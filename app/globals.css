@@ -51,6 +51,16 @@ body {
   }
 }
 
+/* Pe mobil, câmpurile au minim 16px ca iOS Safari să NU mărească (zoom)
+   automat pagina la focus/scriere. Nu afectează zoom-ul manual cu degetele. */
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;
