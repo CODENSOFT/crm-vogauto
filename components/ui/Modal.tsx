@@ -20,10 +20,10 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-elevated animate-scale-in"
+        className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-elevated animate-scale-in"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-5 py-4 sm:px-6">
           <h2 className="text-base font-semibold tracking-tight text-slate-900">{title}</h2>
           <button
             onClick={onClose}
@@ -33,9 +33,9 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
             <IconClose className="h-5 w-5" />
           </button>
         </div>
-        <div className="px-6 py-5">{children}</div>
+        <div className="overflow-y-auto px-5 py-5 sm:px-6">{children}</div>
         {footer && (
-          <div className="flex justify-end gap-2 border-t border-slate-200 bg-slate-50/60 px-6 py-4">
+          <div className="flex shrink-0 justify-end gap-2 border-t border-slate-200 bg-slate-50/60 px-5 py-4 sm:px-6">
             {footer}
           </div>
         )}

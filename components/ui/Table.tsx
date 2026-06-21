@@ -88,7 +88,7 @@ export function Pagination({
   const to = Math.min(page * pageSize, total);
 
   return (
-    <div className="flex items-center justify-between py-3 text-sm text-slate-600">
+    <div className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm text-slate-600">
       <span>
         Afișare {from}–{to} din {total}
       </span>

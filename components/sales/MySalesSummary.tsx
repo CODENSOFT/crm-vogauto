@@ -52,14 +52,15 @@ export function MySalesSummary() {
         ) : monthly.length === 0 ? (
           <div className="px-5 py-6 text-center text-sm text-slate-400">Nu ai înregistrat încă nicio vânzare.</div>
         ) : (
+          <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50">
               <tr>
-                <th className="px-5 py-2.5 text-left font-semibold text-slate-600">Luna</th>
-                <th className="px-5 py-2.5 text-center font-semibold text-slate-600">Vânzări</th>
-                <th className="px-5 py-2.5 text-right font-semibold text-slate-600">Total</th>
-                <th className="px-5 py-2.5 text-right font-semibold text-slate-600">Profit</th>
-                <th className="px-5 py-2.5 text-right font-semibold text-slate-600">Comision</th>
+                <th className="whitespace-nowrap px-5 py-2.5 text-left font-semibold text-slate-600">Luna</th>
+                <th className="whitespace-nowrap px-5 py-2.5 text-center font-semibold text-slate-600">Vânzări</th>
+                <th className="whitespace-nowrap px-5 py-2.5 text-right font-semibold text-slate-600">Total</th>
+                <th className="whitespace-nowrap px-5 py-2.5 text-right font-semibold text-slate-600">Profit</th>
+                <th className="whitespace-nowrap px-5 py-2.5 text-right font-semibold text-slate-600">Comision</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -83,6 +84,7 @@ export function MySalesSummary() {
               </tr>
             </tfoot>
           </table>
+          </div>
         )}
       </div>
     </div>
