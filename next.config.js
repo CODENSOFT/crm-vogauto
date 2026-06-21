@@ -14,11 +14,23 @@ const securityHeaders = [
   },
 ];
 
+// Împiedică memorarea în cache a paginilor autentificate și a răspunsurilor API
+// (date sensibile + fix pentru butonul „Înapoi" după deconectare).
+const noStore = [
+  { key: "Cache-Control", value: "no-store, no-cache, must-revalidate, max-age=0" },
+  { key: "Pragma", value: "no-cache" },
+  { key: "Expires", value: "0" },
+];
+
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      { source: "/dashboard/:path*", headers: noStore },
+      { source: "/api/:path*", headers: noStore },
+    ];
   },
 };
 

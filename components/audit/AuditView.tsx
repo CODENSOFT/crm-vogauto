@@ -61,9 +61,9 @@ export function AuditView() {
 
   return (
     <div>
-      <h1 className="mb-4 text-xl font-semibold tracking-tight text-slate-900">Jurnal audit</h1>
+      <h1 className="mb-6 text-2xl font-bold tracking-tight text-slate-900">Jurnal audit</h1>
 
-      <div className="mb-4 grid grid-cols-1 gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-4">
+      <div className="mb-4 grid grid-cols-1 gap-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-card sm:grid-cols-4">
         <Input label="Utilizator" value={user} onChange={(e) => setUser(e.target.value)} />
         <Select label="Acțiune" value={action} onChange={(e) => setAction(e.target.value)}>
           <option value="">Toate</option>
@@ -76,23 +76,23 @@ export function AuditView() {
       {loading ? (
         <div className="py-12 text-center text-slate-400">Se încarcă...</div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+        <div className="overflow-x-auto rounded-xl border border-slate-200/80 bg-white shadow-card">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50">
+            <thead className="bg-slate-50/80">
               <tr>
                 {["Utilizator", "Acțiune", "IP", "Oraș", "Țară", "Dispozitiv", "Browser", "Data"].map((h) => (
-                  <th key={h} className="whitespace-nowrap px-3 py-2.5 text-left font-semibold text-slate-600">{h}</th>
+                  <th key={h} className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {logs.length === 0 ? (
-                <tr><td colSpan={8} className="px-4 py-8 text-center text-slate-400">Niciun eveniment.</td></tr>
+                <tr><td colSpan={8} className="px-4 py-12 text-center text-slate-400">Niciun eveniment.</td></tr>
               ) : logs.map((l) => (
-                <tr key={l._id} className={flagged.has(l._id) ? "bg-yellow-50" : "hover:bg-slate-50"}>
-                  <td className="whitespace-nowrap px-3 py-2 font-medium text-slate-800">
-                    {l.userName || "—"}
-                    {flagged.has(l._id) && <Badge color="yellow">suspect</Badge>}
+                <tr key={l._id} className={flagged.has(l._id) ? "bg-amber-50" : "transition-colors hover:bg-brand-tint/50"}>
+                  <td className="whitespace-nowrap px-3 py-2.5 font-medium text-slate-800">
+                    <span className="flex items-center gap-2">{l.userName || "—"}
+                    {flagged.has(l._id) && <Badge color="yellow">suspect</Badge>}</span>
                   </td>
                   <td className="px-3 py-2">
                     <Badge color={l.action.includes("FAILED") || l.action.includes("DELETE") ? "red" : "blue"}>

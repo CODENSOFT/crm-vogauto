@@ -48,14 +48,16 @@ export function SaleForm() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="text-xl font-semibold tracking-tight text-slate-900">
-        Înregistrează vânzare
-      </h1>
-      <p className="mb-6 mt-1 text-sm text-slate-500">
-        Completați datele și apăsați „Înregistrează vânzarea”.
-      </p>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+          Înregistrează vânzare
+        </h1>
+        <p className="mt-1 text-sm text-slate-500">
+          Completați datele și apăsați „Înregistrează vânzarea”.
+        </p>
+      </div>
 
-      <form onSubmit={handleSubmit} className="rounded-xl border border-slate-200 bg-white p-6">
+      <form onSubmit={handleSubmit} className="rounded-xl border border-slate-200/80 bg-white p-6 shadow-card">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Input label="Nume client *" value={form.clientName} onChange={(e) => set("clientName", e.target.value)} required />
           <Input label="Telefon client *" value={form.clientPhone} onChange={(e) => set("clientPhone", e.target.value)} required />
@@ -74,13 +76,13 @@ export function SaleForm() {
           <Input label="Data vânzării *" type="date" value={form.saleDate} onChange={(e) => set("saleDate", e.target.value)} required />
         </div>
 
-        <div className="mt-4">
-          <label className="text-sm font-medium text-slate-700">Note</label>
+        <div className="mt-4 flex flex-col gap-1.5">
+          <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">Note</label>
           <textarea
             value={form.notes}
             onChange={(e) => set("notes", e.target.value)}
             rows={3}
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20"
           />
         </div>
 

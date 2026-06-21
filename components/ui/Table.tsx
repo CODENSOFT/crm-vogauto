@@ -25,14 +25,14 @@ export function Table<T>({
   onRowClick,
 }: TableProps<T>) {
   return (
-    <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+    <div className="overflow-x-auto rounded-xl border border-slate-200/80 bg-white shadow-card">
       <table className="min-w-full divide-y divide-slate-200 text-sm">
-        <thead className="bg-slate-50">
+        <thead className="bg-slate-50/80">
           <tr>
             {columns.map((col) => (
               <th
                 key={col.key}
-                className={`px-4 py-3 text-left font-semibold text-slate-600 ${col.className ?? ""}`}
+                className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 ${col.className ?? ""}`}
               >
                 {col.header}
               </th>
@@ -44,7 +44,7 @@ export function Table<T>({
             <tr>
               <td
                 colSpan={columns.length}
-                className="px-4 py-8 text-center text-slate-400"
+                className="px-4 py-12 text-center text-slate-400"
               >
                 {emptyMessage}
               </td>
@@ -54,7 +54,7 @@ export function Table<T>({
               <tr
                 key={rowKey(row)}
                 onClick={() => onRowClick?.(row)}
-                className={`hover:bg-slate-50 ${onRowClick ? "cursor-pointer" : ""}`}
+                className={`transition-colors hover:bg-brand-tint/50 ${onRowClick ? "cursor-pointer" : ""}`}
               >
                 {columns.map((col) => (
                   <td key={col.key} className={`px-4 py-3 text-slate-700 ${col.className ?? ""}`}>
@@ -122,14 +122,17 @@ interface BadgeProps {
 
 export function Badge({ children, color = "gray" }: BadgeProps) {
   const colors: Record<string, string> = {
-    green: "bg-green-100 text-green-800",
-    red: "bg-red-100 text-red-800",
-    yellow: "bg-yellow-100 text-yellow-800",
-    blue: "bg-blue-100 text-blue-800",
-    gray: "bg-slate-100 text-slate-700",
+    green: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
+    red: "bg-red-50 text-red-700 ring-red-600/20",
+    yellow: "bg-amber-50 text-amber-700 ring-amber-600/20",
+    blue: "bg-brand-tint text-brand-dark ring-brand/20",
+    gray: "bg-slate-100 text-slate-600 ring-slate-500/20",
   };
   return (
-    <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${colors[color]}`}>
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset ${colors[color]}`}
+    >
+      <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
       {children}
     </span>
   );

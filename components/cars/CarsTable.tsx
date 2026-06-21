@@ -119,8 +119,8 @@ export function CarsTable() {
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold tracking-tight text-slate-900">Vânzări</h1>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Vânzări</h1>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={() => { window.location.href = "/api/export"; toast("Se generează Excel..."); }}>
             <IconDownload className="h-4 w-4" /> Export Excel
@@ -129,7 +129,7 @@ export function CarsTable() {
         </div>
       </div>
 
-      <div className="mb-4 grid grid-cols-1 gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="mb-4 grid grid-cols-1 gap-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-card sm:grid-cols-3 lg:grid-cols-6">
         <Input label="Căutare" placeholder="Client, telefon, VIN" value={filters.search} onChange={(e) => setF("search", e.target.value)} />
         <Input label="Marcă" value={filters.brand} onChange={(e) => setF("brand", e.target.value)} />
         <Input label="Vânzător" value={filters.worker} onChange={(e) => setF("worker", e.target.value)} />
@@ -148,20 +148,20 @@ export function CarsTable() {
       {loading ? (
         <div className="py-12 text-center text-slate-400">Se încarcă...</div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+        <div className="overflow-x-auto rounded-xl border border-slate-200/80 bg-white shadow-card">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50">
+            <thead className="bg-slate-50/80">
               <tr>{headers.map(([col, lbl], i) => (
-                <th key={i} onClick={() => col && toggleSort(col)} className={`whitespace-nowrap px-3 py-2.5 text-left font-semibold text-slate-600 ${col ? "cursor-pointer select-none hover:text-brand" : ""}`}>{lbl}{col ? sortInd(col) : ""}</th>
+                <th key={i} onClick={() => col && toggleSort(col)} className={`whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 ${col ? "cursor-pointer select-none hover:text-brand" : ""}`}>{lbl}{col ? sortInd(col) : ""}</th>
               ))}</tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {cars.length === 0 ? (
-                <tr><td colSpan={headers.length} className="px-4 py-8 text-center text-slate-400">Nicio vânzare găsită.</td></tr>
+                <tr><td colSpan={headers.length} className="px-4 py-12 text-center text-slate-400">Nicio vânzare găsită.</td></tr>
               ) : cars.map((car, idx) => {
                 const profit = Number(car.priceSell) - Number(car.priceBuy);
                 return (
-                  <tr key={car._id} className="hover:bg-slate-50">
+                  <tr key={car._id} className="transition-colors hover:bg-brand-tint/50">
                     <td className="px-3 py-2 text-slate-400">{(page - 1) * 20 + idx + 1}</td>
                     <td className="px-3 py-2"><Cell car={car} field="clientName" display={car.clientName} /></td>
                     <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">

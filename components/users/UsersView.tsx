@@ -89,8 +89,8 @@ export function UsersView() {
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold tracking-tight text-slate-900">Utilizatori</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Utilizatori</h1>
         <Button onClick={() => setAddOpen(true)}>Adaugă angajat</Button>
       </div>
 

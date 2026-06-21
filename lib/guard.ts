@@ -23,7 +23,9 @@ export async function requireSession(): Promise<
   { user: SessionUser; error: null } | { user: null; error: NextResponse }
 > {
   const session = await getServerSession(authOptions);
-  if (!session?.user) {
+  // Cerem un id valid: un token invalidat (cont dezactivat/șters) ajunge aici
+  // fără identitate și trebuie respins.
+  if (!session?.user?.id) {
     return { user: null, error: NextResponse.json({ error: "Neautentificat" }, { status: 401 }) };
   }
   return { user: session.user as SessionUser, error: null };

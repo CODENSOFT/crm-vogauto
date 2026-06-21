@@ -4,7 +4,7 @@ import Car from "@/models/Car";
 import User from "@/models/User";
 import { requireSession, requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
-import { maskPhone } from "@/lib/utils";
+import { maskPhone, escapeRegex } from "@/lib/utils";
 
 // GET /api/cars — ADMIN ONLY. Listă cu paginare, filtre, căutare, sortare.
 export async function GET(request: Request) {
@@ -27,10 +27,10 @@ export async function GET(request: Request) {
   await connectDB();
 
   const query: Record<string, unknown> = { isDeleted: false };
-  if (brand) query.brand = { $regex: brand, $options: "i" };
+  if (brand) query.brand = { $regex: escapeRegex(brand), $options: "i" };
   if (payment) query.paymentMethod = payment;
   if (status) query.status = status;
-  if (worker) query.soldByName = { $regex: worker, $options: "i" };
+  if (worker) query.soldByName = { $regex: escapeRegex(worker), $options: "i" };
   if (dateFrom || dateTo) {
     const range: Record<string, Date> = {};
     if (dateFrom) range.$gte = new Date(dateFrom);
@@ -38,10 +38,11 @@ export async function GET(request: Request) {
     query.saleDate = range;
   }
   if (search) {
+    const safe = escapeRegex(search);
     query.$or = [
-      { clientName: { $regex: search, $options: "i" } },
-      { clientPhone: { $regex: search, $options: "i" } },
-      { vin: { $regex: search, $options: "i" } },
+      { clientName: { $regex: safe, $options: "i" } },
+      { clientPhone: { $regex: safe, $options: "i" } },
+      { vin: { $regex: safe, $options: "i" } },
     ];
   }
 

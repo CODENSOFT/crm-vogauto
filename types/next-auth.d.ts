@@ -27,5 +27,7 @@ declare module "next-auth/jwt" {
     permissions?: Record<string, boolean>;
     lat?: number;
     lon?: number;
+    // Marcaj de timp al ultimei re-validări față de baza de date.
+    checkedAt?: number;
   }
 }

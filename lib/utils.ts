@@ -75,3 +75,9 @@ export function getClientIp(headers: Headers): string {
   if (forwarded) return forwarded.split(",")[0].trim();
   return headers.get("x-real-ip") || "unknown";
 }
+
+// Escape pentru caractere speciale de regex — previne injecția de regex și
+// atacurile ReDoS atunci când inputul utilizatorului ajunge într-un $regex.
+export function escapeRegex(input: string): string {
+  return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}

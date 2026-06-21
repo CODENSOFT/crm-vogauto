@@ -38,13 +38,17 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-sidebar px-4">
-      <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-8 shadow-xl">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-auth-gradient px-4">
+      {/* Elemente decorative discrete. */}
+      <div className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-brand/20 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-40 -right-24 h-96 w-96 rounded-full bg-indigo-500/20 blur-3xl" />
+
+      <div className="relative w-full max-w-md animate-scale-in rounded-2xl border border-white/10 bg-white p-8 shadow-elevated">
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-brand text-base font-bold text-white">
+          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-gradient text-lg font-bold text-white shadow-glow ring-1 ring-white/20">
             VA
           </div>
-          <h1 className="text-xl font-semibold tracking-tight text-slate-900">VOGAUTO</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">VOGAUTO</h1>
           <p className="mt-1 text-sm text-slate-500">Autentificare în sistem</p>
         </div>
 
@@ -73,10 +77,12 @@ export default function LoginPage() {
           />
 
           {error && (
-            <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
+            <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700">
+              {error}
+            </div>
           )}
 
-          <Button type="submit" loading={loading} className="w-full">
+          <Button type="submit" loading={loading} className="mt-1 w-full">
             Autentificare
           </Button>
         </form>

@@ -37,10 +37,12 @@ export function MySalesSummary() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="text-xl font-semibold tracking-tight text-slate-900">Vânzările mele</h1>
-      <p className="mb-6 mt-1 text-sm text-slate-500">Totalul vânzărilor pe lună, profitul și comisionul.</p>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Vânzările mele</h1>
+        <p className="mt-1 text-sm text-slate-500">Totalul vânzărilor pe lună, profitul și comisionul.</p>
+      </div>
 
-      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-card">
+      <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-card">
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3">
           <h2 className="text-sm font-semibold text-slate-700">Defalcare pe luni</h2>
           <span className="text-xs text-slate-500">Comision: <span className="font-semibold text-slate-700">{pct}%</span></span>

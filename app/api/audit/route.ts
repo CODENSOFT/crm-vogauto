@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import AuditLog from "@/models/AuditLog";
 import { requireAdmin } from "@/lib/guard";
+import { escapeRegex } from "@/lib/utils";
 
 // GET /api/audit — ADMIN ONLY. Paginare 50 + filtre.
 export async function GET(request: Request) {
@@ -19,7 +20,7 @@ export async function GET(request: Request) {
   await connectDB();
   const query: Record<string, unknown> = {};
   if (action) query.action = action;
-  if (userName) query.userName = { $regex: userName, $options: "i" };
+  if (userName) query.userName = { $regex: escapeRegex(userName), $options: "i" };
   if (dateFrom || dateTo) {
     const range: Record<string, Date> = {};
     if (dateFrom) range.$gte = new Date(dateFrom);
