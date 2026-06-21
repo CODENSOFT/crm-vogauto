@@ -1,13 +1,5 @@
 import mongoose from "mongoose";
 
-const MONGODB_URI = process.env.MONGODB_URI;
-
-if (!MONGODB_URI) {
-  throw new Error(
-    "Lipsește MONGODB_URI din variabilele de mediu (.env.local)."
-  );
-}
-
 // Reutilizăm conexiunea între reload-uri (Next.js dev) ca să nu deschidem
 // conexiuni multiple către MongoDB.
 interface MongooseCache {
@@ -26,8 +18,15 @@ global._mongoose = cached;
 export async function connectDB(): Promise<typeof mongoose> {
   if (cached.conn) return cached.conn;
 
+  // Verificăm variabila la momentul conectării (runtime), nu la import — astfel
+  // build-ul (care doar importă modulul) nu eșuează dacă lipsește la build time.
+  const MONGODB_URI = process.env.MONGODB_URI;
+  if (!MONGODB_URI) {
+    throw new Error("Lipsește MONGODB_URI din variabilele de mediu.");
+  }
+
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI!, {
+    cached.promise = mongoose.connect(MONGODB_URI, {
       bufferCommands: false,
     });
   }

@@ -6,11 +6,9 @@ import User from "@/models/User";
 import { logAction } from "@/lib/audit";
 import { isRateLimited, registerFailure, clearFailures } from "@/lib/rateLimit";
 
-// Secret obligatoriu — fără el, JWT-urile ar fi semnate cu o cheie nesigură.
-if (!process.env.NEXTAUTH_SECRET) {
-  throw new Error("Lipsește NEXTAUTH_SECRET din variabilele de mediu.");
-}
-
+// Notă: NEXTAUTH_SECRET este obligatoriu în producție — NextAuth însuși refuză
+// să pornească fără el la runtime. Nu îl verificăm la import, ca să nu blocăm
+// build-ul (variabilele pot lipsi în faza de build).
 const useSecureCookies =
   (process.env.NEXTAUTH_URL ?? "").startsWith("https://") ||
   process.env.NODE_ENV === "production";
