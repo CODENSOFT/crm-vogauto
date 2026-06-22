@@ -8,13 +8,13 @@ import { Input, Select } from "@/components/ui/Input";
 import { Modal, ConfirmDialog } from "@/components/ui/Modal";
 import { IconDownload, IconEye } from "@/components/ui/Icons";
 import { formatMoney, formatDateShort } from "@/lib/utils";
-import { type CarDTO } from "@/types";
+import { type CarDTO, type InventoryDTO } from "@/types";
 
 const EMPTY_FILTERS = { search: "", brand: "", worker: "", payment: "", status: "", dateFrom: "", dateTo: "" };
 const NEW_SALE = {
   clientName: "", clientPhone: "", brand: "", model: "", year: String(new Date().getFullYear()),
   vin: "", color: "", priceBuy: "", priceSell: "", profit: "", paymentMethod: "cash", status: "sold",
-  saleDate: new Date().toISOString().slice(0, 10), notes: "", soldBy: "",
+  saleDate: new Date().toISOString().slice(0, 10), notes: "", soldBy: "", inventoryId: "",
 };
 
 export function CarsTable() {
@@ -34,6 +34,7 @@ export function CarsTable() {
   const [addOpen, setAddOpen] = useState(false);
   const [newSale, setNewSale] = useState({ ...NEW_SALE });
   const [savingNew, setSavingNew] = useState(false);
+  const [stock, setStock] = useState<InventoryDTO[]>([]);
 
   const [deleteTarget, setDeleteTarget] = useState<CarDTO | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -52,6 +53,20 @@ export function CarsTable() {
   useEffect(() => { const t = setTimeout(load, 300); return () => clearTimeout(t); }, [load]);
   useEffect(() => setPage(1), [filters, sortBy, sortDir]);
   useEffect(() => { fetch("/api/users").then((r) => r.ok ? r.json() : { users: [] }).then((d) => setWorkers(d.users || [])); }, []);
+  useEffect(() => { if (addOpen) fetch("/api/inventory?status=available").then((r) => r.ok ? r.json() : { items: [] }).then((d) => setStock(d.items || [])); }, [addOpen]);
+
+  // Alege o mașină din stoc → completează datele și prețurile (preț cump. =
+  // preț cerut de client, preț vânz. = preț vânzare; profitul rezultă = adaosul).
+  function pickFromStock(id: string) {
+    if (!id) { setNewSale((s) => ({ ...s, inventoryId: "" })); return; }
+    const it = stock.find((s) => s._id === id);
+    if (!it) return;
+    setNewSale((s) => ({
+      ...s, inventoryId: id, brand: it.brand, model: it.model, year: String(it.year),
+      vin: it.vin ?? "", color: it.color ?? "",
+      priceBuy: String(it.clientWantPrice), priceSell: String(it.sellPrice), profit: "",
+    }));
+  }
 
   function toggleSort(c: string) { if (sortBy === c) setSortDir((d) => d === "asc" ? "desc" : "asc"); else { setSortBy(c); setSortDir("asc"); } }
   const sortInd = (c: string) => (sortBy === c ? (sortDir === "asc" ? " ▲" : " ▼") : "");
@@ -216,6 +231,17 @@ export function CarsTable() {
 
       <Modal open={addOpen} onClose={() => setAddOpen(false)} title="Adaugă vânzare"
         footer={<><Button variant="secondary" onClick={() => setAddOpen(false)} disabled={savingNew}>Anulează</Button><Button onClick={saveNew} loading={savingNew}>Salvează</Button></>}>
+        {stock.length > 0 && (
+          <div className="mb-3 rounded-lg border border-brand/20 bg-brand-tint/60 p-3">
+            <Select label="Alege din stoc (opțional)" value={newSale.inventoryId} onChange={(e) => pickFromStock(e.target.value)}>
+              <option value="">— Introdu manual —</option>
+              {stock.map((s) => (
+                <option key={s._id} value={s._id}>{s.brand} {s.model} ({s.year}) · {formatMoney(s.sellPrice)}</option>
+              ))}
+            </Select>
+            <p className="mt-1.5 text-xs text-slate-500">Completează automat datele mașinii și prețurile din stoc.</p>
+          </div>
+        )}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Input label="Nume client *" value={newSale.clientName} onChange={(e) => setNewSale((s) => ({ ...s, clientName: e.target.value }))} />
           <Input label="Telefon *" value={newSale.clientPhone} onChange={(e) => setNewSale((s) => ({ ...s, clientPhone: e.target.value }))} />

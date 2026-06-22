@@ -10,25 +10,27 @@ import { Modal, ConfirmDialog } from "@/components/ui/Modal";
 import { formatDate } from "@/lib/utils";
 import { type UserDTO } from "@/types";
 
-function CommissionCell({ user, onSaved }: { user: UserDTO; onSaved: () => void }) {
-  const [value, setValue] = useState(String(user.commissionPercent ?? 0));
+// Celulă numerică editabilă pentru un câmp al utilizatorului (taxă sau bonus).
+function NumCell({ user, field, onSaved }: { user: UserDTO; field: "fixedFee" | "bonus"; onSaved: () => void }) {
+  const current = field === "fixedFee" ? (user.fixedFee ?? 50) : (user.bonus ?? 0);
+  const [value, setValue] = useState(String(current));
   const [saving, setSaving] = useState(false);
   async function save() {
-    if (Number(value) === Number(user.commissionPercent)) return;
+    if (Number(value) === Number(current)) return;
     setSaving(true);
-    const res = await fetch(`/api/users/${user._id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ commissionPercent: value }) });
+    const res = await fetch(`/api/users/${user._id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ [field]: value }) });
     const data = await res.json();
     setSaving(false);
-    if (!res.ok) { toast.error(data.error || "Eroare."); setValue(String(user.commissionPercent ?? 0)); return; }
-    toast.success("Comision actualizat"); onSaved();
+    if (!res.ok) { toast.error(data.error || "Eroare."); setValue(String(current)); return; }
+    toast.success(field === "fixedFee" ? "Taxă actualizată" : "Bonus actualizat"); onSaved();
   }
   return (
     <div className="flex items-center gap-1">
-      <input type="number" min={0} max={100} step="0.5" value={value} disabled={saving}
+      <input type="number" min={0} step="1" value={value} disabled={saving}
         onChange={(e) => setValue(e.target.value)} onBlur={save}
         onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
         className="w-20 rounded-md border border-slate-300 px-2 py-1 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" />
-      <span className="text-xs text-slate-400">%</span>
+      <span className="text-xs text-slate-400">€</span>
     </div>
   );
 }
@@ -73,7 +75,8 @@ export function UsersView() {
     { key: "username", header: "Utilizator", render: (u: UserDTO) => <span className="font-mono text-xs text-slate-600">{u.username}</span> },
     { key: "role", header: "Rol", render: (u: UserDTO) => <Badge color={u.role === "admin" ? "blue" : "gray"}>{u.role === "admin" ? "Administrator" : "Angajat"}</Badge> },
     { key: "isActive", header: "Status", render: (u: UserDTO) => <Badge color={u.isActive ? "green" : "red"}>{u.isActive ? "Activ" : "Inactiv"}</Badge> },
-    { key: "commissionPercent", header: "Comision (%)", render: (u: UserDTO) => <CommissionCell user={u} onSaved={load} /> },
+    { key: "fixedFee", header: "Taxă (€)", render: (u: UserDTO) => <NumCell user={u} field="fixedFee" onSaved={load} /> },
+    { key: "bonus", header: "Bonus (€)", render: (u: UserDTO) => <NumCell user={u} field="bonus" onSaved={load} /> },
     { key: "lastLogin", header: "Ultima conectare", render: (u: UserDTO) => formatDate(u.lastLogin ?? null) },
     {
       key: "actions", header: "",
@@ -105,7 +108,7 @@ export function UsersView() {
 }
 
 function AddUserModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
-  const [form, setForm] = useState({ fullName: "", username: "", password: "" });
+  const [form, setForm] = useState({ fullName: "", username: "", password: "", fixedFee: "50", bonus: "0" });
   const [loading, setLoading] = useState(false);
   async function save() {
     setLoading(true);
@@ -122,18 +125,22 @@ function AddUserModal({ onClose, onSaved }: { onClose: () => void; onSaved: () =
         <Input label="Nume complet *" value={form.fullName} onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))} />
         <Input label="Utilizator (login) *" value={form.username} onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))} placeholder="ex: ion.popescu" autoCapitalize="none" spellCheck={false} />
         <Input label="Parolă * (min. 6)" type="password" value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} />
-        <p className="rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-500">Angajatul va putea doar să înregistreze vânzări și să-și vadă propriile totaluri.</p>
+        <div className="grid grid-cols-2 gap-3">
+          <Input label="Taxă fixă / vânzare (€)" type="number" min={0} value={form.fixedFee} onChange={(e) => setForm((f) => ({ ...f, fixedFee: e.target.value }))} />
+          <Input label="Bonus (€)" type="number" min={0} value={form.bonus} onChange={(e) => setForm((f) => ({ ...f, bonus: e.target.value }))} />
+        </div>
+        <p className="rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-500">Angajatul va putea doar să înregistreze vânzări și să-și vadă propriile totaluri. Plata = taxă × vânzări + bonus.</p>
       </div>
     </Modal>
   );
 }
 
 function EditUserModal({ user, isSelf, onClose, onSaved }: { user: UserDTO; isSelf: boolean; onClose: () => void; onSaved: () => void }) {
-  const [form, setForm] = useState({ fullName: user.fullName, username: user.username, role: user.role, commissionPercent: String(user.commissionPercent ?? 0), password: "" });
+  const [form, setForm] = useState({ fullName: user.fullName, username: user.username, role: user.role, fixedFee: String(user.fixedFee ?? 50), bonus: String(user.bonus ?? 0), password: "" });
   const [loading, setLoading] = useState(false);
   async function save() {
     setLoading(true);
-    const payload: Record<string, unknown> = { fullName: form.fullName, username: form.username, commissionPercent: form.commissionPercent };
+    const payload: Record<string, unknown> = { fullName: form.fullName, username: form.username, fixedFee: form.fixedFee, bonus: form.bonus };
     if (!isSelf) payload.role = form.role;
     if (form.password) payload.password = form.password;
     const res = await fetch(`/api/users/${user._id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
@@ -154,7 +161,10 @@ function EditUserModal({ user, isSelf, onClose, onSaved }: { user: UserDTO; isSe
             <option value="worker">Angajat</option><option value="admin">Administrator</option>
           </Select>
         )}
-        <Input label="Comision (%)" type="number" min={0} max={100} step="0.5" value={form.commissionPercent} onChange={(e) => setForm((f) => ({ ...f, commissionPercent: e.target.value }))} />
+        <div className="grid grid-cols-2 gap-3">
+          <Input label="Taxă fixă / vânzare (€)" type="number" min={0} value={form.fixedFee} onChange={(e) => setForm((f) => ({ ...f, fixedFee: e.target.value }))} />
+          <Input label="Bonus (€)" type="number" min={0} value={form.bonus} onChange={(e) => setForm((f) => ({ ...f, bonus: e.target.value }))} />
+        </div>
       </div>
     </Modal>
   );

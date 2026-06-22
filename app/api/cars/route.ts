@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Car from "@/models/Car";
 import User from "@/models/User";
+import Inventory from "@/models/Inventory";
 import { requireSession, requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
 import { maskPhone, escapeRegex } from "@/lib/utils";
@@ -74,7 +75,7 @@ export async function POST(request: Request) {
   const body = await request.json();
   const {
     clientName, clientPhone, brand, model, year, vin, color,
-    priceBuy, priceSell, profit, paymentMethod, saleDate, status, notes, soldBy,
+    priceBuy, priceSell, profit, paymentMethod, saleDate, status, notes, soldBy, inventoryId,
   } = body;
 
   if (!clientName || !clientPhone || !brand || !model || !year || !vin || !priceSell) {
@@ -123,6 +124,15 @@ export async function POST(request: Request) {
       request,
       coords: coordsOf(user),
     });
+
+    // Dacă vânzarea provine dintr-o mașină din stoc, o marcăm „vândută”
+    // (rămâne în listă pentru istoric).
+    if (inventoryId) {
+      await Inventory.findOneAndUpdate(
+        { _id: inventoryId, isDeleted: false, status: "available" },
+        { status: "sold", soldBy: user.id, soldByName: user.fullName, saleId: car._id, saleDate: car.saleDate }
+      );
+    }
 
     if (!isAdmin) return NextResponse.json({ ok: true }, { status: 201 });
     return NextResponse.json({ car: { ...car.toObject(), _id: String(car._id) } }, { status: 201 });

@@ -51,7 +51,8 @@ async function main() {
       fullName: "Administrator",
       role: "admin",
       permissions: PERMS,
-      commissionPercent: 0,
+      fixedFee: 50,
+      bonus: 0,
       isActive: true,
     });
     console.log("✓ Admin creat — login: admin / parolă: Admin1234!");

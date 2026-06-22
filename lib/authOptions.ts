@@ -116,7 +116,8 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           fullName: user.fullName,
           role: user.role,
-          commissionPercent: user.commissionPercent,
+          fixedFee: user.fixedFee ?? 50,
+          bonus: user.bonus ?? 0,
           permissions: user.permissions,
           lat: coords?.lat,
           lon: coords?.lon,
@@ -132,7 +133,8 @@ export const authOptions: NextAuthOptions = {
           username: string;
           role: string;
           fullName: string;
-          commissionPercent: number;
+          fixedFee: number;
+          bonus: number;
           permissions: Record<string, boolean>;
           lat?: number;
           lon?: number;
@@ -141,7 +143,8 @@ export const authOptions: NextAuthOptions = {
         token.username = u.username;
         token.role = u.role;
         token.fullName = u.fullName;
-        token.commissionPercent = u.commissionPercent;
+        token.fixedFee = u.fixedFee;
+        token.bonus = u.bonus;
         token.permissions = u.permissions;
         token.lat = u.lat;
         token.lon = u.lon;
@@ -157,7 +160,7 @@ export const authOptions: NextAuthOptions = {
         try {
           await connectDB();
           const dbUser = await User.findById(token.id)
-            .select("role isActive fullName commissionPercent username permissions")
+            .select("role isActive fullName fixedFee bonus username permissions")
             .lean();
           if (!dbUser || !dbUser.isActive) {
             // Token gol → sesiunea devine invalidă, utilizatorul e deconectat.
@@ -166,7 +169,8 @@ export const authOptions: NextAuthOptions = {
           token.role = dbUser.role;
           token.fullName = dbUser.fullName;
           token.username = dbUser.username;
-          token.commissionPercent = dbUser.commissionPercent ?? 0;
+          token.fixedFee = dbUser.fixedFee ?? 50;
+          token.bonus = dbUser.bonus ?? 0;
           token.permissions = dbUser.permissions as unknown as Record<string, boolean>;
           token.checkedAt = Date.now();
         } catch {
@@ -182,7 +186,8 @@ export const authOptions: NextAuthOptions = {
         session.user.username = token.username as string;
         session.user.role = token.role as string;
         session.user.fullName = token.fullName as string;
-        session.user.commissionPercent = (token.commissionPercent as number) ?? 0;
+        session.user.fixedFee = (token.fixedFee as number) ?? 50;
+        session.user.bonus = (token.bonus as number) ?? 0;
         session.user.permissions = token.permissions as Record<string, boolean>;
         session.user.lat = token.lat as number | undefined;
         session.user.lon = token.lon as number | undefined;

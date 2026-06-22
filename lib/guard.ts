@@ -8,7 +8,8 @@ type SessionUser = {
   email?: string;
   fullName: string;
   role: string;
-  commissionPercent: number;
+  fixedFee: number;
+  bonus: number;
   permissions: Record<string, boolean>;
   lat?: number;
   lon?: number;

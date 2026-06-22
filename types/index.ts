@@ -66,9 +66,36 @@ export interface UserDTO {
   fullName: string;
   role: "admin" | "worker";
   permissions: Permissions;
-  commissionPercent: number;
+  fixedFee: number;
+  bonus: number;
   isActive: boolean;
   lastLogin?: string;
+  createdAt: string;
+}
+
+export type StockStatus = "available" | "sold";
+
+export const STOCK_STATUS_LABELS: Record<StockStatus, string> = {
+  available: "Disponibilă",
+  sold: "Vândută",
+};
+
+// Mașină în stoc / la realizare.
+export interface InventoryDTO {
+  _id: string;
+  brand: string;
+  model: string;
+  year: number;
+  vin?: string;
+  color?: string;
+  ownerName: string;
+  ownerPhone: string;
+  clientWantPrice: number; // prețul cerut de proprietar
+  sellPrice: number; // prețul de vânzare al parcării
+  markup: number; // adaosul parcării = sellPrice - clientWantPrice
+  status: StockStatus;
+  notes?: string;
+  addedByName?: string;
   createdAt: string;
 }
 
@@ -85,6 +112,9 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   DOWNLOAD_EXCEL: "Descărcare Excel",
   VIEW_STATISTICS: "Vizualizare statistici",
   REVEAL_PHONE: "Dezvăluire telefon",
+  CREATE_STOCK: "Adăugare mașină în stoc",
+  EDIT_STOCK: "Editare mașină stoc",
+  DELETE_STOCK: "Ștergere mașină stoc",
 };
 
 export const AUDIT_ACTIONS = Object.keys(AUDIT_ACTION_LABELS);

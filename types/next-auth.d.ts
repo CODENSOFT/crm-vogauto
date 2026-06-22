@@ -9,7 +9,8 @@ declare module "next-auth" {
       email?: string;
       fullName: string;
       role: string;
-      commissionPercent: number;
+      fixedFee: number;
+      bonus: number;
       permissions: Record<string, boolean>;
       lat?: number;
       lon?: number;
@@ -23,7 +24,8 @@ declare module "next-auth/jwt" {
     username?: string;
     role?: string;
     fullName?: string;
-    commissionPercent?: number;
+    fixedFee?: number;
+    bonus?: number;
     permissions?: Record<string, boolean>;
     lat?: number;
     lon?: number;

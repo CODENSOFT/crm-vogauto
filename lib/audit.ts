@@ -179,4 +179,7 @@ export const ACTION_LABELS: Record<string, string> = {
   DOWNLOAD_EXCEL: "Descărcare Excel",
   VIEW_STATISTICS: "Vizualizare statistici",
   REVEAL_PHONE: "Dezvăluire telefon",
+  CREATE_STOCK: "Adăugare mașină în stoc",
+  EDIT_STOCK: "Editare mașină stoc",
+  DELETE_STOCK: "Ștergere mașină stoc",
 };

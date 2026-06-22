@@ -20,7 +20,7 @@ export async function POST(request: Request) {
   const { user, error } = await requireAdmin();
   if (error) return error;
 
-  const { username, password, fullName, role, permissions, commissionPercent } = await request.json();
+  const { username, password, fullName, role, permissions, fixedFee, bonus } = await request.json();
   if (!username || !password || !fullName) {
     return NextResponse.json({ error: "Nume, utilizator și parolă sunt obligatorii." }, { status: 400 });
   }
@@ -47,7 +47,8 @@ export async function POST(request: Request) {
     fullName,
     role: role === "admin" ? "admin" : "worker",
     permissions: permissions || {},
-    commissionPercent: Number(commissionPercent) || 0,
+    fixedFee: fixedFee !== undefined && fixedFee !== "" ? Number(fixedFee) : 50,
+    bonus: Number(bonus) || 0,
     isActive: true,
   });
 

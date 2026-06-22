@@ -47,28 +47,33 @@ export async function GET(request: Request) {
     agg[id].monthly[month].profit += profit;
   }
 
-  // Procentele de comision din profilurile utilizatorilor.
+  // Taxa fixă și bonusul din profilurile utilizatorilor.
   const ids = Object.keys(agg).filter((id) => id !== "necunoscut");
   const users = ids.length
-    ? await User.find({ _id: { $in: ids } }).select("commissionPercent").lean()
+    ? await User.find({ _id: { $in: ids } }).select("fixedFee bonus").lean()
     : [];
-  const pctMap = new Map(users.map((u) => [String(u._id), Number(u.commissionPercent ?? 0)]));
+  const feeMap = new Map(users.map((u) => [String(u._id), Number(u.fixedFee ?? 50)]));
+  const bonusMap = new Map(users.map((u) => [String(u._id), Number(u.bonus ?? 0)]));
 
   const grandTotalProfit = sales.reduce((s, c) => s + (Number(c.priceSell) - Number(c.priceBuy)), 0);
   const grandTotalRevenue = sales.reduce((s, c) => s + Number(c.priceSell), 0);
 
   const managers = Object.entries(agg)
     .map(([id, a]) => {
-      const commissionPercent = pctMap.get(id) ?? 0;
+      const fixedFee = feeMap.get(id) ?? 50;
+      const bonus = bonusMap.get(id) ?? 0;
+      const feeTotal = fixedFee * a.count;
       return {
         id,
         name: a.name,
-        commissionPercent,
+        fixedFee,
+        bonus,
         totalCount: a.count,
         totalRevenue: a.revenue,
         totalProfit: a.profit,
         profitPercent: grandTotalProfit ? (a.profit / grandTotalProfit) * 100 : 0,
-        commissionAmount: (a.profit * commissionPercent) / 100,
+        feeTotal,
+        payout: feeTotal + bonus, // total de plată = taxă × vânzări + bonus
         monthly: months.map((m) => ({
           month: m,
           count: a.monthly[m]?.count ?? 0,
@@ -76,13 +81,16 @@ export async function GET(request: Request) {
         })),
       };
     })
-    .sort((a, b) => b.totalProfit - a.totalProfit);
+    .sort((a, b) => b.payout - a.payout);
+
+  const grandTotalPayout = managers.reduce((s, m) => s + m.payout, 0);
 
   return NextResponse.json({
     months,
     grandTotalProfit,
     grandTotalRevenue,
     grandTotalCount: sales.length,
+    grandTotalPayout,
     managers,
   });
 }

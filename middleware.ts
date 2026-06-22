@@ -19,6 +19,7 @@ export default withAuth(
 
     const ADMIN_ONLY = [
       "/dashboard/cars",
+      "/dashboard/inventory",
       "/dashboard/statistics",
       "/dashboard/managers",
       "/dashboard/audit",

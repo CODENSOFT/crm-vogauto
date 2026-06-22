@@ -8,7 +8,7 @@ interface MonthRow {
   count: number;
   revenue: number;
   profit: number;
-  commission: number;
+  fee: number;
 }
 
 function monthLabel(m: string) {
@@ -18,8 +18,10 @@ function monthLabel(m: string) {
 
 export function MySalesSummary() {
   const [monthly, setMonthly] = useState<MonthRow[]>([]);
-  const [totals, setTotals] = useState({ count: 0, revenue: 0, profit: 0, commission: 0 });
-  const [pct, setPct] = useState(0);
+  const [totals, setTotals] = useState({ count: 0, revenue: 0, profit: 0, fee: 0 });
+  const [fixedFee, setFixedFee] = useState(0);
+  const [bonus, setBonus] = useState(0);
+  const [payout, setPayout] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -28,7 +30,9 @@ export function MySalesSummary() {
       const d = await res.json();
       setMonthly(d.monthly);
       setTotals(d.totals);
-      setPct(d.commissionPercent ?? 0);
+      setFixedFee(d.fixedFee ?? 0);
+      setBonus(d.bonus ?? 0);
+      setPayout(d.payout ?? 0);
     }
     setLoading(false);
   }, []);
@@ -39,13 +43,32 @@ export function MySalesSummary() {
     <div className="mx-auto max-w-3xl">
       <div className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">Vânzările mele</h1>
-        <p className="mt-1 text-sm text-slate-500">Totalul vânzărilor pe lună, profitul și comisionul.</p>
+        <p className="mt-1 text-sm text-slate-500">Totalul vânzărilor pe lună, taxa și bonusul.</p>
+      </div>
+
+      <div className="mb-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-card">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Taxă / vânzare</p>
+          <p className="mt-1 text-xl font-bold text-slate-900">{formatMoney(fixedFee)}</p>
+        </div>
+        <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-card">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Vânzări</p>
+          <p className="mt-1 text-xl font-bold text-slate-900">{totals.count}</p>
+        </div>
+        <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-card">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Bonus</p>
+          <p className="mt-1 text-xl font-bold text-slate-900">{formatMoney(bonus)}</p>
+        </div>
+        <div className="rounded-xl border border-brand/20 bg-brand-tint p-4 shadow-card">
+          <p className="text-xs font-semibold uppercase tracking-wide text-brand-dark">Total de plată</p>
+          <p className="mt-1 text-xl font-bold text-brand-dark">{formatMoney(payout)}</p>
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-card">
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3">
           <h2 className="text-sm font-semibold text-slate-700">Defalcare pe luni</h2>
-          <span className="text-xs text-slate-500">Comision: <span className="font-semibold text-slate-700">{pct}%</span></span>
+          <span className="text-xs text-slate-500">Taxă: <span className="font-semibold text-slate-700">{formatMoney(fixedFee)}</span> / vânzare</span>
         </div>
         {loading ? (
           <div className="px-5 py-6 text-center text-sm text-slate-400">Se încarcă...</div>
@@ -60,7 +83,7 @@ export function MySalesSummary() {
                 <th className="whitespace-nowrap px-5 py-2.5 text-center font-semibold text-slate-600">Vânzări</th>
                 <th className="whitespace-nowrap px-5 py-2.5 text-right font-semibold text-slate-600">Total</th>
                 <th className="whitespace-nowrap px-5 py-2.5 text-right font-semibold text-slate-600">Profit</th>
-                <th className="whitespace-nowrap px-5 py-2.5 text-right font-semibold text-slate-600">Comision</th>
+                <th className="whitespace-nowrap px-5 py-2.5 text-right font-semibold text-slate-600">Taxă</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -70,7 +93,7 @@ export function MySalesSummary() {
                   <td className="px-5 py-2.5 text-center font-medium text-slate-800">{m.count}</td>
                   <td className="px-5 py-2.5 text-right text-slate-700">{formatMoney(m.revenue)}</td>
                   <td className="px-5 py-2.5 text-right font-medium text-emerald-700">{formatMoney(m.profit)}</td>
-                  <td className="px-5 py-2.5 text-right font-semibold text-brand">{formatMoney(m.commission)}</td>
+                  <td className="px-5 py-2.5 text-right font-semibold text-brand">{formatMoney(m.fee)}</td>
                 </tr>
               ))}
             </tbody>
@@ -80,7 +103,7 @@ export function MySalesSummary() {
                 <td className="px-5 py-2.5 text-center font-semibold text-slate-900">{totals.count}</td>
                 <td className="px-5 py-2.5 text-right font-semibold text-slate-900">{formatMoney(totals.revenue)}</td>
                 <td className="px-5 py-2.5 text-right font-semibold text-emerald-700">{formatMoney(totals.profit)}</td>
-                <td className="px-5 py-2.5 text-right font-semibold text-brand">{formatMoney(totals.commission)}</td>
+                <td className="px-5 py-2.5 text-right font-semibold text-brand">{formatMoney(totals.fee)}</td>
               </tr>
             </tfoot>
           </table>

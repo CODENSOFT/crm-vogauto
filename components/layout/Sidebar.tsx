@@ -11,6 +11,7 @@ import {
   IconUsers,
   IconForm,
   IconTrend,
+  IconCube,
 } from "@/components/ui/Icons";
 
 interface NavItem {
@@ -27,6 +28,7 @@ const WORKER_NAV: NavItem[] = [
 const ADMIN_NAV: NavItem[] = [
   { href: "/dashboard", label: "Prezentare generală", Icon: IconDashboard },
   { href: "/dashboard/cars", label: "Vânzări", Icon: IconCar },
+  { href: "/dashboard/inventory", label: "Stoc mașini", Icon: IconCube },
   { href: "/dashboard/statistics", label: "Statistici", Icon: IconChart },
   { href: "/dashboard/managers", label: "Manageri", Icon: IconTrend },
   { href: "/dashboard/audit", label: "Jurnal audit", Icon: IconShield },

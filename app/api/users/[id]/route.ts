@@ -49,13 +49,21 @@ export async function PUT(
     target.permissions = { ...target.permissions, ...body.permissions };
     changed.permissions = target.permissions;
   }
-  if (body.commissionPercent !== undefined) {
-    const pct = Number(body.commissionPercent);
-    if (isNaN(pct) || pct < 0 || pct > 100) {
-      return NextResponse.json({ error: "Procentul trebuie să fie între 0 și 100." }, { status: 400 });
+  if (body.fixedFee !== undefined) {
+    const fee = Number(body.fixedFee);
+    if (isNaN(fee) || fee < 0) {
+      return NextResponse.json({ error: "Taxa fixă trebuie să fie un număr ≥ 0." }, { status: 400 });
     }
-    target.commissionPercent = pct;
-    changed.commissionPercent = pct;
+    target.fixedFee = fee;
+    changed.fixedFee = fee;
+  }
+  if (body.bonus !== undefined) {
+    const bonus = Number(body.bonus);
+    if (isNaN(bonus) || bonus < 0) {
+      return NextResponse.json({ error: "Bonusul trebuie să fie un număr ≥ 0." }, { status: 400 });
+    }
+    target.bonus = bonus;
+    changed.bonus = bonus;
   }
   if (body.password) {
     if (String(body.password).length < 6) {

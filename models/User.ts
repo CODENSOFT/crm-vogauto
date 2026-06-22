@@ -16,7 +16,9 @@ export interface IUser {
   fullName: string;
   role: "admin" | "worker";
   permissions: IPermissions;
-  commissionPercent: number;
+  // Plată angajat: taxă fixă per vânzare × nr. vânzări + bonus fix.
+  fixedFee: number;
+  bonus: number;
   isActive: boolean;
   createdAt: Date;
   lastLogin?: Date;
@@ -41,8 +43,10 @@ const UserSchema = new Schema<IUser>({
   fullName: { type: String, required: true },
   role: { type: String, enum: ["admin", "worker"], default: "worker" },
   permissions: { type: PermissionsSchema, default: () => ({}) },
-  // Procentul de comision al managerului (setat de admin).
-  commissionPercent: { type: Number, default: 0 },
+  // Taxa fixă pe care o câștigă angajatul la fiecare vânzare (implicit 50 €).
+  fixedFee: { type: Number, default: 50 },
+  // Bonus fix adăugat la total (setat de admin).
+  bonus: { type: Number, default: 0 },
   isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now },
   lastLogin: { type: Date },

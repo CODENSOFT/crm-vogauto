@@ -8,12 +8,14 @@ import { formatMoney } from "@/lib/utils";
 interface Manager {
   id: string;
   name: string;
-  commissionPercent: number;
+  fixedFee: number;
+  bonus: number;
   totalCount: number;
   totalRevenue: number;
   totalProfit: number;
   profitPercent: number;
-  commissionAmount: number;
+  feeTotal: number;
+  payout: number;
   monthly: { month: string; count: number; profit: number }[];
 }
 interface Data {
@@ -21,6 +23,7 @@ interface Data {
   grandTotalProfit: number;
   grandTotalRevenue: number;
   grandTotalCount: number;
+  grandTotalPayout: number;
   managers: Manager[];
 }
 
@@ -47,8 +50,8 @@ export function ManagersView() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Manageri — vânzări și profit</h1>
-        <p className="mt-1 text-sm text-slate-500">Profitul generat de fiecare manager, ponderea în profit și comisionul.</p>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Manageri — vânzări și plată</h1>
+        <p className="mt-1 text-sm text-slate-500">Vânzările și profitul fiecărui manager, plus taxa, bonusul și totalul de plată.</p>
       </div>
 
       <div className="mb-4 flex flex-wrap items-end gap-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-card">
@@ -72,8 +75,9 @@ export function ManagersView() {
                   <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Venit</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Profit</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">% din profit</th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">Comision</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Comision (€)</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Taxă/buc</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Bonus</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Total plată</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -84,8 +88,9 @@ export function ManagersView() {
                     <td className="px-4 py-3 text-right text-slate-700">{formatMoney(m.totalRevenue)}</td>
                     <td className="px-4 py-3 text-right font-medium text-emerald-700">{formatMoney(m.totalProfit)}</td>
                     <td className="px-4 py-3 text-center text-slate-600">{pct(m.profitPercent)}</td>
-                    <td className="px-4 py-3 text-center text-slate-600">{pct(m.commissionPercent)}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-slate-900">{formatMoney(m.commissionAmount)}</td>
+                    <td className="px-4 py-3 text-right text-slate-600">{formatMoney(m.fixedFee)}</td>
+                    <td className="px-4 py-3 text-right text-slate-600">{formatMoney(m.bonus)}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-slate-900">{formatMoney(m.payout)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -97,11 +102,12 @@ export function ManagersView() {
                   <td className="px-4 py-3 text-right font-semibold text-slate-900">{formatMoney(data.grandTotalProfit)}</td>
                   <td className="px-4 py-3 text-center font-semibold text-slate-700">100%</td>
                   <td /><td />
+                  <td className="px-4 py-3 text-right font-semibold text-slate-900">{formatMoney(data.grandTotalPayout)}</td>
                 </tr>
               </tfoot>
             </table>
           </div>
-          <p className="mb-6 mt-2 text-xs text-slate-400">Comisionul (€) = Profit × procentul setat pe pagina Utilizatori.</p>
+          <p className="mb-6 mt-2 text-xs text-slate-400">Total plată = Taxă fixă × nr. vânzări + Bonus (setate pe pagina Utilizatori).</p>
 
           <h2 className="mb-3 text-base font-semibold tracking-tight text-slate-900">Defalcare pe luni</h2>
           <div className="overflow-x-auto rounded-xl border border-slate-200/80 bg-white shadow-card">

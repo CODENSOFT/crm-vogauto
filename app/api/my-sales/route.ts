@@ -13,8 +13,8 @@ export async function GET() {
     .select("priceSell priceBuy saleDate")
     .lean();
 
-  const pct = Number(user.commissionPercent ?? 0);
-  const commissionOf = (profit: number) => (profit * pct) / 100;
+  const fee = Number(user.fixedFee ?? 50);
+  const bonus = Number(user.bonus ?? 0);
 
   const byMonth: Record<string, { count: number; revenue: number; profit: number }> = {};
   for (const c of sales) {
@@ -25,9 +25,10 @@ export async function GET() {
     byMonth[month].profit += Number(c.priceSell) - Number(c.priceBuy);
   }
 
+  // Taxa câștigată într-o lună = taxa fixă × nr. vânzări din acea lună.
   const monthly = Object.entries(byMonth)
     .sort(([a], [b]) => b.localeCompare(a))
-    .map(([month, v]) => ({ month, ...v, commission: commissionOf(v.profit) }));
+    .map(([month, v]) => ({ month, ...v, fee: fee * v.count }));
 
   const totals = sales.reduce(
     (acc, c) => {
@@ -39,9 +40,12 @@ export async function GET() {
     { count: 0, revenue: 0, profit: 0 }
   );
 
+  const totalFee = fee * totals.count;
   return NextResponse.json({
     monthly,
-    totals: { ...totals, commission: commissionOf(totals.profit) },
-    commissionPercent: pct,
+    totals: { ...totals, fee: totalFee },
+    fixedFee: fee,
+    bonus,
+    payout: totalFee + bonus, // total de plată = taxă × vânzări + bonus
   });
 }
