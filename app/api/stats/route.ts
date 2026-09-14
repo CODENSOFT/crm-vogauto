@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/mongodb";
-import Car from "@/models/Car";
+import { and, eq, gte, lte, sql } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { cars } from "@/lib/schema";
 import { requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
 
@@ -14,16 +15,19 @@ export async function GET(request: Request) {
   const dateTo = searchParams.get("dateTo");
   const log = searchParams.get("log") === "1";
 
-  await connectDB();
-  const query: Record<string, unknown> = { isDeleted: false, status: "sold" };
-  if (dateFrom || dateTo) {
-    const range: Record<string, Date> = {};
-    if (dateFrom) range.$gte = new Date(dateFrom);
-    if (dateTo) range.$lte = new Date(dateTo + "T23:59:59");
-    query.saleDate = range;
-  }
+  const conds = [eq(cars.isDeleted, false), eq(cars.status, "sold")];
+  if (dateFrom) conds.push(gte(cars.saleDate, new Date(dateFrom)));
+  if (dateTo) conds.push(lte(cars.saleDate, new Date(dateTo + "T23:59:59")));
 
-  const sales = await Car.find(query).select("priceSell priceBuy saleDate soldByName").lean();
+  const sales = await db
+    .select({
+      priceSell: cars.priceSell,
+      priceBuy: cars.priceBuy,
+      saleDate: cars.saleDate,
+      soldByName: cars.soldByName,
+    })
+    .from(cars)
+    .where(and(...conds));
 
   const byMonth: Record<string, { count: number; revenue: number; profit: number }> = {};
   const byWorker: Record<string, number> = {};
@@ -55,11 +59,18 @@ export async function GET(request: Request) {
   const avgSellPrice = totalSales ? totalRevenue / totalSales : 0;
 
   // Numărători globale pe status (fără filtru de dată) — pentru cardurile overview.
+  const countWhere = (extra?: ReturnType<typeof eq>) =>
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(cars)
+      .where(extra ? and(eq(cars.isDeleted, false), extra) : eq(cars.isDeleted, false))
+      .then((r) => r[0].count);
+
   const [allCount, soldCount, availableCount, reservedCount] = await Promise.all([
-    Car.countDocuments({ isDeleted: false }),
-    Car.countDocuments({ isDeleted: false, status: "sold" }),
-    Car.countDocuments({ isDeleted: false, status: "available" }),
-    Car.countDocuments({ isDeleted: false, status: "reserved" }),
+    countWhere(),
+    countWhere(eq(cars.status, "sold")),
+    countWhere(eq(cars.status, "available")),
+    countWhere(eq(cars.status, "reserved")),
   ]);
 
   if (log) {

@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/mongodb";
-import Car from "@/models/Car";
-import User from "@/models/User";
-import Inventory from "@/models/Inventory";
+import { and, or, eq, ilike, gte, lte, asc, desc, sql } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { cars, users, inventory } from "@/lib/schema";
 import { requireSession, requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
-import { maskPhone, escapeRegex } from "@/lib/utils";
+import { escapeLike, isUuid } from "@/lib/utils";
+import { carToDTO } from "@/lib/serialize";
 
 // GET /api/cars — ADMIN ONLY. Listă cu paginare, filtre, căutare, sortare.
 export async function GET(request: Request) {
@@ -23,48 +23,57 @@ export async function GET(request: Request) {
   const dateFrom = searchParams.get("dateFrom");
   const dateTo = searchParams.get("dateTo");
   const sortBy = searchParams.get("sortBy") || "saleDate";
-  const sortDir = searchParams.get("sortDir") === "asc" ? 1 : -1;
+  const sortDir = searchParams.get("sortDir") === "asc" ? "asc" : "desc";
 
-  await connectDB();
-
-  const query: Record<string, unknown> = { isDeleted: false };
-  if (brand) query.brand = { $regex: escapeRegex(brand), $options: "i" };
-  if (payment) query.paymentMethod = payment;
-  if (status) query.status = status;
-  if (worker) query.soldByName = { $regex: escapeRegex(worker), $options: "i" };
-  if (dateFrom || dateTo) {
-    const range: Record<string, Date> = {};
-    if (dateFrom) range.$gte = new Date(dateFrom);
-    if (dateTo) range.$lte = new Date(dateTo + "T23:59:59");
-    query.saleDate = range;
-  }
+  const conds = [eq(cars.isDeleted, false)];
+  if (brand) conds.push(ilike(cars.brand, `%${escapeLike(brand)}%`));
+  if (payment) conds.push(eq(cars.paymentMethod, payment));
+  if (status) conds.push(eq(cars.status, status));
+  if (worker) conds.push(ilike(cars.soldByName, `%${escapeLike(worker)}%`));
+  if (dateFrom) conds.push(gte(cars.saleDate, new Date(dateFrom)));
+  if (dateTo) conds.push(lte(cars.saleDate, new Date(dateTo + "T23:59:59")));
   if (search) {
-    const safe = escapeRegex(search);
-    query.$or = [
-      { clientName: { $regex: safe, $options: "i" } },
-      { clientPhone: { $regex: safe, $options: "i" } },
-      { vin: { $regex: safe, $options: "i" } },
-    ];
+    const safe = `%${escapeLike(search)}%`;
+    conds.push(
+      or(
+        ilike(cars.clientName, safe),
+        ilike(cars.clientPhone, safe),
+        ilike(cars.vin, safe)
+      )!
+    );
   }
+  const where = and(...conds);
 
-  const allowed = ["saleDate", "brand", "model", "year", "priceSell", "priceBuy", "clientName"];
-  const sortField = allowed.includes(sortBy) ? sortBy : "saleDate";
+  const sortCols = {
+    saleDate: cars.saleDate,
+    brand: cars.brand,
+    model: cars.model,
+    year: cars.year,
+    priceSell: cars.priceSell,
+    priceBuy: cars.priceBuy,
+    clientName: cars.clientName,
+  } as const;
+  const sortCol = sortCols[sortBy as keyof typeof sortCols] ?? cars.saleDate;
 
-  const total = await Car.countDocuments(query);
-  const cars = await Car.find(query)
-    .sort({ [sortField]: sortDir })
-    .skip((page - 1) * pageSize)
+  const [{ count }] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(cars)
+    .where(where);
+
+  const rows = await db
+    .select()
+    .from(cars)
+    .where(where)
+    .orderBy(sortDir === "asc" ? asc(sortCol) : desc(sortCol))
     .limit(pageSize)
-    .lean();
+    .offset((page - 1) * pageSize);
 
-  const data = cars.map((c) => ({
-    ...c,
-    _id: String(c._id),
-    soldBy: String(c.soldBy),
-    clientPhone: maskPhone(c.clientPhone),
-  }));
-
-  return NextResponse.json({ cars: data, total, page, pageSize });
+  return NextResponse.json({
+    cars: rows.map((c) => carToDTO(c, true)),
+    total: count,
+    page,
+    pageSize,
+  });
 }
 
 // POST /api/cars — admin ȘI worker.
@@ -97,47 +106,52 @@ export async function POST(request: Request) {
     buy = sell - (Number(profit) || 0);
   }
 
-  await connectDB();
-
   // Vânzătorul: adminul poate alege; implicit el însuși.
   let soldById = user.id;
   let soldByName = user.fullName;
-  if (isAdmin && soldBy && soldBy !== user.id) {
-    const seller = await User.findById(soldBy).select("fullName").lean();
+  if (isAdmin && soldBy && soldBy !== user.id && isUuid(soldBy)) {
+    const [seller] = await db
+      .select({ fullName: users.fullName })
+      .from(users)
+      .where(eq(users.id, soldBy))
+      .limit(1);
     if (seller) { soldById = soldBy; soldByName = seller.fullName; }
   }
 
   try {
-    const car = await Car.create({
-      clientName, clientPhone, brand, model, year: Number(year),
-      vin: String(vin).trim(), color: color || undefined,
-      priceBuy: buy, priceSell: sell,
-      paymentMethod: paymentMethod || "cash",
-      status: isAdmin ? status || "sold" : "sold",
-      saleDate: saleDate ? new Date(saleDate) : new Date(),
-      soldBy: soldById, soldByName, notes: notes || undefined,
-    });
+    const [car] = await db
+      .insert(cars)
+      .values({
+        clientName, clientPhone, brand, model, year: Number(year),
+        vin: String(vin).trim(), color: color || null,
+        priceBuy: buy, priceSell: sell,
+        paymentMethod: paymentMethod || "cash",
+        status: isAdmin ? status || "sold" : "sold",
+        saleDate: saleDate ? new Date(saleDate) : new Date(),
+        soldBy: soldById, soldByName, notes: notes || null,
+      })
+      .returning();
 
     await logAction({
       userId: user.id, userName: user.fullName, action: "CREATE_SALE",
-      details: { carId: String(car._id), brand, model, vin, priceSell: sell, profit: sell - buy },
+      details: { carId: car.id, brand, model, vin, priceSell: sell, profit: sell - buy },
       request,
       coords: coordsOf(user),
     });
 
-    // Dacă vânzarea provine dintr-o mașină din stoc, o marcăm „vândută”
+    // Dacă vânzarea provine dintr-o mașină din stoc, o marcăm „vândută"
     // (rămâne în listă pentru istoric).
-    if (inventoryId) {
-      await Inventory.findOneAndUpdate(
-        { _id: inventoryId, isDeleted: false, status: "available" },
-        { status: "sold", soldBy: user.id, soldByName: user.fullName, saleId: car._id, saleDate: car.saleDate }
-      );
+    if (inventoryId && isUuid(inventoryId)) {
+      await db
+        .update(inventory)
+        .set({ status: "sold", soldBy: user.id, soldByName: user.fullName, saleId: car.id, saleDate: car.saleDate })
+        .where(and(eq(inventory.id, inventoryId), eq(inventory.isDeleted, false), eq(inventory.status, "available")));
     }
 
     if (!isAdmin) return NextResponse.json({ ok: true }, { status: 201 });
-    return NextResponse.json({ car: { ...car.toObject(), _id: String(car._id) } }, { status: 201 });
+    return NextResponse.json({ car: carToDTO(car, false) }, { status: 201 });
   } catch (err: unknown) {
-    const e = err as { code?: number };
-    return NextResponse.json({ error: e.code === 11000 ? "VIN deja existent." : "Eroare la salvare." }, { status: 400 });
+    const e = err as { code?: string };
+    return NextResponse.json({ error: e.code === "23505" ? "VIN deja existent." : "Eroare la salvare." }, { status: 400 });
   }
 }

@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/mongodb";
-import AuditLog from "@/models/AuditLog";
+import { and, eq, ilike, gte, lte, desc, sql } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { auditLogs } from "@/lib/schema";
 import { requireAdmin } from "@/lib/guard";
-import { escapeRegex } from "@/lib/utils";
+import { escapeLike } from "@/lib/utils";
+import { auditToDTO } from "@/lib/serialize";
 
 // GET /api/audit — ADMIN ONLY. Paginare 50 + filtre.
 export async function GET(request: Request) {
@@ -17,27 +19,29 @@ export async function GET(request: Request) {
   const dateFrom = searchParams.get("dateFrom");
   const dateTo = searchParams.get("dateTo");
 
-  await connectDB();
-  const query: Record<string, unknown> = {};
-  if (action) query.action = action;
-  if (userName) query.userName = { $regex: escapeRegex(userName), $options: "i" };
-  if (dateFrom || dateTo) {
-    const range: Record<string, Date> = {};
-    if (dateFrom) range.$gte = new Date(dateFrom);
-    if (dateTo) range.$lte = new Date(dateTo + "T23:59:59");
-    query.createdAt = range;
-  }
+  const conds = [];
+  if (action) conds.push(eq(auditLogs.action, action));
+  if (userName) conds.push(ilike(auditLogs.userName, `%${escapeLike(userName)}%`));
+  if (dateFrom) conds.push(gte(auditLogs.createdAt, new Date(dateFrom)));
+  if (dateTo) conds.push(lte(auditLogs.createdAt, new Date(dateTo + "T23:59:59")));
+  const where = conds.length ? and(...conds) : undefined;
 
-  const total = await AuditLog.countDocuments(query);
-  const logs = await AuditLog.find(query)
-    .sort({ createdAt: -1 })
-    .skip((page - 1) * pageSize)
+  const [{ count }] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(auditLogs)
+    .where(where);
+
+  const logs = await db
+    .select()
+    .from(auditLogs)
+    .where(where)
+    .orderBy(desc(auditLogs.createdAt))
     .limit(pageSize)
-    .lean();
+    .offset((page - 1) * pageSize);
 
   return NextResponse.json({
-    logs: logs.map((l) => ({ ...l, _id: String(l._id), userId: l.userId ? String(l.userId) : null })),
-    total,
+    logs: logs.map(auditToDTO),
+    total: count,
     page,
     pageSize,
   });

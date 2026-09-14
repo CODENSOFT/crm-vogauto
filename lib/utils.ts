@@ -81,3 +81,19 @@ export function getClientIp(headers: Headers): string {
 export function escapeRegex(input: string): string {
   return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
+
+// Escape pentru caractere speciale de LIKE/ILIKE în Postgres (`\`, `%`, `_`),
+// ca inputul utilizatorului să fie tratat literal. Se folosește cu `ESCAPE '\'`
+// (comportamentul implicit al operatorului ILIKE din Drizzle).
+export function escapeLike(input: string): string {
+  return input.replace(/[\\%_]/g, "\\$&");
+}
+
+// Verifică dacă un șir e un UUID valid — evită erorile Postgres (22P02) când
+// un id primit de la client ar fi comparat cu o coloană uuid.
+export function isUuid(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
+  );
+}

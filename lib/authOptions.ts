@@ -1,8 +1,9 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import connectDB from "@/lib/mongodb";
-import User from "@/models/User";
+import { eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { users } from "@/lib/schema";
 import { logAction } from "@/lib/audit";
 import { isRateLimited, registerFailure, clearFailures } from "@/lib/rateLimit";
 
@@ -65,13 +66,16 @@ export const authOptions: NextAuthOptions = {
         const lonN = credentials?.lon ? Number(credentials.lon) : NaN;
         const coords = !isNaN(latN) && !isNaN(lonN) ? { lat: latN, lon: lonN } : null;
 
-        await connectDB();
-        const user = await User.findOne({ username });
+        const [user] = await db
+          .select()
+          .from(users)
+          .where(eq(users.username, username))
+          .limit(1);
 
         if (!user || !user.isActive) {
           registerFailure(rlKey);
           await logAction({
-            userId: user?._id?.toString() ?? null,
+            userId: user?.id ?? null,
             userName: username,
             action: "LOGIN_FAILED",
             details: { reason: user ? "inactive" : "unknown_user", username },
@@ -85,7 +89,7 @@ export const authOptions: NextAuthOptions = {
         if (!ok) {
           registerFailure(rlKey);
           await logAction({
-            userId: user._id.toString(),
+            userId: user.id,
             userName: user.fullName,
             action: "LOGIN_FAILED",
             details: { reason: "bad_password", username },
@@ -98,11 +102,13 @@ export const authOptions: NextAuthOptions = {
         // Autentificare reușită — resetăm contorul anti-brute-force.
         clearFailures(rlKey);
 
-        user.lastLogin = new Date();
-        await user.save();
+        await db
+          .update(users)
+          .set({ lastLogin: new Date() })
+          .where(eq(users.id, user.id));
 
         await logAction({
-          userId: user._id.toString(),
+          userId: user.id,
           userName: user.fullName,
           action: "LOGIN_SUCCESS",
           details: { username },
@@ -111,7 +117,7 @@ export const authOptions: NextAuthOptions = {
         });
 
         return {
-          id: user._id.toString(),
+          id: user.id,
           username: user.username,
           email: user.email,
           fullName: user.fullName,
@@ -158,10 +164,19 @@ export const authOptions: NextAuthOptions = {
       const last = (token.checkedAt as number) ?? 0;
       if (token.id && Date.now() - last > REVALIDATE_MS) {
         try {
-          await connectDB();
-          const dbUser = await User.findById(token.id)
-            .select("role isActive fullName fixedFee bonus username permissions")
-            .lean();
+          const [dbUser] = await db
+            .select({
+              role: users.role,
+              isActive: users.isActive,
+              fullName: users.fullName,
+              fixedFee: users.fixedFee,
+              bonus: users.bonus,
+              username: users.username,
+              permissions: users.permissions,
+            })
+            .from(users)
+            .where(eq(users.id, token.id as string))
+            .limit(1);
           if (!dbUser || !dbUser.isActive) {
             // Token gol → sesiunea devine invalidă, utilizatorul e deconectat.
             return {};

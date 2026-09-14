@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/mongodb";
-import Car from "@/models/Car";
+import { eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { cars } from "@/lib/schema";
 import { requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
+import { isUuid } from "@/lib/utils";
 
 // POST /api/cars/[id]/reveal-phone — ADMIN ONLY. Întoarce numărul complet + log.
 export async function POST(
@@ -12,8 +14,11 @@ export async function POST(
   const { user, error } = await requireAdmin();
   if (error) return error;
 
-  await connectDB();
-  const car = await Car.findById(params.id).lean();
+  if (!isUuid(params.id)) {
+    return NextResponse.json({ error: "Vânzarea nu a fost găsită." }, { status: 404 });
+  }
+
+  const [car] = await db.select().from(cars).where(eq(cars.id, params.id)).limit(1);
   if (!car) {
     return NextResponse.json({ error: "Vânzarea nu a fost găsită." }, { status: 404 });
   }

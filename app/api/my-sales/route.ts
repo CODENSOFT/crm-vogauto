@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/mongodb";
-import Car from "@/models/Car";
+import { and, eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { cars } from "@/lib/schema";
 import { requireSession } from "@/lib/guard";
 
 // GET /api/my-sales — totalurile PROPRII ale utilizatorului curent, pe lună.
@@ -8,10 +9,10 @@ export async function GET() {
   const { user, error } = await requireSession();
   if (error) return error;
 
-  await connectDB();
-  const sales = await Car.find({ soldBy: user.id, isDeleted: false, status: "sold" })
-    .select("priceSell priceBuy saleDate")
-    .lean();
+  const sales = await db
+    .select({ priceSell: cars.priceSell, priceBuy: cars.priceBuy, saleDate: cars.saleDate })
+    .from(cars)
+    .where(and(eq(cars.soldBy, user.id), eq(cars.isDeleted, false), eq(cars.status, "sold")));
 
   const fee = Number(user.fixedFee ?? 50);
   const bonus = Number(user.bonus ?? 0);

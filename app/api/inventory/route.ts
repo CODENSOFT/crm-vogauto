@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/mongodb";
-import Inventory from "@/models/Inventory";
+import { and, or, eq, ilike, desc } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { inventory } from "@/lib/schema";
 import { requireSession, requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
-import { escapeRegex } from "@/lib/utils";
+import { escapeLike } from "@/lib/utils";
+import { inventoryToDTO } from "@/lib/serialize";
 
 // GET /api/inventory — listă stoc. Orice utilizator autentificat (workerii o
 // folosesc pentru a alege o mașină la înregistrarea vânzării).
@@ -15,27 +17,27 @@ export async function GET(request: Request) {
   const status = searchParams.get("status")?.trim();
   const search = searchParams.get("search")?.trim();
 
-  await connectDB();
-  const query: Record<string, unknown> = { isDeleted: false };
-  if (status === "available" || status === "sold") query.status = status;
+  const conds = [eq(inventory.isDeleted, false)];
+  if (status === "available" || status === "sold") conds.push(eq(inventory.status, status));
   if (search) {
-    const safe = escapeRegex(search);
-    query.$or = [
-      { brand: { $regex: safe, $options: "i" } },
-      { model: { $regex: safe, $options: "i" } },
-      { vin: { $regex: safe, $options: "i" } },
-      { ownerName: { $regex: safe, $options: "i" } },
-    ];
+    const safe = `%${escapeLike(search)}%`;
+    conds.push(
+      or(
+        ilike(inventory.brand, safe),
+        ilike(inventory.model, safe),
+        ilike(inventory.vin, safe),
+        ilike(inventory.ownerName, safe)
+      )!
+    );
   }
 
-  const items = await Inventory.find(query).sort({ createdAt: -1 }).lean();
-  const data = items.map((c) => ({
-    ...c,
-    _id: String(c._id),
-    markup: Number(c.sellPrice) - Number(c.clientWantPrice),
-  }));
+  const rows = await db
+    .select()
+    .from(inventory)
+    .where(and(...conds))
+    .orderBy(desc(inventory.createdAt));
 
-  return NextResponse.json({ items: data });
+  return NextResponse.json({ items: rows.map(inventoryToDTO) });
 }
 
 // POST /api/inventory — ADMIN ONLY. Adaugă o mașină în stoc.
@@ -53,26 +55,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Completați marca, modelul, anul, proprietarul, telefonul și prețul de vânzare." }, { status: 400 });
   }
 
-  await connectDB();
-  const item = await Inventory.create({
-    brand, model, year: Number(year),
-    vin: vin ? String(vin).trim() : undefined,
-    color: color || undefined,
-    ownerName, ownerPhone,
-    clientWantPrice: Number(clientWantPrice) || 0,
-    sellPrice: Number(sellPrice),
-    status: status === "sold" ? "sold" : "available",
-    notes: notes || undefined,
-    addedBy: user.id, addedByName: user.fullName,
-  });
+  const [item] = await db
+    .insert(inventory)
+    .values({
+      brand, model, year: Number(year),
+      vin: vin ? String(vin).trim() : null,
+      color: color || null,
+      ownerName, ownerPhone,
+      clientWantPrice: Number(clientWantPrice) || 0,
+      sellPrice: Number(sellPrice),
+      status: status === "sold" ? "sold" : "available",
+      notes: notes || null,
+      addedBy: user.id, addedByName: user.fullName,
+    })
+    .returning();
 
   await logAction({
     userId: user.id, userName: user.fullName, action: "CREATE_STOCK",
-    details: { stockId: String(item._id), brand, model, vin, sellPrice: Number(sellPrice) },
+    details: { stockId: item.id, brand, model, vin, sellPrice: Number(sellPrice) },
     request, coords: coordsOf(user),
   });
 
-  return NextResponse.json({
-    item: { ...item.toObject(), _id: String(item._id), markup: Number(item.sellPrice) - Number(item.clientWantPrice) },
-  }, { status: 201 });
+  return NextResponse.json({ item: inventoryToDTO(item) }, { status: 201 });
 }

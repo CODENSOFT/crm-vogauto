@@ -1,18 +1,19 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import connectDB from "@/lib/mongodb";
-import User from "@/models/User";
+import { desc, eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { users } from "@/lib/schema";
 import { requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
+import { userToDTO } from "@/lib/serialize";
 
 // GET /api/users — ADMIN ONLY. Fără parole.
 export async function GET() {
   const { error } = await requireAdmin();
   if (error) return error;
 
-  await connectDB();
-  const users = await User.find().select("-password").sort({ createdAt: -1 }).lean();
-  return NextResponse.json({ users: users.map((u) => ({ ...u, _id: String(u._id) })) });
+  const rows = await db.select().from(users).orderBy(desc(users.createdAt));
+  return NextResponse.json({ users: rows.map(userToDTO) });
 }
 
 // POST /api/users — ADMIN ONLY. Creează utilizator (login pe username).
@@ -35,31 +36,32 @@ export async function POST(request: Request) {
     );
   }
 
-  await connectDB();
-  if (await User.findOne({ username: login })) {
+  const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.username, login)).limit(1);
+  if (existing) {
     return NextResponse.json({ error: "Acest nume de utilizator există deja." }, { status: 400 });
   }
 
-  const created = await User.create({
-    username: login,
-    email: `${login}@vogauto.local`,
-    password: await bcrypt.hash(password, 10),
-    fullName,
-    role: role === "admin" ? "admin" : "worker",
-    permissions: permissions || {},
-    fixedFee: fixedFee !== undefined && fixedFee !== "" ? Number(fixedFee) : 50,
-    bonus: Number(bonus) || 0,
-    isActive: true,
-  });
+  const [created] = await db
+    .insert(users)
+    .values({
+      username: login,
+      email: `${login}@vogauto.local`,
+      password: await bcrypt.hash(password, 10),
+      fullName,
+      role: role === "admin" ? "admin" : "worker",
+      permissions: permissions || {},
+      fixedFee: fixedFee !== undefined && fixedFee !== "" ? Number(fixedFee) : 50,
+      bonus: Number(bonus) || 0,
+      isActive: true,
+    })
+    .returning();
 
   await logAction({
     userId: user.id, userName: user.fullName, action: "CREATE_USER",
-    details: { newUserId: String(created._id), username: login, fullName, role: created.role },
+    details: { newUserId: created.id, username: login, fullName, role: created.role },
     request,
     coords: coordsOf(user),
   });
 
-  const obj = created.toObject() as unknown as Record<string, unknown>;
-  delete obj.password;
-  return NextResponse.json({ user: { ...obj, _id: String(created._id) } }, { status: 201 });
+  return NextResponse.json({ user: userToDTO(created) }, { status: 201 });
 }

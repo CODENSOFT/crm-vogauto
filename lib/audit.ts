@@ -1,5 +1,5 @@
-import connectDB from "@/lib/mongodb";
-import AuditLog from "@/models/AuditLog";
+import { db } from "@/lib/db";
+import { auditLogs } from "@/lib/schema";
 
 // Tip flexibil pentru sursa anteturilor: un Request standard sau un obiect
 // cu anteturi (cazul NextAuth `authorize`, unde req.headers e un Record).
@@ -141,12 +141,11 @@ export async function logAction({
     const deviceType = /mobile/i.test(ua) ? "Mobile" : "Desktop";
     const device = os ? `${deviceType} · ${os}` : deviceType;
 
-    await connectDB();
-    await AuditLog.create({
-      userId: userId || undefined,
+    await db.insert(auditLogs).values({
+      userId: userId || null,
       userName,
       action,
-      details,
+      details: details as Record<string, unknown>,
       ipAddress: ip,
       locationCity: city,
       locationCountry: country,

@@ -7,14 +7,17 @@
     "build": "next build",
     "start": "next start -p 3002",
     "lint": "next lint",
-    "seed": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' -r dotenv/config scripts/seed.ts dotenv_config_path=.env.local"
+    "db:init": "node -r dotenv/config scripts/db-init.mjs dotenv_config_path=.env.local",
+    "seed": "node -r dotenv/config scripts/seed.mjs dotenv_config_path=.env.local",
+    "create-admin": "node -r dotenv/config scripts/create-admin.mjs dotenv_config_path=.env.local"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
+    "drizzle-orm": "^0.45.2",
     "exceljs": "^4.4.0",
-    "mongoose": "^9.7.1",
     "next": "^14.2.33",
     "next-auth": "^4.24.14",
+    "postgres": "^3.4.9",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hot-toast": "^2.6.0",
@@ -27,6 +30,7 @@
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.20",
     "dotenv": "^17.4.2",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.33",
     "postcss": "^8.4.47",

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/mongodb";
-import Car from "@/models/Car";
-import User from "@/models/User";
+import { and, eq, gte, lte, inArray } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { cars, users } from "@/lib/schema";
 import { requireAdmin } from "@/lib/guard";
+import { isUuid } from "@/lib/utils";
 
 // GET /api/managers — defalcare profit & vânzări pe manager × lună (admin only).
 export async function GET(request: Request) {
@@ -13,16 +14,20 @@ export async function GET(request: Request) {
   const dateFrom = searchParams.get("dateFrom");
   const dateTo = searchParams.get("dateTo");
 
-  await connectDB();
-  const query: Record<string, unknown> = { isDeleted: false, status: "sold" };
-  if (dateFrom || dateTo) {
-    const range: Record<string, Date> = {};
-    if (dateFrom) range.$gte = new Date(dateFrom);
-    if (dateTo) range.$lte = new Date(dateTo + "T23:59:59");
-    query.saleDate = range;
-  }
+  const conds = [eq(cars.isDeleted, false), eq(cars.status, "sold")];
+  if (dateFrom) conds.push(gte(cars.saleDate, new Date(dateFrom)));
+  if (dateTo) conds.push(lte(cars.saleDate, new Date(dateTo + "T23:59:59")));
 
-  const sales = await Car.find(query).select("priceSell priceBuy saleDate soldBy soldByName").lean();
+  const sales = await db
+    .select({
+      priceSell: cars.priceSell,
+      priceBuy: cars.priceBuy,
+      saleDate: cars.saleDate,
+      soldBy: cars.soldBy,
+      soldByName: cars.soldByName,
+    })
+    .from(cars)
+    .where(and(...conds));
 
   const months = Array.from(new Set(sales.map((s) => new Date(s.saleDate).toISOString().slice(0, 7)))).sort();
 
@@ -48,12 +53,12 @@ export async function GET(request: Request) {
   }
 
   // Taxa fixă și bonusul din profilurile utilizatorilor.
-  const ids = Object.keys(agg).filter((id) => id !== "necunoscut");
-  const users = ids.length
-    ? await User.find({ _id: { $in: ids } }).select("fixedFee bonus").lean()
+  const ids = Object.keys(agg).filter((id) => isUuid(id));
+  const userRows = ids.length
+    ? await db.select({ id: users.id, fixedFee: users.fixedFee, bonus: users.bonus }).from(users).where(inArray(users.id, ids))
     : [];
-  const feeMap = new Map(users.map((u) => [String(u._id), Number(u.fixedFee ?? 50)]));
-  const bonusMap = new Map(users.map((u) => [String(u._id), Number(u.bonus ?? 0)]));
+  const feeMap = new Map(userRows.map((u) => [String(u.id), Number(u.fixedFee ?? 50)]));
+  const bonusMap = new Map(userRows.map((u) => [String(u.id), Number(u.bonus ?? 0)]));
 
   const grandTotalProfit = sales.reduce((s, c) => s + (Number(c.priceSell) - Number(c.priceBuy)), 0);
   const grandTotalRevenue = sales.reduce((s, c) => s + Number(c.priceSell), 0);

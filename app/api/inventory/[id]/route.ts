@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/mongodb";
-import Inventory from "@/models/Inventory";
+import { eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { inventory } from "@/lib/schema";
 import { requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
+import { isUuid } from "@/lib/utils";
+import { inventoryToDTO } from "@/lib/serialize";
 
 // PUT /api/inventory/[id] — ADMIN ONLY. Editare mașină din stoc.
 export async function PUT(
@@ -13,24 +16,30 @@ export async function PUT(
   if (error) return error;
 
   const body = await request.json();
-  await connectDB();
-  const item = await Inventory.findById(params.id);
+  if (!isUuid(params.id)) {
+    return NextResponse.json({ error: "Mașina nu a fost găsită." }, { status: 404 });
+  }
+
+  const [item] = await db.select().from(inventory).where(eq(inventory.id, params.id)).limit(1);
   if (!item || item.isDeleted) {
     return NextResponse.json({ error: "Mașina nu a fost găsită." }, { status: 404 });
   }
 
   const editable = ["brand", "model", "year", "vin", "color", "ownerName", "ownerPhone", "clientWantPrice", "sellPrice", "status", "notes"];
   const changes: Record<string, unknown> = {};
+  const updates: Record<string, unknown> = {};
   for (const field of editable) {
     if (body[field] === undefined) continue;
     let value = body[field];
     if (field === "year") value = Number(value);
     if (field === "clientWantPrice" || field === "sellPrice") value = Number(value);
-    (item as unknown as Record<string, unknown>)[field] = value;
+    updates[field] = value;
     changes[field] = value;
   }
 
-  await item.save();
+  const [saved] = Object.keys(updates).length
+    ? await db.update(inventory).set(updates).where(eq(inventory.id, params.id)).returning()
+    : [item];
 
   await logAction({
     userId: user.id, userName: user.fullName, action: "EDIT_STOCK",
@@ -38,9 +47,7 @@ export async function PUT(
     request, coords: coordsOf(user),
   });
 
-  return NextResponse.json({
-    item: { ...item.toObject(), _id: String(item._id), markup: Number(item.sellPrice) - Number(item.clientWantPrice) },
-  });
+  return NextResponse.json({ item: inventoryToDTO(saved) });
 }
 
 // DELETE /api/inventory/[id] — ADMIN ONLY. Soft delete.
@@ -51,16 +58,19 @@ export async function DELETE(
   const { user, error } = await requireAdmin();
   if (error) return error;
 
-  await connectDB();
-  const item = await Inventory.findById(params.id);
+  if (!isUuid(params.id)) {
+    return NextResponse.json({ error: "Mașina nu a fost găsită." }, { status: 404 });
+  }
+
+  const [item] = await db.select().from(inventory).where(eq(inventory.id, params.id)).limit(1);
   if (!item || item.isDeleted) {
     return NextResponse.json({ error: "Mașina nu a fost găsită." }, { status: 404 });
   }
 
-  item.isDeleted = true;
-  item.deletedAt = new Date();
-  item.deletedBy = user.id as unknown as typeof item.deletedBy;
-  await item.save();
+  await db
+    .update(inventory)
+    .set({ isDeleted: true, deletedAt: new Date(), deletedBy: user.id })
+    .where(eq(inventory.id, params.id));
 
   await logAction({
     userId: user.id, userName: user.fullName, action: "DELETE_STOCK",

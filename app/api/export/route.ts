@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import ExcelJS from "exceljs";
-import connectDB from "@/lib/mongodb";
-import Car from "@/models/Car";
+import { eq, desc } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { cars } from "@/lib/schema";
 import { requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
 
@@ -10,8 +11,11 @@ export async function GET(request: Request) {
   const { user, error } = await requireAdmin();
   if (error) return error;
 
-  await connectDB();
-  const cars = await Car.find({ isDeleted: false }).sort({ saleDate: -1 }).lean();
+  const rows = await db
+    .select()
+    .from(cars)
+    .where(eq(cars.isDeleted, false))
+    .orderBy(desc(cars.saleDate));
 
   const wb = new ExcelJS.Workbook();
   wb.creator = "VOGAUTO";
@@ -36,7 +40,7 @@ export async function GET(request: Request) {
   ws.getRow(1).font = { bold: true, color: { argb: "FFFFFFFF" } };
   ws.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1A1A2E" } };
 
-  for (const c of cars) {
+  for (const c of rows) {
     ws.addRow({
       clientName: c.clientName,
       clientPhone: c.clientPhone,
@@ -64,7 +68,7 @@ export async function GET(request: Request) {
     userId: user.id,
     userName: user.fullName,
     action: "DOWNLOAD_EXCEL",
-    details: { count: cars.length },
+    details: { count: rows.length },
     request,
     coords: coordsOf(user),
   });

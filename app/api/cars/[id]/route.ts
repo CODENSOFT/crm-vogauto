@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/mongodb";
-import Car from "@/models/Car";
+import { eq } from "drizzle-orm";
+import { db } from "@/lib/db";
+import { cars } from "@/lib/schema";
 import { requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
-import { maskPhone } from "@/lib/utils";
+import { maskPhone, isUuid } from "@/lib/utils";
+import { carToDTO } from "@/lib/serialize";
 
 // PUT /api/cars/[id] — ADMIN ONLY. Editare vânzare.
 export async function PUT(
@@ -14,9 +16,11 @@ export async function PUT(
   if (error) return error;
 
   const body = await request.json();
-  await connectDB();
+  if (!isUuid(params.id)) {
+    return NextResponse.json({ error: "Vânzarea nu a fost găsită." }, { status: 404 });
+  }
 
-  const old = await Car.findById(params.id);
+  const [old] = await db.select().from(cars).where(eq(cars.id, params.id)).limit(1);
   if (!old || old.isDeleted) {
     return NextResponse.json({ error: "Vânzarea nu a fost găsită." }, { status: 404 });
   }
@@ -26,6 +30,7 @@ export async function PUT(
     "priceBuy", "priceSell", "paymentMethod", "status", "saleDate", "notes",
   ];
   const changes: Record<string, { old: unknown; new: unknown }> = {};
+  const updates: Record<string, unknown> = {};
 
   for (const field of editable) {
     if (body[field] === undefined) continue;
@@ -44,16 +49,16 @@ export async function PUT(
     const logOld = field === "clientPhone" ? maskPhone(oldVal as string) : oldVal;
     const logNew = field === "clientPhone" ? maskPhone(value as string) : value;
     changes[field] = { old: logOld, new: logNew };
-    (old as unknown as Record<string, unknown>)[field] = value;
+    updates[field] = value;
   }
 
   // Editarea directă a profitului → recalculează prețul de cumpărare.
   if (body.profit !== undefined) {
-    const sell = changes.priceSell ? Number(changes.priceSell.new) : Number(old.priceSell);
+    const sell = updates.priceSell !== undefined ? Number(updates.priceSell) : Number(old.priceSell);
     const newBuy = sell - Number(body.profit);
     if (newBuy !== Number(old.priceBuy)) {
       changes.priceBuy = { old: old.priceBuy, new: newBuy };
-      old.priceBuy = newBuy;
+      updates.priceBuy = newBuy;
     }
   }
 
@@ -61,11 +66,12 @@ export async function PUT(
     return NextResponse.json({ message: "Nicio modificare." });
   }
 
+  let saved;
   try {
-    await old.save();
+    [saved] = await db.update(cars).set(updates).where(eq(cars.id, params.id)).returning();
   } catch (err: unknown) {
-    const e = err as { code?: number };
-    const msg = e.code === 11000 ? "VIN deja existent." : "Eroare la salvare.";
+    const e = err as { code?: string };
+    const msg = e.code === "23505" ? "VIN deja existent." : "Eroare la salvare.";
     return NextResponse.json({ error: msg }, { status: 400 });
   }
 
@@ -73,15 +79,12 @@ export async function PUT(
     userId: user.id,
     userName: user.fullName,
     action: "EDIT_SALE",
-    details: { carId: params.id, vin: old.vin, changes },
+    details: { carId: params.id, vin: saved.vin, changes },
     request,
     coords: coordsOf(user),
   });
 
-  const obj = old.toObject();
-  return NextResponse.json({
-    car: { ...obj, _id: String(obj._id), soldBy: String(obj.soldBy), clientPhone: maskPhone(obj.clientPhone) },
-  });
+  return NextResponse.json({ car: carToDTO(saved, true) });
 }
 
 // DELETE /api/cars/[id] — ADMIN ONLY. Soft delete.
@@ -92,16 +95,19 @@ export async function DELETE(
   const { user, error } = await requireAdmin();
   if (error) return error;
 
-  await connectDB();
-  const car = await Car.findById(params.id);
+  if (!isUuid(params.id)) {
+    return NextResponse.json({ error: "Vânzarea nu a fost găsită." }, { status: 404 });
+  }
+
+  const [car] = await db.select().from(cars).where(eq(cars.id, params.id)).limit(1);
   if (!car || car.isDeleted) {
     return NextResponse.json({ error: "Vânzarea nu a fost găsită." }, { status: 404 });
   }
 
-  car.isDeleted = true;
-  car.deletedAt = new Date();
-  car.deletedBy = user.id as unknown as typeof car.deletedBy;
-  await car.save();
+  await db
+    .update(cars)
+    .set({ isDeleted: true, deletedAt: new Date(), deletedBy: user.id })
+    .where(eq(cars.id, params.id));
 
   await logAction({
     userId: user.id,
