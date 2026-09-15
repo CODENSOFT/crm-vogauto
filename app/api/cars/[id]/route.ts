@@ -2,10 +2,22 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { cars } from "@/lib/schema";
-import { requireAdmin, coordsOf } from "@/lib/guard";
+import { requireAdmin, requireSession, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
 import { maskPhone, isUuid } from "@/lib/utils";
 import { carToDTO } from "@/lib/serialize";
+
+// GET /api/cars/[id] — o singură vânzare (pentru pagina de detaliu). Telefon mascat.
+export async function GET(_request: Request, { params }: { params: { id: string } }) {
+  const { error } = await requireSession();
+  if (error) return error;
+
+  if (!isUuid(params.id)) return NextResponse.json({ error: "Vânzarea nu a fost găsită." }, { status: 404 });
+  const [car] = await db.select().from(cars).where(eq(cars.id, params.id)).limit(1);
+  if (!car || car.isDeleted) return NextResponse.json({ error: "Vânzarea nu a fost găsită." }, { status: 404 });
+
+  return NextResponse.json({ car: carToDTO(car, true) });
+}
 
 // PUT /api/cars/[id] — ADMIN ONLY. Editare vânzare.
 export async function PUT(

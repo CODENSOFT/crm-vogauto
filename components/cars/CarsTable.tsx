@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import toast from "react-hot-toast";
 import { Pagination } from "@/components/ui/Table";
 import { Button } from "@/components/ui/Button";
@@ -127,7 +128,7 @@ export function CarsTable() {
   }
 
   const headers: [string, string][] = [
-    ["", "#"], ["clientName", "Client"], ["", "Telefon"], ["brand", "Marcă"], ["", "Model"], ["year", "An"],
+    ["", "#"], ["", "Foto"], ["clientName", "Client"], ["", "Telefon"], ["brand", "Marcă"], ["", "Model"], ["year", "An"],
     ["", "VIN"], ["", "Culoare"], ["priceBuy", "Preț cump."], ["priceSell", "Preț vânz."], ["", "Profit"],
     ["", "Plată"], ["", "Vândut de"], ["saleDate", "Data"], ["", "Status"], ["", "Note"], ["", ""],
   ];
@@ -178,6 +179,21 @@ export function CarsTable() {
                 return (
                   <tr key={car._id} className="transition-colors hover:bg-brand-tint/50">
                     <td className="px-3 py-2 text-slate-400">{(page - 1) * 20 + idx + 1}</td>
+                    <td className="px-3 py-2">
+                      <Link href={`/dashboard/cars/${car._id}`} className="block" title="Vezi detalii">
+                        <div className="relative h-10 w-14 overflow-hidden rounded-md border border-slate-200 bg-slate-100">
+                          {car.primaryPhoto ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={car.primaryPhoto} alt="" className="h-full w-full object-cover" loading="lazy" />
+                          ) : (
+                            <span className="flex h-full w-full items-center justify-center text-[9px] text-slate-400">fără</span>
+                          )}
+                          {(car.photoCount ?? 0) > 1 && (
+                            <span className="absolute bottom-0 right-0 rounded-tl bg-black/60 px-1 text-[8px] text-white">{car.photoCount}</span>
+                          )}
+                        </div>
+                      </Link>
+                    </td>
                     <td className="px-3 py-2"><Cell car={car} field="clientName" display={car.clientName} /></td>
                     <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">
                       {revealed[car._id] ? revealed[car._id] : (

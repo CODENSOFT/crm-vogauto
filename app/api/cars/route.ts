@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { and, or, eq, ilike, gte, lte, asc, desc, sql } from "drizzle-orm";
+import { and, or, eq, ilike, gte, lte, asc, desc, sql, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { cars, users, inventory } from "@/lib/schema";
+import { cars, users, inventory, carPhotos } from "@/lib/schema";
 import { requireSession, requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
 import { escapeLike, isUuid } from "@/lib/utils";
@@ -68,12 +68,31 @@ export async function GET(request: Request) {
     .limit(pageSize)
     .offset((page - 1) * pageSize);
 
-  return NextResponse.json({
-    cars: rows.map((c) => carToDTO(c, true)),
-    total: count,
-    page,
-    pageSize,
-  });
+  const data = rows.map((c) => carToDTO(c, true));
+
+  // Atașează foto principală + numărul de poze pentru fiecare vânzare.
+  if (data.length) {
+    const ids = data.map((c) => c._id);
+    const photos = await db
+      .select({ carId: carPhotos.carId, url: carPhotos.url })
+      .from(carPhotos)
+      .where(inArray(carPhotos.carId, ids))
+      .orderBy(asc(carPhotos.sortOrder), asc(carPhotos.createdAt));
+    const map = new Map<string, { url: string; count: number }>();
+    for (const p of photos) {
+      if (!p.carId) continue;
+      const e = map.get(p.carId);
+      if (e) e.count++;
+      else map.set(p.carId, { url: p.url, count: 1 });
+    }
+    const withPhotos = data.map((c) => {
+      const e = map.get(c._id);
+      return { ...c, primaryPhoto: e?.url ?? null, photoCount: e?.count ?? 0 };
+    });
+    return NextResponse.json({ cars: withPhotos, total: count, page, pageSize });
+  }
+
+  return NextResponse.json({ cars: data, total: count, page, pageSize });
 }
 
 // POST /api/cars — admin ȘI worker.

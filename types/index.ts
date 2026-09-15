@@ -57,6 +57,8 @@ export interface CarDTO {
   soldBy: string;
   soldByName?: string;
   notes?: string;
+  primaryPhoto?: string | null;
+  photoCount?: number;
 }
 
 export interface UserDTO {
