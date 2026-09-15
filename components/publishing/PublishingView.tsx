@@ -40,6 +40,10 @@ export function PublishingView() {
 
   useEffect(() => { setOrigin(window.location.origin); }, []);
 
+  const embedCode =
+    `<div id="vogauto-listings"></div>\n` +
+    `<script src="${origin}/embed/vogauto.js" async data-phone="+373XXXXXXXX"></script>`;
+
   const load = useCallback(async () => {
     setLoading(true);
     const res = await fetch("/api/inventory?status=available");
@@ -103,6 +107,21 @@ export function PublishingView() {
         <CopyRow label="Feed site (JSON)" value={`${origin}/api/public/listings`} />
         <CopyRow label="Feed 999.md (XML)" value={`${origin}/api/public/feed-999`} />
         <p className="text-xs text-slate-400">Conțin doar mașinile marcate „Publicat” ȘI disponibile — fără date despre proprietar. Când o mașină e vândută, dispare automat.</p>
+      </div>
+
+      <div className="mb-5 rounded-xl border border-slate-200/80 bg-white p-4 shadow-card">
+        <p className="text-sm font-semibold text-slate-700">Widget pentru site (WordPress)</p>
+        <p className="mt-1 text-xs text-slate-500">
+          În pagina dorită din WordPress → adaugă un bloc <strong>„HTML personalizat”</strong> → lipește codul de mai jos.
+          Pune numărul vostru la <code>data-phone</code>. Mașinile marcate „Publicat” cu poze apar automat; vândute → dispar automat.
+        </p>
+        <div className="mt-2 flex items-start gap-2">
+          <pre className="min-w-0 flex-1 overflow-x-auto rounded-md bg-slate-900 px-3 py-2.5 text-xs leading-relaxed text-slate-100">{embedCode}</pre>
+          <Button variant="secondary" size="sm" onClick={() => { navigator.clipboard.writeText(embedCode); toast.success("Cod copiat"); }}>Copiază</Button>
+        </div>
+        <p className="mt-2 text-xs text-slate-400">
+          Opțional pe <code>&lt;script&gt;</code>: <code>data-columns=&quot;3&quot;</code> pentru număr fix de coloane.
+        </p>
       </div>
 
       {loading ? (
