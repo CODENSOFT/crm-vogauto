@@ -38,7 +38,13 @@ export function PublishingView() {
   const [igLoading, setIgLoading] = useState(false);
   const [igResult, setIgResult] = useState<{ caption: string; imageUrl?: string; posted: boolean; note?: string } | null>(null);
 
+  const [igConfigured, setIgConfigured] = useState<boolean | null>(null);
+
   useEffect(() => { setOrigin(window.location.origin); }, []);
+  useEffect(() => {
+    fetch("/api/publish/instagram/status").then((r) => r.json())
+      .then((d) => setIgConfigured(!!d.configured)).catch(() => setIgConfigured(false));
+  }, []);
 
   const embedCode =
     `<div id="vogauto-listings"></div>\n` +
@@ -97,9 +103,18 @@ export function PublishingView() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Publicare</h1>
-        <p className="mt-1 text-sm text-slate-500">Publică mașinile pe site și 999.md prin feed-uri automate, sau pregătește postări Instagram. O vânzare le scoate automat din feed.</p>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Publicare</h1>
+          <p className="mt-1 text-sm text-slate-500">Publică mașinile pe site și 999.md prin feed-uri automate, sau pregătește postări Instagram. O vânzare le scoate automat din feed.</p>
+        </div>
+        {igConfigured !== null && (
+          <span title={igConfigured ? "Postarea automată este activă" : "Adaugă IG_ACCESS_TOKEN și IG_USER_ID ca să activezi postarea automată"}>
+            <Badge color={igConfigured ? "green" : "gray"}>
+              Instagram: {igConfigured ? "conectat" : "neconectat"}
+            </Badge>
+          </span>
+        )}
       </div>
 
       <div className="mb-5 grid grid-cols-1 gap-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-card">
