@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { and, eq, gte, lte, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { cars } from "@/lib/schema";
+import { cars, inventory } from "@/lib/schema";
 import { requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
 
@@ -73,6 +73,24 @@ export async function GET(request: Request) {
     countWhere(eq(cars.status, "reserved")),
   ]);
 
+  // Numărători pentru STOC (tabelul inventory).
+  const invCount = (extra?: ReturnType<typeof eq>) =>
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(inventory)
+      .where(extra ? and(eq(inventory.isDeleted, false), extra) : eq(inventory.isDeleted, false))
+      .then((r) => r[0].count);
+  const [stockTotal, stockAvailable, stockSold] = await Promise.all([
+    invCount(),
+    invCount(eq(inventory.status, "available")),
+    invCount(eq(inventory.status, "sold")),
+  ]);
+  // Valoarea stocului disponibil (suma prețurilor de vânzare).
+  const [{ stockValue }] = await db
+    .select({ stockValue: sql<number>`coalesce(sum(${inventory.sellPrice}),0)::float8` })
+    .from(inventory)
+    .where(and(eq(inventory.isDeleted, false), eq(inventory.status, "available")));
+
   if (log) {
     await logAction({
       userId: user.id,
@@ -92,5 +110,6 @@ export async function GET(request: Request) {
     totalProfit,
     avgSellPrice,
     counts: { total: allCount, sold: soldCount, available: availableCount, reserved: reservedCount },
+    stock: { total: stockTotal, available: stockAvailable, sold: stockSold, value: stockValue },
   });
 }
