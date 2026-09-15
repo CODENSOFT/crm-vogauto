@@ -72,6 +72,10 @@ export const inventory = pgTable("inventory", {
   sellPrice: doublePrecision("sell_price").notNull(),
   status: text("status").notNull().default("available"),
   notes: text("notes"),
+  // Publicare externă (site / 999.md / Instagram).
+  published: boolean("published").notNull().default(false),
+  listingTitle: text("listing_title"),
+  listingDescription: text("listing_description"),
   addedBy: uuid("added_by"),
   addedByName: text("added_by_name"),
   soldBy: uuid("sold_by"),
@@ -81,6 +85,93 @@ export const inventory = pgTable("inventory", {
   isDeleted: boolean("is_deleted").notNull().default(false),
   deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "date" }),
   deletedBy: uuid("deleted_by"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+    .notNull()
+    .defaultNow(),
+});
+
+export const carPhotos = pgTable("car_photos", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  carId: uuid("car_id"),
+  inventoryId: uuid("inventory_id"),
+  url: text("url").notNull(),
+  path: text("path").notNull(),
+  sortOrder: integer("sort_order").notNull().default(0),
+  uploadedBy: uuid("uploaded_by"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+    .notNull()
+    .defaultNow(),
+});
+
+export const tasks = pgTable("tasks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: text("title").notNull(),
+  description: text("description"),
+  // general | test_drive | bring_car | to_asp | service | wash | detailing | customs | delivery
+  type: text("type").notNull().default("general"),
+  // todo | in_progress | done
+  status: text("status").notNull().default("todo"),
+  // low | normal | high
+  priority: text("priority").notNull().default("normal"),
+  assignedTo: uuid("assigned_to"),
+  assignedToName: text("assigned_to_name"),
+  createdBy: uuid("created_by"),
+  createdByName: text("created_by_name"),
+  carId: uuid("car_id"),
+  inventoryId: uuid("inventory_id"),
+  carLabel: text("car_label"),
+  dueDate: timestamp("due_date", { withTimezone: true, mode: "date" }),
+  completedAt: timestamp("completed_at", { withTimezone: true, mode: "date" }),
+  isDeleted: boolean("is_deleted").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+    .notNull()
+    .defaultNow(),
+});
+
+export const workOrders = pgTable("work_orders", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  // service | wash | detailing | other
+  type: text("type").notNull().default("service"),
+  carId: uuid("car_id"),
+  inventoryId: uuid("inventory_id"),
+  carLabel: text("car_label"),
+  responsibleId: uuid("responsible_id"),
+  responsibleName: text("responsible_name"),
+  // pending | in_progress | done
+  status: text("status").notNull().default("pending"),
+  cost: doublePrecision("cost").notNull().default(0),
+  dateIn: timestamp("date_in", { withTimezone: true, mode: "date" }),
+  dateOut: timestamp("date_out", { withTimezone: true, mode: "date" }),
+  notes: text("notes"),
+  createdBy: uuid("created_by"),
+  createdByName: text("created_by_name"),
+  isDeleted: boolean("is_deleted").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+    .notNull()
+    .defaultNow(),
+});
+
+export const imports = pgTable("imports", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  brand: text("brand").notNull(),
+  model: text("model").notNull(),
+  year: integer("year"),
+  vin: text("vin"),
+  source: text("source"), // țara/piața de proveniență
+  supplierName: text("supplier_name"),
+  // purchased | in_transit | arrived | customs | ready | done
+  stage: text("stage").notNull().default("purchased"),
+  purchasePrice: doublePrecision("purchase_price").notNull().default(0),
+  customsCost: doublePrecision("customs_cost").notNull().default(0),
+  otherCosts: doublePrecision("other_costs").notNull().default(0),
+  responsibleId: uuid("responsible_id"),
+  responsibleName: text("responsible_name"),
+  expectedDate: timestamp("expected_date", { withTimezone: true, mode: "date" }),
+  arrivedDate: timestamp("arrived_date", { withTimezone: true, mode: "date" }),
+  notes: text("notes"),
+  createdBy: uuid("created_by"),
+  createdByName: text("created_by_name"),
+  isDeleted: boolean("is_deleted").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
     .notNull()
     .defaultNow(),
@@ -115,3 +206,7 @@ export type UserRow = typeof users.$inferSelect;
 export type CarRow = typeof cars.$inferSelect;
 export type InventoryRow = typeof inventory.$inferSelect;
 export type AuditLogRow = typeof auditLogs.$inferSelect;
+export type TaskRow = typeof tasks.$inferSelect;
+export type CarPhotoRow = typeof carPhotos.$inferSelect;
+export type WorkOrderRow = typeof workOrders.$inferSelect;
+export type ImportRow = typeof imports.$inferSelect;

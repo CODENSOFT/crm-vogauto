@@ -87,6 +87,97 @@ async function main() {
     )
   `;
   await sql`create index if not exists inventory_deleted_status_created_idx on inventory (is_deleted, status, created_at desc)`;
+  // Coloane de publicare (adăugate ulterior — idempotent).
+  await sql`alter table inventory add column if not exists published boolean not null default false`;
+  await sql`alter table inventory add column if not exists listing_title text`;
+  await sql`alter table inventory add column if not exists listing_description text`;
+
+  await sql`
+    create table if not exists car_photos (
+      id uuid primary key default gen_random_uuid(),
+      car_id uuid,
+      inventory_id uuid,
+      url text not null,
+      path text not null,
+      sort_order integer not null default 0,
+      uploaded_by uuid,
+      created_at timestamptz not null default now()
+    )
+  `;
+  await sql`create index if not exists car_photos_car_idx on car_photos (car_id)`;
+  await sql`create index if not exists car_photos_inv_idx on car_photos (inventory_id)`;
+
+  await sql`
+    create table if not exists tasks (
+      id uuid primary key default gen_random_uuid(),
+      title text not null,
+      description text,
+      type text not null default 'general',
+      status text not null default 'todo',
+      priority text not null default 'normal',
+      assigned_to uuid,
+      assigned_to_name text,
+      created_by uuid,
+      created_by_name text,
+      car_id uuid,
+      inventory_id uuid,
+      car_label text,
+      due_date timestamptz,
+      completed_at timestamptz,
+      is_deleted boolean not null default false,
+      created_at timestamptz not null default now()
+    )
+  `;
+  await sql`create index if not exists tasks_due_idx on tasks (is_deleted, due_date)`;
+  await sql`create index if not exists tasks_assigned_idx on tasks (assigned_to, status)`;
+
+  await sql`
+    create table if not exists work_orders (
+      id uuid primary key default gen_random_uuid(),
+      type text not null default 'service',
+      car_id uuid,
+      inventory_id uuid,
+      car_label text,
+      responsible_id uuid,
+      responsible_name text,
+      status text not null default 'pending',
+      cost double precision not null default 0,
+      date_in timestamptz,
+      date_out timestamptz,
+      notes text,
+      created_by uuid,
+      created_by_name text,
+      is_deleted boolean not null default false,
+      created_at timestamptz not null default now()
+    )
+  `;
+  await sql`create index if not exists work_orders_idx on work_orders (is_deleted, type, status, created_at desc)`;
+
+  await sql`
+    create table if not exists imports (
+      id uuid primary key default gen_random_uuid(),
+      brand text not null,
+      model text not null,
+      year integer,
+      vin text,
+      source text,
+      supplier_name text,
+      stage text not null default 'purchased',
+      purchase_price double precision not null default 0,
+      customs_cost double precision not null default 0,
+      other_costs double precision not null default 0,
+      responsible_id uuid,
+      responsible_name text,
+      expected_date timestamptz,
+      arrived_date timestamptz,
+      notes text,
+      created_by uuid,
+      created_by_name text,
+      is_deleted boolean not null default false,
+      created_at timestamptz not null default now()
+    )
+  `;
+  await sql`create index if not exists imports_idx on imports (is_deleted, stage, created_at desc)`;
 
   await sql`
     create table if not exists audit_logs (
@@ -113,7 +204,7 @@ async function main() {
   await sql`create index if not exists audit_user_idx on audit_logs (user_id)`;
   await sql`create index if not exists audit_action_idx on audit_logs (action)`;
 
-  console.log("✓ Tabele create/verificate: users, cars, inventory, audit_logs");
+  console.log("✓ Tabele create/verificate: users, cars, inventory, tasks, car_photos, work_orders, imports, audit_logs");
   await sql.end({ timeout: 5 });
 }
 

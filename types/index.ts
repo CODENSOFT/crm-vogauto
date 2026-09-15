@@ -95,6 +95,9 @@ export interface InventoryDTO {
   markup: number; // adaosul parcării = sellPrice - clientWantPrice
   status: StockStatus;
   notes?: string;
+  published?: boolean;
+  listingTitle?: string | null;
+  listingDescription?: string | null;
   addedByName?: string;
   createdAt: string;
 }
@@ -115,6 +118,16 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   CREATE_STOCK: "Adăugare mașină în stoc",
   EDIT_STOCK: "Editare mașină stoc",
   DELETE_STOCK: "Ștergere mașină stoc",
+  CREATE_TASK: "Adăugare sarcină",
+  EDIT_TASK: "Editare sarcină",
+  DELETE_TASK: "Ștergere sarcină",
+  CREATE_WORK_ORDER: "Adăugare lucrare",
+  EDIT_WORK_ORDER: "Editare lucrare",
+  DELETE_WORK_ORDER: "Ștergere lucrare",
+  CREATE_IMPORT: "Adăugare import",
+  EDIT_IMPORT: "Editare import",
+  DELETE_IMPORT: "Ștergere import",
+  PUBLISH_INSTAGRAM: "Publicare pe Instagram",
 };
 
 export const AUDIT_ACTIONS = Object.keys(AUDIT_ACTION_LABELS);
@@ -135,5 +148,131 @@ export interface AuditDTO {
   device: string;
   browser: string;
   userAgent?: string;
+  createdAt: string;
+}
+
+// ---- Sarcini (task management) ----
+
+export type TaskType =
+  | "general" | "test_drive" | "bring_car" | "to_asp"
+  | "service" | "wash" | "detailing" | "customs" | "delivery";
+
+export const TASK_TYPE_LABELS: Record<TaskType, string> = {
+  general: "General",
+  test_drive: "Vizionare client",
+  bring_car: "Aducere mașină (evaluare)",
+  to_asp: "Ducere la ASP (vânzare)",
+  service: "Service",
+  wash: "Spălătorie",
+  detailing: "Detailing",
+  customs: "Devamare / import",
+  delivery: "Livrare / predare",
+};
+
+export type TaskStatus = "todo" | "in_progress" | "done";
+
+export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
+  todo: "De făcut",
+  in_progress: "În lucru",
+  done: "Finalizat",
+};
+
+export type TaskPriority = "low" | "normal" | "high";
+
+export const TASK_PRIORITY_LABELS: Record<TaskPriority, string> = {
+  low: "Scăzută",
+  normal: "Normală",
+  high: "Urgentă",
+};
+
+export interface TaskDTO {
+  _id: string;
+  title: string;
+  description?: string | null;
+  type: TaskType;
+  status: TaskStatus;
+  priority: TaskPriority;
+  assignedTo?: string | null;
+  assignedToName?: string | null;
+  createdByName?: string | null;
+  carId?: string | null;
+  inventoryId?: string | null;
+  carLabel?: string | null;
+  dueDate?: string | null;
+  completedAt?: string | null;
+  createdAt: string;
+}
+
+// ---- Fotografii mașini ----
+export interface PhotoDTO {
+  _id: string;
+  carId?: string | null;
+  inventoryId?: string | null;
+  url: string;
+  path: string;
+  sortOrder: number;
+  createdAt: string;
+}
+
+// ---- Lucrări: service / spălătorie / detailing ----
+export type WorkType = "service" | "wash" | "detailing" | "other";
+export const WORK_TYPE_LABELS: Record<WorkType, string> = {
+  service: "Service",
+  wash: "Spălătorie",
+  detailing: "Detailing",
+  other: "Altă lucrare",
+};
+export type WorkStatus = "pending" | "in_progress" | "done";
+export const WORK_STATUS_LABELS: Record<WorkStatus, string> = {
+  pending: "În așteptare",
+  in_progress: "În lucru",
+  done: "Finalizat",
+};
+export interface WorkOrderDTO {
+  _id: string;
+  type: WorkType;
+  carId?: string | null;
+  inventoryId?: string | null;
+  carLabel?: string | null;
+  responsibleId?: string | null;
+  responsibleName?: string | null;
+  status: WorkStatus;
+  cost: number;
+  dateIn?: string | null;
+  dateOut?: string | null;
+  notes?: string | null;
+  createdByName?: string | null;
+  createdAt: string;
+}
+
+// ---- Import & devamare ----
+export type ImportStage = "purchased" | "in_transit" | "arrived" | "customs" | "ready" | "done";
+export const IMPORT_STAGE_LABELS: Record<ImportStage, string> = {
+  purchased: "Cumpărată",
+  in_transit: "În transport",
+  arrived: "Sosită",
+  customs: "Devamare",
+  ready: "Gata de vânzare",
+  done: "Finalizat",
+};
+export interface ImportDTO {
+  _id: string;
+  brand: string;
+  model: string;
+  year?: number | null;
+  vin?: string | null;
+  source?: string | null;
+  supplierName?: string | null;
+  stage: ImportStage;
+  purchasePrice: number;
+  customsCost: number;
+  otherCosts: number;
+  totalCost: number;
+  responsibleId?: string | null;
+  responsibleName?: string | null;
+  expectedDate?: string | null;
+  arrivedDate?: string | null;
+  notes?: string | null;
+  createdByName?: string | null;
   createdAt: string;
 }

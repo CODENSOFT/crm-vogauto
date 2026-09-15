@@ -152,3 +152,48 @@ export const IconClose = ({ className }: IconProps) => (
     <path d="M6 6l12 12M18 6L6 18" />
   </Svg>
 );
+
+export const IconTasks = ({ className }: IconProps) => (
+  <Svg className={className}>
+    <path d="M9 5h9a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1" />
+    <path d="M9 3h6v4H9z" />
+    <path d="M9 12l2 2 4-4" />
+  </Svg>
+);
+
+export const IconCalendar = ({ className }: IconProps) => (
+  <Svg className={className}>
+    <rect x="3" y="4" width="18" height="17" rx="2" />
+    <path d="M3 9h18M8 2v4M16 2v4" />
+  </Svg>
+);
+
+export const IconPhoto = ({ className }: IconProps) => (
+  <Svg className={className}>
+    <rect x="3" y="4" width="18" height="16" rx="2" />
+    <circle cx="8.5" cy="9.5" r="1.5" />
+    <path d="M21 16l-5-5-6 6-3-3-4 4" />
+  </Svg>
+);
+
+export const IconWrench = ({ className }: IconProps) => (
+  <Svg className={className}>
+    <path d="M14.7 6.3a4 4 0 0 0-5.4 5.2L3 17.8 6.2 21l6.3-6.3a4 4 0 0 0 5.2-5.4l-2.7 2.7-2.3-.6-.6-2.3z" />
+  </Svg>
+);
+
+export const IconTruck = ({ className }: IconProps) => (
+  <Svg className={className}>
+    <path d="M3 6h11v9H3z" />
+    <path d="M14 9h4l3 3v3h-7z" />
+    <circle cx="7" cy="18" r="1.6" />
+    <circle cx="17" cy="18" r="1.6" />
+  </Svg>
+);
+
+export const IconShare = ({ className }: IconProps) => (
+  <Svg className={className}>
+    <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" />
+    <path d="M12 15V3M8 7l4-4 4 4" />
+  </Svg>
+);

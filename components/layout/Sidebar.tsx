@@ -12,6 +12,10 @@ import {
   IconForm,
   IconTrend,
   IconCube,
+  IconTasks,
+  IconWrench,
+  IconTruck,
+  IconShare,
 } from "@/components/ui/Icons";
 
 interface NavItem {
@@ -22,13 +26,18 @@ interface NavItem {
 
 const WORKER_NAV: NavItem[] = [
   { href: "/dashboard", label: "Înregistrare vânzare", Icon: IconForm },
+  { href: "/dashboard/tasks", label: "Sarcinile mele", Icon: IconTasks },
   { href: "/dashboard/my-sales", label: "Vânzările mele", Icon: IconChart },
 ];
 
 const ADMIN_NAV: NavItem[] = [
   { href: "/dashboard", label: "Prezentare generală", Icon: IconDashboard },
+  { href: "/dashboard/tasks", label: "Sarcini", Icon: IconTasks },
   { href: "/dashboard/cars", label: "Vânzări", Icon: IconCar },
   { href: "/dashboard/inventory", label: "Stoc mașini", Icon: IconCube },
+  { href: "/dashboard/imports", label: "Import & devamare", Icon: IconTruck },
+  { href: "/dashboard/work-orders", label: "Lucrări", Icon: IconWrench },
+  { href: "/dashboard/publishing", label: "Publicare", Icon: IconShare },
   { href: "/dashboard/statistics", label: "Statistici", Icon: IconChart },
   { href: "/dashboard/managers", label: "Manageri", Icon: IconTrend },
   { href: "/dashboard/audit", label: "Jurnal audit", Icon: IconShield },
