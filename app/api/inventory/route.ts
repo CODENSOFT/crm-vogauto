@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { and, or, eq, ilike, desc } from "drizzle-orm";
+import { and, or, eq, ilike, desc, asc, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { inventory } from "@/lib/schema";
+import { inventory, carPhotos } from "@/lib/schema";
 import { requireSession, requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
 import { escapeLike } from "@/lib/utils";
@@ -37,7 +37,31 @@ export async function GET(request: Request) {
     .where(and(...conds))
     .orderBy(desc(inventory.createdAt));
 
-  return NextResponse.json({ items: rows.map(inventoryToDTO) });
+  const items = rows.map(inventoryToDTO);
+
+  // Atașează foto principală + numărul de poze pentru fiecare mașină.
+  if (items.length) {
+    const ids = items.map((i) => i._id);
+    const photos = await db
+      .select({ inventoryId: carPhotos.inventoryId, url: carPhotos.url })
+      .from(carPhotos)
+      .where(inArray(carPhotos.inventoryId, ids))
+      .orderBy(asc(carPhotos.sortOrder), asc(carPhotos.createdAt));
+    const map = new Map<string, { url: string; count: number }>();
+    for (const p of photos) {
+      if (!p.inventoryId) continue;
+      const e = map.get(p.inventoryId);
+      if (e) e.count++;
+      else map.set(p.inventoryId, { url: p.url, count: 1 });
+    }
+    const withPhotos = items.map((it) => {
+      const e = map.get(it._id);
+      return { ...it, primaryPhoto: e?.url ?? null, photoCount: e?.count ?? 0 };
+    });
+    return NextResponse.json({ items: withPhotos });
+  }
+
+  return NextResponse.json({ items });
 }
 
 // POST /api/inventory — ADMIN ONLY. Adaugă o mașină în stoc.

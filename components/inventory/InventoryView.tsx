@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import Link from "next/link";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
@@ -148,17 +149,37 @@ export function InventoryView() {
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50/80">
               <tr>
-                {["Mașină", "An", "VIN", "Proprietar", "Telefon", "Preț client", "Preț vânzare", "Adaus", "Status", ""].map((h, i) => (
+                {["Foto", "Mașină", "An", "VIN", "Proprietar", "Telefon", "Preț client", "Preț vânzare", "Adaus", "Status", ""].map((h, i) => (
                   <th key={i} className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {items.length === 0 ? (
-                <tr><td colSpan={10} className="px-4 py-12 text-center text-slate-400">Nicio mașină în stoc.</td></tr>
+                <tr><td colSpan={11} className="px-4 py-12 text-center text-slate-400">Nicio mașină în stoc.</td></tr>
               ) : items.map((it) => (
                 <tr key={it._id} className="transition-colors hover:bg-brand-tint/50">
-                  <td className="whitespace-nowrap px-3 py-2.5 font-medium text-slate-800">{it.brand} {it.model}{it.color ? <span className="text-slate-400"> · {it.color}</span> : null}</td>
+                  <td className="px-3 py-2">
+                    <Link href={`/dashboard/inventory/${it._id}`} className="block">
+                      <div className="relative h-12 w-16 overflow-hidden rounded-md border border-slate-200 bg-slate-100">
+                        {it.primaryPhoto ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={it.primaryPhoto} alt="" className="h-full w-full object-cover" loading="lazy" />
+                        ) : (
+                          <span className="flex h-full w-full items-center justify-center text-[10px] text-slate-400">fără</span>
+                        )}
+                        {(it.photoCount ?? 0) > 1 && (
+                          <span className="absolute bottom-0 right-0 rounded-tl bg-black/60 px-1 text-[9px] text-white">{it.photoCount}</span>
+                        )}
+                      </div>
+                    </Link>
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2.5 font-medium text-slate-800">
+                    <Link href={`/dashboard/inventory/${it._id}`} className="hover:text-brand hover:underline">
+                      {it.brand} {it.model}
+                    </Link>
+                    {it.color ? <span className="text-slate-400"> · {it.color}</span> : null}
+                  </td>
                   <td className="px-3 py-2.5 text-slate-600">{it.year}</td>
                   <td className="whitespace-nowrap px-3 py-2.5 font-mono text-xs text-slate-500">{it.vin || "—"}</td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-slate-700">{it.ownerName}</td>

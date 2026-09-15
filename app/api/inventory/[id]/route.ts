@@ -2,10 +2,22 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { inventory } from "@/lib/schema";
-import { requireAdmin, coordsOf } from "@/lib/guard";
+import { requireAdmin, requireSession, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
 import { isUuid } from "@/lib/utils";
 import { inventoryToDTO } from "@/lib/serialize";
+
+// GET /api/inventory/[id] — o singură mașină din stoc (pentru pagina de detaliu).
+export async function GET(_request: Request, { params }: { params: { id: string } }) {
+  const { error } = await requireSession();
+  if (error) return error;
+
+  if (!isUuid(params.id)) return NextResponse.json({ error: "Mașina nu a fost găsită." }, { status: 404 });
+  const [item] = await db.select().from(inventory).where(eq(inventory.id, params.id)).limit(1);
+  if (!item || item.isDeleted) return NextResponse.json({ error: "Mașina nu a fost găsită." }, { status: 404 });
+
+  return NextResponse.json({ item: inventoryToDTO(item) });
+}
 
 // PUT /api/inventory/[id] — ADMIN ONLY. Editare mașină din stoc.
 export async function PUT(

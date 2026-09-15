@@ -100,6 +100,8 @@ export interface InventoryDTO {
   listingDescription?: string | null;
   addedByName?: string;
   createdAt: string;
+  primaryPhoto?: string | null;
+  photoCount?: number;
 }
 
 export const AUDIT_ACTION_LABELS: Record<string, string> = {
