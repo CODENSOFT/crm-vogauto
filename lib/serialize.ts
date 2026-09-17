@@ -1,6 +1,7 @@
 import { maskPhone } from "@/lib/utils";
 import type {
   CarRow, InventoryRow, UserRow, AuditLogRow, TaskRow, CarPhotoRow, WorkOrderRow, ImportRow,
+  LeadRow, NotificationRow,
 } from "@/lib/schema";
 
 // Convertesc rândurile din Postgres în forma serializată așteptată de client
@@ -50,6 +51,17 @@ export function photoToDTO(row: CarPhotoRow) {
 export function workOrderToDTO(row: WorkOrderRow) {
   const { id, isDeleted: _d, ...rest } = row;
   void _d;
+  return { ...rest, _id: id };
+}
+
+export function leadToDTO(row: LeadRow) {
+  const { id, isDeleted: _d, ...rest } = row;
+  void _d;
+  return { ...rest, _id: id };
+}
+
+export function notificationToDTO(row: NotificationRow) {
+  const { id, ...rest } = row;
   return { ...rest, _id: id };
 }
 

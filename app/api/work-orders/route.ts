@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { and, eq, desc, type SQL } from "drizzle-orm";
+import { and, eq, or, desc, isNull, notInArray, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { workOrders, users } from "@/lib/schema";
+import { workOrders, users, inventory } from "@/lib/schema";
 import { requireSession, requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
 import { isUuid } from "@/lib/utils";
@@ -22,6 +22,13 @@ export async function GET(request: Request) {
   const conds: SQL[] = [eq(workOrders.isDeleted, false)];
   if (type && TYPES.includes(type)) conds.push(eq(workOrders.type, type));
   if (status && STATUSES.includes(status)) conds.push(eq(workOrders.status, status));
+
+  // Ascunde lucrările pentru mașinile din stoc deja vândute.
+  const soldRows = await db.select({ id: inventory.id }).from(inventory).where(eq(inventory.status, "sold"));
+  const soldIds = soldRows.map((r) => r.id);
+  if (soldIds.length) {
+    conds.push(or(isNull(workOrders.inventoryId), notInArray(workOrders.inventoryId, soldIds))!);
+  }
 
   const rows = await db
     .select()

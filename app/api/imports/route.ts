@@ -7,7 +7,7 @@ import { logAction } from "@/lib/audit";
 import { isUuid } from "@/lib/utils";
 import { importToDTO } from "@/lib/serialize";
 
-const STAGES = ["purchased", "in_transit", "arrived", "customs", "ready", "done"];
+const STAGES = ["in_transit", "customs", "ready"];
 
 // GET /api/imports — listă importuri (orice utilizator autentificat).
 export async function GET(request: Request) {
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
       vin: vin ? String(vin).trim() : null,
       source: source ? String(source) : null,
       supplierName: supplierName ? String(supplierName) : null,
-      stage: STAGES.includes(stage) ? stage : "purchased",
+      stage: STAGES.includes(stage) ? stage : "in_transit",
       purchasePrice: Number(purchasePrice) || 0,
       customsCost: Number(customsCost) || 0,
       otherCosts: Number(otherCosts) || 0,

@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { imports, users } from "@/lib/schema";
+import { imports, users, inventory } from "@/lib/schema";
 import { requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
 import { isUuid } from "@/lib/utils";
 import { importToDTO } from "@/lib/serialize";
+import { notifyAdmins } from "@/lib/notify";
 
-const STAGES = ["purchased", "in_transit", "arrived", "customs", "ready", "done"];
+const STAGES = ["in_transit", "customs", "ready"];
 
 // PUT /api/imports/[id] — ADMIN ONLY.
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
@@ -36,7 +37,37 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     } else { updates.responsibleId = null; updates.responsibleName = null; }
   }
 
-  if (Object.keys(updates).length === 0) return NextResponse.json({ error: "Nimic de modificat." }, { status: 400 });
+  // Când importul devine „gata de vânzare", creează automat mașina în stoc
+  // (o singură dată — legată prin imports.inventoryId).
+  const finalStage = (updates.stage as string) ?? imp.stage;
+  if (finalStage === "ready" && !imp.inventoryId) {
+    const brand = (updates.brand as string) ?? imp.brand;
+    const model = (updates.model as string) ?? imp.model;
+    const year = (updates.year as number) ?? imp.year ?? new Date().getFullYear();
+    const vin = (updates.vin as string | null) ?? imp.vin;
+    const purchase = (updates.purchasePrice as number) ?? Number(imp.purchasePrice);
+    const customs = (updates.customsCost as number) ?? Number(imp.customsCost);
+    const other = (updates.otherCosts as number) ?? Number(imp.otherCosts);
+    const [inv] = await db
+      .insert(inventory)
+      .values({
+        brand, model, year: Number(year), vin: vin || null,
+        ownerName: imp.supplierName || "Import propriu",
+        ownerPhone: "—",
+        clientWantPrice: purchase + customs + other, // baza de cost
+        sellPrice: 0, // prețul de vânzare se setează de admin
+        status: "available",
+        notes: "Adăugată automat din import.",
+        addedBy: user.id, addedByName: user.fullName,
+      })
+      .returning();
+    updates.inventoryId = inv.id;
+    await notifyAdmins({
+      type: "stock", title: "Mașină gata de vânzare",
+      body: `${brand} ${model} ${year} a fost adăugată automat în stoc (din import). Setează prețul de vânzare.`,
+      link: `/dashboard/inventory/${inv.id}`,
+    });
+  }
 
   const [saved] = await db.update(imports).set(updates).where(eq(imports.id, params.id)).returning();
   await logAction({

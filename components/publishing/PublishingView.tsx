@@ -60,15 +60,16 @@ export function PublishingView() {
   }, []);
   useEffect(() => { load(); }, [load]);
 
-  async function togglePublished(it: InventoryDTO) {
+  async function toggleChannel(it: InventoryDTO, field: "publishedSite" | "published999", channelName: string) {
+    const next = !it[field];
     const res = await fetch(`/api/inventory/${it._id}`, {
       method: "PUT", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ published: !it.published }),
+      body: JSON.stringify({ [field]: next }),
     });
     const data = await res.json();
     if (!res.ok) { toast.error(data.error || "Eroare."); return; }
     setItems((list) => list.map((x) => (x._id === it._id ? data.item : x)));
-    toast.success(!it.published ? "Publicat" : "Retras de la publicare");
+    toast.success(next ? `Publicat pe ${channelName}` : `Retras de pe ${channelName}`);
   }
 
   function openListing(it: InventoryDTO) {
@@ -121,7 +122,7 @@ export function PublishingView() {
         <p className="text-sm font-semibold text-slate-700">Feed-uri publice (dă-le site-ului tău și importului 999.md):</p>
         <CopyRow label="Feed site (JSON)" value={`${origin}/api/public/listings`} />
         <CopyRow label="Feed 999.md (XML)" value={`${origin}/api/public/feed-999`} />
-        <p className="text-xs text-slate-400">Conțin doar mașinile marcate „Publicat” ȘI disponibile — fără date despre proprietar. Când o mașină e vândută, dispare automat.</p>
+        <p className="text-xs text-slate-400">Fiecare feed conține doar mașinile publicate pe canalul respectiv (butoanele „Site” / „999.md” din tabel) ȘI disponibile — fără date despre proprietar. Vândută → dispare automat din feed.</p>
       </div>
 
       <div className="mb-5 rounded-xl border border-slate-200/80 bg-white p-4 shadow-card">
@@ -146,28 +147,37 @@ export function PublishingView() {
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50/80">
               <tr>
-                {["Mașină", "An", "Preț", "Publicat", "Acțiuni"].map((h, i) => (
+                {["Mașină", "An", "Preț", "Site", "999.md", "Instagram", "Acțiuni"].map((h, i) => (
                   <th key={i} className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {items.length === 0 ? (
-                <tr><td colSpan={5} className="px-4 py-12 text-center text-slate-400">Nicio mașină disponibilă în stoc.</td></tr>
+                <tr><td colSpan={7} className="px-4 py-12 text-center text-slate-400">Nicio mașină disponibilă în stoc.</td></tr>
               ) : items.map((it) => (
                 <tr key={it._id} className="transition-colors hover:bg-brand-tint/50">
                   <td className="whitespace-nowrap px-3 py-2.5 font-medium text-slate-800">{it.brand} {it.model}</td>
                   <td className="px-3 py-2.5 text-slate-600">{it.year}</td>
                   <td className="whitespace-nowrap px-3 py-2.5 font-medium text-slate-900">{formatMoney(it.sellPrice)}</td>
                   <td className="px-3 py-2.5">
-                    <button onClick={() => togglePublished(it)}>
-                      <Badge color={it.published ? "green" : "gray"}>{it.published ? "Publicat" : "Nepublicat"}</Badge>
+                    <button onClick={() => toggleChannel(it, "publishedSite", "site")}
+                      className={`rounded-full px-2.5 py-1 text-xs font-semibold transition-colors ${it.publishedSite ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>
+                      {it.publishedSite ? "● Publicat" : "○ Publică"}
                     </button>
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <button onClick={() => toggleChannel(it, "published999", "999.md")}
+                      className={`rounded-full px-2.5 py-1 text-xs font-semibold transition-colors ${it.published999 ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}>
+                      {it.published999 ? "● Publicat" : "○ Publică"}
+                    </button>
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <Button variant="ghost" size="sm" className="text-pink-600" onClick={() => prepareInstagram(it)}>Postează</Button>
                   </td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-right">
                     <Button variant="ghost" size="sm" className="text-slate-600" onClick={() => setPhotoTarget(it)}>Poze</Button>
                     <Button variant="ghost" size="sm" className="text-brand" onClick={() => openListing(it)}>Anunț</Button>
-                    <Button variant="ghost" size="sm" className="text-pink-600" onClick={() => prepareInstagram(it)}>Instagram</Button>
                   </td>
                 </tr>
               ))}

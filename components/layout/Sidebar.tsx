@@ -16,6 +16,7 @@ import {
   IconWrench,
   IconTruck,
   IconShare,
+  IconTarget,
 } from "@/components/ui/Icons";
 
 interface NavItem {
@@ -27,12 +28,14 @@ interface NavItem {
 const WORKER_NAV: NavItem[] = [
   { href: "/dashboard", label: "Înregistrare vânzare", Icon: IconForm },
   { href: "/dashboard/tasks", label: "Sarcinile mele", Icon: IconTasks },
+  { href: "/dashboard/leads", label: "Lead-uri", Icon: IconTarget },
   { href: "/dashboard/my-sales", label: "Vânzările mele", Icon: IconChart },
 ];
 
 const ADMIN_NAV: NavItem[] = [
   { href: "/dashboard", label: "Prezentare generală", Icon: IconDashboard },
   { href: "/dashboard/tasks", label: "Sarcini", Icon: IconTasks },
+  { href: "/dashboard/leads", label: "Lead-uri", Icon: IconTarget },
   { href: "/dashboard/cars", label: "Vânzări", Icon: IconCar },
   { href: "/dashboard/inventory", label: "Stoc mașini", Icon: IconCube },
   { href: "/dashboard/imports", label: "Import & devamare", Icon: IconTruck },

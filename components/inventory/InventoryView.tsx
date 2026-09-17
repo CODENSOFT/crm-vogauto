@@ -20,7 +20,8 @@ export function InventoryView() {
   const [items, setItems] = useState<InventoryDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
+  // Implicit arătăm doar mașinile disponibile; vândutele se văd cu filtrul.
+  const [status, setStatus] = useState("available");
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<InventoryDTO | null>(null);

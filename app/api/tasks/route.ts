@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { and, eq, gte, lt, desc, asc, sql, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { tasks, users } from "@/lib/schema";
+import { tasks, users, workOrders } from "@/lib/schema";
 import { requireSession, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
 import { isUuid } from "@/lib/utils";
 import { taskToDTO } from "@/lib/serialize";
+import { notify } from "@/lib/notify";
 
 const TYPES = ["general", "test_drive", "bring_car", "to_asp", "service", "wash", "detailing", "customs", "delivery"];
 const STATUSES = ["todo", "in_progress", "done"];
@@ -21,6 +22,7 @@ export async function GET(request: Request) {
   const status = searchParams.get("status")?.trim();
   const type = searchParams.get("type")?.trim();
   const assignedTo = searchParams.get("assignedTo")?.trim();
+  const leadId = searchParams.get("leadId")?.trim();
   const date = searchParams.get("date")?.trim(); // YYYY-MM-DD
   const dateFrom = searchParams.get("dateFrom");
   const dateTo = searchParams.get("dateTo");
@@ -33,6 +35,7 @@ export async function GET(request: Request) {
 
   if (status && STATUSES.includes(status)) conds.push(eq(tasks.status, status));
   if (type && TYPES.includes(type)) conds.push(eq(tasks.type, type));
+  if (leadId && isUuid(leadId)) conds.push(eq(tasks.leadId, leadId));
 
   if (date) {
     const start = new Date(date + "T00:00:00");
@@ -60,7 +63,7 @@ export async function POST(request: Request) {
   if (error) return error;
 
   const body = await request.json();
-  const { title, description, type, priority, dueDate, carId, inventoryId, carLabel } = body;
+  const { title, description, type, priority, dueDate, carId, inventoryId, carLabel, leadId } = body;
   let { assignedTo } = body;
 
   if (!title || !String(title).trim()) {
@@ -94,9 +97,45 @@ export async function POST(request: Request) {
       carId: carId && isUuid(carId) ? carId : null,
       inventoryId: inventoryId && isUuid(inventoryId) ? inventoryId : null,
       carLabel: carLabel ? String(carLabel) : null,
+      leadId: leadId && isUuid(leadId) ? leadId : null,
       dueDate: dueDate ? new Date(dueDate) : null,
     })
     .returning();
+
+  // Sarcinile de tip service/spălătorie/detailing generează automat o lucrare
+  // în pagina Lucrări (legată de sarcină, cu status sincronizat).
+  const WORK_TYPES = ["service", "wash", "detailing"];
+  let taskOut = task;
+  if (WORK_TYPES.includes(task.type)) {
+    const [wo] = await db
+      .insert(workOrders)
+      .values({
+        type: task.type,
+        carId: task.carId,
+        inventoryId: task.inventoryId,
+        carLabel: task.carLabel,
+        responsibleId: task.assignedTo,
+        responsibleName: task.assignedToName,
+        status: "pending",
+        dateIn: task.dueDate,
+        notes: task.description || task.title,
+        createdBy: user.id,
+        createdByName: user.fullName,
+      })
+      .returning();
+    [taskOut] = await db.update(tasks).set({ workOrderId: wo.id }).where(eq(tasks.id, task.id)).returning();
+  }
+
+  // Notifică angajatul dacă i s-a atribuit o sarcină (de altcineva).
+  if (assignedToId !== user.id) {
+    await notify({
+      userId: assignedToId,
+      type: "task",
+      title: "Sarcină nouă",
+      body: `${task.title}${task.dueDate ? ` — termen ${new Date(task.dueDate).toLocaleString("ro-RO")}` : ""}`,
+      link: "/dashboard/tasks",
+    });
+  }
 
   await logAction({
     userId: user.id, userName: user.fullName, action: "CREATE_TASK",
@@ -104,5 +143,5 @@ export async function POST(request: Request) {
     request, coords: coordsOf(user),
   });
 
-  return NextResponse.json({ task: taskToDTO(task) }, { status: 201 });
+  return NextResponse.json({ task: taskToDTO(taskOut) }, { status: 201 });
 }

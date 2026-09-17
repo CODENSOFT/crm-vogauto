@@ -72,8 +72,10 @@ export const inventory = pgTable("inventory", {
   sellPrice: doublePrecision("sell_price").notNull(),
   status: text("status").notNull().default("available"),
   notes: text("notes"),
-  // Publicare externă (site / 999.md / Instagram).
-  published: boolean("published").notNull().default(false),
+  // Publicare externă — comutatoare independente per canal.
+  published: boolean("published").notNull().default(false), // (istoric; păstrat)
+  publishedSite: boolean("published_site").notNull().default(false),
+  published999: boolean("published_999").notNull().default(false),
   listingTitle: text("listing_title"),
   listingDescription: text("listing_description"),
   addedBy: uuid("added_by"),
@@ -120,6 +122,12 @@ export const tasks = pgTable("tasks", {
   carId: uuid("car_id"),
   inventoryId: uuid("inventory_id"),
   carLabel: text("car_label"),
+  // Lucrarea generată automat pentru sarcinile service/spălat/detailing.
+  workOrderId: uuid("work_order_id"),
+  // Lead-ul (clientul potențial) de care e legată sarcina.
+  leadId: uuid("lead_id"),
+  // Marcaj: s-a trimis reminderul „cu 30 min înainte".
+  reminded: boolean("reminded").notNull().default(false),
   dueDate: timestamp("due_date", { withTimezone: true, mode: "date" }),
   completedAt: timestamp("completed_at", { withTimezone: true, mode: "date" }),
   isDeleted: boolean("is_deleted").notNull().default(false),
@@ -159,19 +167,58 @@ export const imports = pgTable("imports", {
   vin: text("vin"),
   source: text("source"), // țara/piața de proveniență
   supplierName: text("supplier_name"),
-  // purchased | in_transit | arrived | customs | ready | done
-  stage: text("stage").notNull().default("purchased"),
+  // in_transit | ready
+  stage: text("stage").notNull().default("in_transit"),
   purchasePrice: doublePrecision("purchase_price").notNull().default(0),
   customsCost: doublePrecision("customs_cost").notNull().default(0),
   otherCosts: doublePrecision("other_costs").notNull().default(0),
   responsibleId: uuid("responsible_id"),
   responsibleName: text("responsible_name"),
+  // Mașina din stoc creată automat când importul devine „gata de vânzare".
+  inventoryId: uuid("inventory_id"),
   expectedDate: timestamp("expected_date", { withTimezone: true, mode: "date" }),
   arrivedDate: timestamp("arrived_date", { withTimezone: true, mode: "date" }),
   notes: text("notes"),
   createdBy: uuid("created_by"),
   createdByName: text("created_by_name"),
   isDeleted: boolean("is_deleted").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+    .notNull()
+    .defaultNow(),
+});
+
+export const leads = pgTable("leads", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  clientName: text("client_name").notNull(),
+  clientPhone: text("client_phone"),
+  // call | site | 999 | instagram | walk_in | referral | other
+  source: text("source").notNull().default("call"),
+  interestBrand: text("interest_brand"),
+  interestModel: text("interest_model"),
+  budget: doublePrecision("budget"),
+  inventoryId: uuid("inventory_id"), // mașina de interes din stoc
+  // new | contacted | viewing | negotiating | won | lost
+  status: text("status").notNull().default("new"),
+  assignedTo: uuid("assigned_to"),
+  assignedToName: text("assigned_to_name"),
+  notes: text("notes"),
+  lastContactAt: timestamp("last_contact_at", { withTimezone: true, mode: "date" }),
+  createdBy: uuid("created_by"),
+  createdByName: text("created_by_name"),
+  isDeleted: boolean("is_deleted").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+    .notNull()
+    .defaultNow(),
+});
+
+export const notifications = pgTable("notifications", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id"), // destinatarul (null = pentru toți adminii)
+  type: text("type").notNull().default("info"),
+  title: text("title").notNull(),
+  body: text("body"),
+  link: text("link"),
+  isRead: boolean("is_read").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
     .notNull()
     .defaultNow(),
@@ -210,3 +257,5 @@ export type TaskRow = typeof tasks.$inferSelect;
 export type CarPhotoRow = typeof carPhotos.$inferSelect;
 export type WorkOrderRow = typeof workOrders.$inferSelect;
 export type ImportRow = typeof imports.$inferSelect;
+export type LeadRow = typeof leads.$inferSelect;
+export type NotificationRow = typeof notifications.$inferSelect;

@@ -191,4 +191,7 @@ export const ACTION_LABELS: Record<string, string> = {
   EDIT_IMPORT: "Editare import",
   DELETE_IMPORT: "Ștergere import",
   PUBLISH_INSTAGRAM: "Publicare pe Instagram",
+  CREATE_LEAD: "Adăugare lead",
+  EDIT_LEAD: "Editare lead",
+  DELETE_LEAD: "Ștergere lead",
 };

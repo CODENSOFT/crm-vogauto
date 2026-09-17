@@ -98,6 +98,8 @@ export interface InventoryDTO {
   status: StockStatus;
   notes?: string;
   published?: boolean;
+  publishedSite?: boolean;
+  published999?: boolean;
   listingTitle?: string | null;
   listingDescription?: string | null;
   addedByName?: string;
@@ -132,6 +134,9 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   EDIT_IMPORT: "Editare import",
   DELETE_IMPORT: "Ștergere import",
   PUBLISH_INSTAGRAM: "Publicare pe Instagram",
+  CREATE_LEAD: "Adăugare lead",
+  EDIT_LEAD: "Editare lead",
+  DELETE_LEAD: "Ștergere lead",
 };
 
 export const AUDIT_ACTIONS = Object.keys(AUDIT_ACTION_LABELS);
@@ -202,6 +207,8 @@ export interface TaskDTO {
   carId?: string | null;
   inventoryId?: string | null;
   carLabel?: string | null;
+  workOrderId?: string | null;
+  leadId?: string | null;
   dueDate?: string | null;
   completedAt?: string | null;
   createdAt: string;
@@ -250,14 +257,11 @@ export interface WorkOrderDTO {
 }
 
 // ---- Import & devamare ----
-export type ImportStage = "purchased" | "in_transit" | "arrived" | "customs" | "ready" | "done";
+export type ImportStage = "in_transit" | "customs" | "ready";
 export const IMPORT_STAGE_LABELS: Record<ImportStage, string> = {
-  purchased: "Cumpărată",
   in_transit: "În transport",
-  arrived: "Sosită",
-  customs: "Devamare",
+  customs: "Devamat",
   ready: "Gata de vânzare",
-  done: "Finalizat",
 };
 export interface ImportDTO {
   _id: string;
@@ -277,6 +281,44 @@ export interface ImportDTO {
   expectedDate?: string | null;
   arrivedDate?: string | null;
   notes?: string | null;
+  createdByName?: string | null;
+  createdAt: string;
+}
+
+// ---- Lead-uri (clienți potențiali) ----
+export type LeadSource = "call" | "site" | "999" | "instagram" | "walk_in" | "referral" | "other";
+export const LEAD_SOURCE_LABELS: Record<LeadSource, string> = {
+  call: "Telefon",
+  site: "Site",
+  "999": "999.md",
+  instagram: "Instagram",
+  walk_in: "A venit la parcare",
+  referral: "Recomandare",
+  other: "Altă sursă",
+};
+export type LeadStatus = "new" | "contacted" | "viewing" | "negotiating" | "won" | "lost";
+export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
+  new: "Nou",
+  contacted: "Contactat",
+  viewing: "Vizionare",
+  negotiating: "Negociere",
+  won: "Câștigat",
+  lost: "Pierdut",
+};
+export interface LeadDTO {
+  _id: string;
+  clientName: string;
+  clientPhone?: string | null;
+  source: LeadSource;
+  interestBrand?: string | null;
+  interestModel?: string | null;
+  budget?: number | null;
+  inventoryId?: string | null;
+  status: LeadStatus;
+  assignedTo?: string | null;
+  assignedToName?: string | null;
+  notes?: string | null;
+  lastContactAt?: string | null;
   createdByName?: string | null;
   createdAt: string;
 }

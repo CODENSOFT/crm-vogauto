@@ -5,7 +5,8 @@ import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
 import { Modal, ConfirmDialog } from "@/components/ui/Modal";
-import { Badge } from "@/components/ui/Table";
+import { CarStockPicker } from "@/components/shared/CarStockPicker";
+import { InlineEdit, InlinePill } from "@/components/shared/Inline";
 import { formatMoney, formatDateShort } from "@/lib/utils";
 import {
   WORK_TYPE_LABELS, WORK_STATUS_LABELS,
@@ -13,11 +14,16 @@ import {
 } from "@/types";
 
 const EMPTY = {
-  type: "service" as WorkType, carLabel: "", responsibleId: "", status: "pending",
+  type: "service" as WorkType, carLabel: "", inventoryId: "", responsibleId: "", status: "pending",
   cost: "", dateIn: "", dateOut: "", notes: "",
 };
 
-const statusColor = (s: WorkStatus) => (s === "done" ? "green" : s === "in_progress" ? "yellow" : "gray");
+const statusPill: Record<WorkStatus, string> = {
+  pending: "bg-slate-100 text-slate-600",
+  in_progress: "bg-amber-100 text-amber-700",
+  done: "bg-emerald-100 text-emerald-700",
+};
+const STATUS_OPTS = Object.entries(WORK_STATUS_LABELS) as [string, string][];
 const dateInput = (iso?: string | null) => (iso ? new Date(iso).toISOString().slice(0, 10) : "");
 
 export function WorkOrdersView() {
@@ -59,7 +65,7 @@ export function WorkOrdersView() {
   function openEdit(w: WorkOrderDTO) {
     setEditing(w);
     setForm({
-      type: w.type, carLabel: w.carLabel ?? "", responsibleId: w.responsibleId ?? "",
+      type: w.type, carLabel: w.carLabel ?? "", inventoryId: w.inventoryId ?? "", responsibleId: w.responsibleId ?? "",
       status: w.status, cost: String(w.cost ?? ""), dateIn: dateInput(w.dateIn), dateOut: dateInput(w.dateOut),
       notes: w.notes ?? "",
     });
@@ -78,6 +84,16 @@ export function WorkOrdersView() {
     if (!res.ok) { toast.error(data.error || "Eroare."); return; }
     toast.success(editing ? "Lucrare actualizată" : "Lucrare adăugată");
     setFormOpen(false); load();
+  }
+
+  // Editare rapidă direct în tabel (fără modal).
+  async function patch(w: WorkOrderDTO, payload: Record<string, unknown>) {
+    const res = await fetch(`/api/work-orders/${w._id}`, {
+      method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) { toast.error(data.error || "Eroare."); return; }
+    setItems((list) => list.map((x) => (x._id === w._id ? data.workOrder : x)));
   }
 
   async function confirmDelete() {
@@ -131,10 +147,18 @@ export function WorkOrdersView() {
                   <td className="whitespace-nowrap px-3 py-2.5 font-medium text-slate-800">{WORK_TYPE_LABELS[w.type]}</td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-slate-700">{w.carLabel || "—"}</td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-slate-700">{w.responsibleName || "—"}</td>
-                  <td className="px-3 py-2.5"><Badge color={statusColor(w.status)}>{WORK_STATUS_LABELS[w.status]}</Badge></td>
-                  <td className="whitespace-nowrap px-3 py-2.5 text-slate-700">{formatMoney(w.cost)}</td>
-                  <td className="whitespace-nowrap px-3 py-2.5 text-slate-600">{w.dateIn ? formatDateShort(w.dateIn) : "—"}</td>
-                  <td className="whitespace-nowrap px-3 py-2.5 text-slate-600">{w.dateOut ? formatDateShort(w.dateOut) : "—"}</td>
+                  <td className="px-3 py-2.5">
+                    <InlinePill value={w.status} options={STATUS_OPTS} className={statusPill[w.status]} onChange={(v) => patch(w, { status: v })} />
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2.5 text-slate-700">
+                    <InlineEdit type="number" width="w-24" inputValue={String(w.cost ?? "")} display={formatMoney(w.cost)} onSave={(v) => patch(w, { cost: v })} />
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2.5 text-slate-600">
+                    <InlineEdit type="date" inputValue={dateInput(w.dateIn)} display={w.dateIn ? formatDateShort(w.dateIn) : "—"} onSave={(v) => patch(w, { dateIn: v || null })} />
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2.5 text-slate-600">
+                    <InlineEdit type="date" inputValue={dateInput(w.dateOut)} display={w.dateOut ? formatDateShort(w.dateOut) : "—"} onSave={(v) => patch(w, { dateOut: v || null })} />
+                  </td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-right">
                     <Button variant="ghost" size="sm" className="text-brand" onClick={() => openEdit(w)}>Editează</Button>
                     <Button variant="ghost" size="sm" className="text-red-600" onClick={() => setDeleteTarget(w)}>Șterge</Button>
@@ -145,6 +169,7 @@ export function WorkOrdersView() {
           </table>
         </div>
       )}
+      <p className="mt-2 text-xs text-slate-400">Click pe status, cost sau date pentru editare rapidă — fără să deschizi „Editează”.</p>
 
       <Modal open={formOpen} onClose={() => setFormOpen(false)} title={editing ? "Editează lucrarea" : "Lucrare nouă"}
         footer={<><Button variant="secondary" onClick={() => setFormOpen(false)} disabled={saving}>Anulează</Button><Button onClick={save} loading={saving}>Salvează</Button></>}>
@@ -156,7 +181,8 @@ export function WorkOrdersView() {
             {Object.entries(WORK_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </Select>
           <div className="sm:col-span-2">
-            <Input label="Mașină" value={form.carLabel} onChange={(e) => setF("carLabel", e.target.value)} placeholder="ex: BMW X5 2018" />
+            <CarStockPicker value={form.carLabel} inventoryId={form.inventoryId}
+              onChange={(label, invId) => setForm((f) => ({ ...f, carLabel: label, inventoryId: invId }))} label="Mașină" />
           </div>
           <Select label="Responsabil" value={form.responsibleId} onChange={(e) => setF("responsibleId", e.target.value)}>
             <option value="">— fără —</option>

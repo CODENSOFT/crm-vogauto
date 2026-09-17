@@ -8,6 +8,8 @@ import { IconEye } from "@/components/ui/Icons";
 import { PhotoManager } from "@/components/photos/PhotoManager";
 import { formatMoney, formatDateShort } from "@/lib/utils";
 import { STATUS_LABELS, PAYMENT_LABELS, type CarDTO, type PhotoDTO } from "@/types";
+import type { CarPnl } from "@/lib/pnl";
+import type { TimelineEvent } from "@/lib/timeline";
 
 function Spec({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -27,18 +29,24 @@ export function CarDetail({ id }: { id: string }) {
   const [zoom, setZoom] = useState(false);
   const [photoOpen, setPhotoOpen] = useState(false);
   const [phone, setPhone] = useState<string | null>(null);
+  const [pnl, setPnl] = useState<CarPnl | null>(null);
+  const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [rc, rp] = await Promise.all([
+    const [rc, rp, rpnl, rt] = await Promise.all([
       fetch(`/api/cars/${id}`),
       fetch(`/api/photos?carId=${id}`),
+      fetch(`/api/cars/${id}/pnl`),
+      fetch(`/api/cars/${id}/timeline`),
     ]);
     const dc = await rc.json();
     if (!rc.ok) { setNotFound(true); setLoading(false); return; }
     setCar(dc.car);
     const dp = await rp.json();
     if (rp.ok) setPhotos(dp.photos);
+    if (rpnl.ok) { const d = await rpnl.json(); setPnl(d.pnl); }
+    if (rt.ok) { const d = await rt.json(); setTimeline(d.events || []); }
     setSel(0);
     setLoading(false);
   }, [id]);
@@ -122,6 +130,25 @@ export function CarDetail({ id }: { id: string }) {
             </div>
           </div>
 
+          {/* Profit net real (P&L) */}
+          {pnl && (
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card">
+              <h3 className="mb-2 text-sm font-semibold text-slate-700">Profit net real</h3>
+              <div className="space-y-1.5 text-sm">
+                <div className="flex justify-between"><span className="text-slate-500">Preț vânzare</span><span className="font-medium text-slate-800">{formatMoney(pnl.priceSell)}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">− Preț cumpărare</span><span className="text-slate-700">{formatMoney(pnl.priceBuy)}</span></div>
+                {pnl.workOrders.map((w, i) => (
+                  <div key={i} className="flex justify-between"><span className="text-slate-500">− Lucrare ({w.type})</span><span className="text-slate-700">{formatMoney(w.cost)}</span></div>
+                ))}
+                {pnl.commission > 0 && <div className="flex justify-between"><span className="text-slate-500">− Comision vânzător</span><span className="text-slate-700">{formatMoney(pnl.commission)}</span></div>}
+                <div className="mt-2 flex justify-between border-t border-slate-200 pt-2 text-base font-bold">
+                  <span className="text-slate-700">Profit net</span>
+                  <span className={pnl.net >= 0 ? "text-emerald-700" : "text-red-600"}>{formatMoney(pnl.net)}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {car.notes && (
             <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card">
               <h3 className="mb-1 text-sm font-semibold text-slate-700">Note</h3>
@@ -130,6 +157,23 @@ export function CarDetail({ id }: { id: string }) {
           )}
         </div>
       </div>
+
+      {/* Istoric complet (timeline) */}
+      {timeline.length > 0 && (
+        <div className="mt-5 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card">
+          <h3 className="mb-4 text-sm font-semibold text-slate-700">Istoricul mașinii</h3>
+          <ol className="relative ml-2 border-l-2 border-slate-100">
+            {timeline.map((e, i) => (
+              <li key={i} className="mb-4 ml-4 last:mb-0">
+                <span className="absolute -left-[7px] mt-1 h-3 w-3 rounded-full bg-brand ring-4 ring-white" />
+                <div className="text-sm font-medium text-slate-800">{e.title}</div>
+                {e.detail && <div className="text-xs text-slate-500">{e.detail}</div>}
+                {e.date && <div className="text-[11px] text-slate-400">{formatDateShort(e.date)}</div>}
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
 
       {zoom && main && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4" onClick={() => setZoom(false)}>

@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 // GET /api/public/feed-999 — feed XML pentru importul automat 999.md (cont dealer).
 // Structură generică; se mapează la schema exactă cerută de 999.md când o avem.
 export async function GET() {
-  const listings = await getPublishedListings();
+  const listings = await getPublishedListings("999");
 
   const items = listings
     .map((l) => {

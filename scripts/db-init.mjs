@@ -89,6 +89,8 @@ async function main() {
   await sql`create index if not exists inventory_deleted_status_created_idx on inventory (is_deleted, status, created_at desc)`;
   // Coloane de publicare (adăugate ulterior — idempotent).
   await sql`alter table inventory add column if not exists published boolean not null default false`;
+  await sql`alter table inventory add column if not exists published_site boolean not null default false`;
+  await sql`alter table inventory add column if not exists published_999 boolean not null default false`;
   await sql`alter table inventory add column if not exists listing_title text`;
   await sql`alter table inventory add column if not exists listing_description text`;
 
@@ -122,12 +124,16 @@ async function main() {
       car_id uuid,
       inventory_id uuid,
       car_label text,
+      work_order_id uuid,
       due_date timestamptz,
       completed_at timestamptz,
       is_deleted boolean not null default false,
       created_at timestamptz not null default now()
     )
   `;
+  await sql`alter table tasks add column if not exists work_order_id uuid`;
+  await sql`alter table tasks add column if not exists lead_id uuid`;
+  await sql`alter table tasks add column if not exists reminded boolean not null default false`;
   await sql`create index if not exists tasks_due_idx on tasks (is_deleted, due_date)`;
   await sql`create index if not exists tasks_assigned_idx on tasks (assigned_to, status)`;
 
@@ -178,6 +184,44 @@ async function main() {
     )
   `;
   await sql`create index if not exists imports_idx on imports (is_deleted, stage, created_at desc)`;
+  await sql`alter table imports add column if not exists inventory_id uuid`;
+
+  await sql`
+    create table if not exists leads (
+      id uuid primary key default gen_random_uuid(),
+      client_name text not null,
+      client_phone text,
+      source text not null default 'call',
+      interest_brand text,
+      interest_model text,
+      budget double precision,
+      inventory_id uuid,
+      status text not null default 'new',
+      assigned_to uuid,
+      assigned_to_name text,
+      notes text,
+      last_contact_at timestamptz,
+      created_by uuid,
+      created_by_name text,
+      is_deleted boolean not null default false,
+      created_at timestamptz not null default now()
+    )
+  `;
+  await sql`create index if not exists leads_idx on leads (is_deleted, status, created_at desc)`;
+
+  await sql`
+    create table if not exists notifications (
+      id uuid primary key default gen_random_uuid(),
+      user_id uuid,
+      type text not null default 'info',
+      title text not null,
+      body text,
+      link text,
+      is_read boolean not null default false,
+      created_at timestamptz not null default now()
+    )
+  `;
+  await sql`create index if not exists notifications_idx on notifications (user_id, is_read, created_at desc)`;
 
   await sql`
     create table if not exists audit_logs (
@@ -204,7 +248,7 @@ async function main() {
   await sql`create index if not exists audit_user_idx on audit_logs (user_id)`;
   await sql`create index if not exists audit_action_idx on audit_logs (action)`;
 
-  console.log("✓ Tabele create/verificate: users, cars, inventory, tasks, car_photos, work_orders, imports, audit_logs");
+  console.log("✓ Tabele: users, cars, inventory, tasks, car_photos, work_orders, imports, leads, notifications, audit_logs");
   await sql.end({ timeout: 5 });
 }
 

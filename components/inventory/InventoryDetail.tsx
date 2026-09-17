@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/Table";
 import { PhotoManager } from "@/components/photos/PhotoManager";
 import { formatMoney, formatDateShort } from "@/lib/utils";
 import { STOCK_STATUS_LABELS, type InventoryDTO, type PhotoDTO } from "@/types";
+import type { TimelineEvent } from "@/lib/timeline";
 
 function Spec({ label, value, strong }: { label: string; value: React.ReactNode; strong?: boolean }) {
   return (
@@ -27,17 +28,21 @@ export function InventoryDetail({ id }: { id: string }) {
   const [zoom, setZoom] = useState(false);
   const [photoOpen, setPhotoOpen] = useState(false);
 
+  const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
+
   const load = useCallback(async () => {
     setLoading(true);
-    const [ri, rp] = await Promise.all([
+    const [ri, rp, rt] = await Promise.all([
       fetch(`/api/inventory/${id}`),
       fetch(`/api/photos?inventoryId=${id}`),
+      fetch(`/api/inventory/${id}/timeline`),
     ]);
     const di = await ri.json();
     if (!ri.ok) { setNotFound(true); setLoading(false); return; }
     setItem(di.item);
     const dp = await rp.json();
     if (rp.ok) setPhotos(dp.photos);
+    if (rt.ok) { const d = await rt.json(); setTimeline(d.events || []); }
     setSel(0);
     setLoading(false);
   }, [id]);
@@ -133,6 +138,23 @@ export function InventoryDetail({ id }: { id: string }) {
           )}
         </div>
       </div>
+
+      {/* Istoric complet (timeline) */}
+      {timeline.length > 0 && (
+        <div className="mt-5 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card">
+          <h3 className="mb-4 text-sm font-semibold text-slate-700">Istoricul mașinii</h3>
+          <ol className="relative ml-2 border-l-2 border-slate-100">
+            {timeline.map((e, i) => (
+              <li key={i} className="mb-4 ml-4 last:mb-0">
+                <span className="absolute -left-[7px] mt-1 h-3 w-3 rounded-full bg-brand ring-4 ring-white" />
+                <div className="text-sm font-medium text-slate-800">{e.title}</div>
+                {e.detail && <div className="text-xs text-slate-500">{e.detail}</div>}
+                {e.date && <div className="text-[11px] text-slate-400">{formatDateShort(e.date)}</div>}
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
 
       {/* Zoom fullscreen */}
       {zoom && main && (

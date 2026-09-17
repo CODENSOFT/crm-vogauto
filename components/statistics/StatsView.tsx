@@ -66,13 +66,11 @@ export function StatsView() {
           {data.stock && (
             <>
               <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-slate-500">Stoc mașini</h3>
-              <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
-                <Card label="Mașini în stoc" value={data.stock.available} />
-                <Card label="Vândute din stoc" value={data.stock.sold} />
-                <Card label="Total stoc" value={data.stock.total} />
+              <div className="mb-5 grid grid-cols-2 gap-4">
+                <Card label="Mașini în stoc (disponibile)" value={data.stock.available} />
                 <Card label="Valoare stoc" value={formatMoney(data.stock.value)} />
               </div>
-              <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-slate-500">Vânzări</h3>
+              <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-slate-500">Vânzări realizate</h3>
             </>
           )}
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

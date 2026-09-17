@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { formatMoney } from "@/lib/utils";
 import {
-  IconCar, IconMoney, IconCheck, IconBookmark, IconTrend, IconCube,
+  IconCar, IconMoney, IconCheck, IconTrend, IconCube, IconWarning,
 } from "@/components/ui/Icons";
+
+interface Alert { key: string; severity: "high" | "medium" | "low"; title: string; detail: string; count: number; link: string; }
 
 interface Stats {
   totalRevenue: number;
@@ -55,6 +58,7 @@ function SkeletonCard() {
 export function AdminDashboard({ name }: { name: string }) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
 
   useEffect(() => {
     fetch("/api/stats")
@@ -62,7 +66,10 @@ export function AdminDashboard({ name }: { name: string }) {
       .then((s) => setStats(s && s.counts ? { ...ZERO, ...s, stock: { ...ZERO.stock, ...(s.stock || {}) } } : ZERO))
       .catch(() => setStats(ZERO))
       .finally(() => setLoading(false));
+    fetch("/api/alerts").then((r) => (r.ok ? r.json() : { alerts: [] })).then((d) => setAlerts(d.alerts || [])).catch(() => {});
   }, []);
+
+  const alertTone = (s: string) => (s === "high" ? "border-red-200 bg-red-50 text-red-700" : s === "medium" ? "border-amber-200 bg-amber-50 text-amber-800" : "border-slate-200 bg-slate-50 text-slate-600");
 
   return (
     <div>
@@ -71,32 +78,44 @@ export function AdminDashboard({ name }: { name: string }) {
         <p className="mt-1 text-sm text-slate-500">Prezentare generală — stoc și vânzări.</p>
       </div>
 
+      {alerts.length > 0 && (
+        <div className="mb-6">
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-slate-500">
+            <IconWarning className="h-4 w-4 text-amber-500" /> De rezolvat
+          </h2>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {alerts.map((a) => (
+              <Link key={a.key} href={a.link} className={`flex items-start justify-between gap-3 rounded-xl border px-4 py-3 transition-all hover:-translate-y-0.5 hover:shadow-card ${alertTone(a.severity)}`}>
+                <div>
+                  <div className="text-sm font-semibold">{a.title}</div>
+                  <div className="mt-0.5 text-xs opacity-80">{a.detail}</div>
+                </div>
+                <span className="mt-0.5 shrink-0 text-lg font-bold">→</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       {loading || !stats ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
         </div>
       ) : (
         <>
-          {/* Stoc mașini */}
+          {/* Stoc mașini — mașinile de vânzare */}
           <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-500">Stoc mașini</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Mașini în stoc" value={stats.stock.available} Icon={IconCube} tone="bg-brand-tint text-brand" />
-            <StatCard label="Vândute din stoc" value={stats.stock.sold} Icon={IconMoney} tone="bg-indigo-50 text-indigo-600" />
-            <StatCard label="Total stoc" value={stats.stock.total} Icon={IconCar} tone="bg-slate-100 text-slate-600" />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <StatCard label="Mașini în stoc (disponibile)" value={stats.stock.available} Icon={IconCube} tone="bg-brand-tint text-brand" />
             <StatCard label="Valoare stoc" value={formatMoney(stats.stock.value)} Icon={IconTrend} tone="bg-emerald-50 text-emerald-600" />
           </div>
 
-          {/* Vânzări */}
-          <h2 className="mb-3 mt-8 text-sm font-bold uppercase tracking-wide text-slate-500">Vânzări</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Total vânzări" value={stats.counts.total} Icon={IconCar} tone="bg-brand-tint text-brand" />
-            <StatCard label="Vândute" value={stats.counts.sold} Icon={IconMoney} tone="bg-indigo-50 text-indigo-600" />
-            <StatCard label="Disponibile" value={stats.counts.available} Icon={IconCheck} tone="bg-emerald-50 text-emerald-600" />
-            <StatCard label="Rezervate" value={stats.counts.reserved} Icon={IconBookmark} tone="bg-amber-50 text-amber-600" />
-          </div>
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <StatCard label="Încasări totale" value={formatMoney(stats.totalRevenue)} Icon={IconTrend} tone="bg-emerald-50 text-emerald-600" />
-            <StatCard label="Profit total" value={formatMoney(stats.totalProfit)} Icon={IconCube} tone="bg-slate-100 text-slate-600" />
+          {/* Vânzări — realizate */}
+          <h2 className="mb-3 mt-8 text-sm font-bold uppercase tracking-wide text-slate-500">Vânzări realizate</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <StatCard label="Mașini vândute" value={stats.counts.sold} Icon={IconMoney} tone="bg-indigo-50 text-indigo-600" />
+            <StatCard label="Încasări totale" value={formatMoney(stats.totalRevenue)} Icon={IconCar} tone="bg-brand-tint text-brand" />
+            <StatCard label="Profit total" value={formatMoney(stats.totalProfit)} Icon={IconCheck} tone="bg-emerald-50 text-emerald-600" />
           </div>
         </>
       )}

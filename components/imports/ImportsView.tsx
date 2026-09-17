@@ -5,18 +5,22 @@ import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
 import { Modal, ConfirmDialog } from "@/components/ui/Modal";
-import { Badge } from "@/components/ui/Table";
-import { formatMoney, formatDateShort } from "@/lib/utils";
+import { InlineEdit, InlinePill } from "@/components/shared/Inline";
+import { formatMoney } from "@/lib/utils";
 import { IMPORT_STAGE_LABELS, type ImportDTO, type ImportStage, type UserDTO } from "@/types";
 
 const EMPTY = {
   brand: "", model: "", year: String(new Date().getFullYear()), vin: "", source: "", supplierName: "",
-  stage: "purchased", purchasePrice: "", customsCost: "", otherCosts: "",
+  stage: "in_transit", purchasePrice: "", customsCost: "", otherCosts: "",
   responsibleId: "", expectedDate: "", arrivedDate: "", notes: "",
 };
 
-const stageColor = (s: ImportStage) =>
-  s === "done" || s === "ready" ? "green" : s === "customs" ? "yellow" : "blue";
+const stagePill: Record<ImportStage, string> = {
+  in_transit: "bg-blue-100 text-blue-700",
+  customs: "bg-amber-100 text-amber-700",
+  ready: "bg-emerald-100 text-emerald-700",
+};
+const STAGE_OPTS = Object.entries(IMPORT_STAGE_LABELS) as [string, string][];
 const dateInput = (iso?: string | null) => (iso ? new Date(iso).toISOString().slice(0, 10) : "");
 
 export function ImportsView() {
@@ -81,6 +85,18 @@ export function ImportsView() {
     setFormOpen(false); load();
   }
 
+  // Editare rapidă direct în tabel (fără modal).
+  async function patch(im: ImportDTO, payload: Record<string, unknown>) {
+    const res = await fetch(`/api/imports/${im._id}`, {
+      method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok) { toast.error(data.error || "Eroare."); return; }
+    setItems((list) => list.map((x) => (x._id === im._id ? data.import : x)));
+    // Trecerea la „gata de vânzare" poate crea automat mașina în stoc.
+    if (payload.stage === "ready") toast.success("Adăugată automat în stoc (gata de vânzare)");
+  }
+
   async function confirmDelete() {
     if (!deleteTarget) return;
     setDeleting(true);
@@ -128,9 +144,15 @@ export function ImportsView() {
                   <td className="whitespace-nowrap px-3 py-2.5 font-medium text-slate-800">{im.brand} {im.model}</td>
                   <td className="px-3 py-2.5 text-slate-600">{im.year || "—"}</td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-slate-700">{im.source || "—"}</td>
-                  <td className="px-3 py-2.5"><Badge color={stageColor(im.stage)}>{IMPORT_STAGE_LABELS[im.stage]}</Badge></td>
-                  <td className="whitespace-nowrap px-3 py-2.5 text-slate-700">{formatMoney(im.purchasePrice)}</td>
-                  <td className="whitespace-nowrap px-3 py-2.5 text-slate-700">{formatMoney(im.customsCost)}</td>
+                  <td className="px-3 py-2.5">
+                    <InlinePill value={im.stage} options={STAGE_OPTS} className={stagePill[im.stage]} onChange={(v) => patch(im, { stage: v })} />
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2.5 text-slate-700">
+                    <InlineEdit type="number" width="w-24" inputValue={String(im.purchasePrice ?? "")} display={formatMoney(im.purchasePrice)} onSave={(v) => patch(im, { purchasePrice: v })} />
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2.5 text-slate-700">
+                    <InlineEdit type="number" width="w-24" inputValue={String(im.customsCost ?? "")} display={formatMoney(im.customsCost)} onSave={(v) => patch(im, { customsCost: v })} />
+                  </td>
                   <td className="whitespace-nowrap px-3 py-2.5 font-semibold text-slate-900">{formatMoney(im.totalCost)}</td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-slate-700">{im.responsibleName || "—"}</td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-right">
@@ -143,6 +165,7 @@ export function ImportsView() {
           </table>
         </div>
       )}
+      <p className="mt-2 text-xs text-slate-400">Click pe etapă, prețuri sau date pentru editare rapidă. „Gata de vânzare” adaugă automat mașina în stoc.</p>
 
       <Modal open={formOpen} onClose={() => setFormOpen(false)} title={editing ? "Editează importul" : "Import nou"}
         footer={<><Button variant="secondary" onClick={() => setFormOpen(false)} disabled={saving}>Anulează</Button><Button onClick={save} loading={saving}>Salvează</Button></>}>

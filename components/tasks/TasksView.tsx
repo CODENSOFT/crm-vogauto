@@ -6,7 +6,9 @@ import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
 import { Modal, ConfirmDialog } from "@/components/ui/Modal";
-import { Badge } from "@/components/ui/Table";
+import { TaskDetailModal } from "@/components/tasks/TaskDetailModal";
+import { CarStockPicker } from "@/components/shared/CarStockPicker";
+import { IconClock, IconUser, IconCar } from "@/components/ui/Icons";
 import { formatDate } from "@/lib/utils";
 import {
   TASK_TYPE_LABELS,
@@ -14,7 +16,6 @@ import {
   TASK_PRIORITY_LABELS,
   type TaskDTO,
   type TaskType,
-  type TaskStatus,
   type UserDTO,
 } from "@/types";
 
@@ -32,11 +33,8 @@ function toLocalInput(iso?: string | null) {
 
 const EMPTY = {
   title: "", description: "", type: "general" as TaskType, priority: "normal",
-  assignedTo: "", dueDate: "", carLabel: "",
+  assignedTo: "", dueDate: "", carLabel: "", inventoryId: "",
 };
-
-const statusColor = (s: TaskStatus) => (s === "done" ? "green" : s === "in_progress" ? "yellow" : "gray");
-const priorityColor = (p: string) => (p === "high" ? "red" : p === "low" ? "gray" : "blue");
 
 export function TasksView() {
   const { data: session } = useSession();
@@ -58,6 +56,7 @@ export function TasksView() {
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<TaskDTO | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [detailTask, setDetailTask] = useState<TaskDTO | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -95,6 +94,7 @@ export function TasksView() {
     setForm({
       title: t.title, description: t.description ?? "", type: t.type, priority: t.priority,
       assignedTo: t.assignedTo ?? "", dueDate: toLocalInput(t.dueDate), carLabel: t.carLabel ?? "",
+      inventoryId: t.inventoryId ?? "",
     });
     setFormOpen(true);
   }
@@ -113,16 +113,6 @@ export function TasksView() {
     if (!res.ok) { toast.error(data.error || "Eroare."); return; }
     toast.success(editing ? "Sarcină actualizată" : "Sarcină creată");
     setFormOpen(false); load();
-  }
-
-  async function changeStatus(t: TaskDTO, newStatus: TaskStatus) {
-    const res = await fetch(`/api/tasks/${t._id}`, {
-      method: "PUT", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: newStatus }),
-    });
-    const data = await res.json();
-    if (!res.ok) { toast.error(data.error || "Eroare."); return; }
-    setTasks((list) => list.map((x) => (x._id === t._id ? data.task : x)));
   }
 
   async function confirmDelete() {
@@ -192,38 +182,42 @@ export function TasksView() {
       ) : (
         <div className="flex flex-col gap-3">
           {tasks.map((t) => (
-            <div key={t._id} className={`rounded-xl border bg-white p-4 shadow-card transition-colors ${t.status === "done" ? "border-slate-200/60 opacity-70" : "border-slate-200/80"}`}>
-              <div className="flex flex-wrap items-start justify-between gap-3">
+            <div
+              key={t._id}
+              onClick={() => setDetailTask(t)}
+              className={`group relative cursor-pointer overflow-hidden rounded-xl border bg-white shadow-card transition-all hover:border-slate-300 hover:shadow-card-hover ${t.status === "done" ? "border-slate-200/60" : "border-slate-200"}`}
+            >
+              <span className={`absolute inset-y-0 left-0 w-1 ${t.status === "done" ? "bg-emerald-400" : t.status === "in_progress" ? "bg-amber-400" : t.priority === "high" ? "bg-red-500" : "bg-slate-300"}`} />
+              <div className="flex items-start justify-between gap-3 p-4 pl-5">
                 <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className={`font-semibold text-slate-900 ${t.status === "done" ? "line-through decoration-slate-300" : ""}`}>{t.title}</span>
-                    <Badge color="blue">{TASK_TYPE_LABELS[t.type]}</Badge>
-                    <Badge color={priorityColor(t.priority)}>{TASK_PRIORITY_LABELS[t.priority]}</Badge>
+                  <div className="flex items-center gap-2">
+                    <h3 className={`truncate text-[15px] font-semibold ${t.status === "done" ? "text-slate-400 line-through decoration-slate-300" : "text-slate-900"}`}>{t.title}</h3>
                   </div>
-                  {t.description && <p className="mt-1 text-sm text-slate-500">{t.description}</p>}
-                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
-                    {t.dueDate && <span>🕑 {formatDate(t.dueDate)}</span>}
-                    {isAdmin && t.assignedToName && <span>👤 {t.assignedToName}</span>}
-                    {t.carLabel && <span>🚗 {t.carLabel}</span>}
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                    <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">{TASK_TYPE_LABELS[t.type]}</span>
+                    {t.priority === "high" && <span className="rounded-md bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-600">Urgentă</span>}
+                    {t.priority === "low" && <span className="rounded-md bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-400">Scăzută</span>}
+                  </div>
+                  {t.description && <p className="mt-1.5 line-clamp-1 text-sm text-slate-500">{t.description}</p>}
+                  <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+                    {t.dueDate && <span className="inline-flex items-center gap-1.5"><IconClock className="h-3.5 w-3.5 text-slate-400" />{formatDate(t.dueDate)}</span>}
+                    {isAdmin && t.assignedToName && <span className="inline-flex items-center gap-1.5"><IconUser className="h-3.5 w-3.5 text-slate-400" />{t.assignedToName}</span>}
+                    {t.carLabel && <span className="inline-flex items-center gap-1.5"><IconCar className="h-3.5 w-3.5 text-slate-400" />{t.carLabel}</span>}
                   </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <Badge color={statusColor(t.status)}>{TASK_STATUS_LABELS[t.status]}</Badge>
-                  <Select
-                    aria-label="Schimbă status"
-                    value={t.status}
-                    onChange={(e) => changeStatus(t, e.target.value as TaskStatus)}
-                    className="!py-1.5 text-xs"
-                  >
-                    <option value="todo">De făcut</option>
-                    <option value="in_progress">În lucru</option>
-                    <option value="done">Finalizat</option>
-                  </Select>
+                <div className="flex shrink-0 flex-col items-end gap-2.5" onClick={(e) => e.stopPropagation()}>
+                  <span className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold ${t.status === "done" ? "bg-emerald-100 text-emerald-700" : t.status === "in_progress" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"}`}>
+                    {TASK_STATUS_LABELS[t.status]}
+                  </span>
                   {isAdmin && (
-                    <>
-                      <Button variant="ghost" size="sm" className="text-brand" onClick={() => openEdit(t)}>Editează</Button>
-                      <Button variant="ghost" size="sm" className="text-red-600" onClick={() => setDeleteTarget(t)}>Șterge</Button>
-                    </>
+                    <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                      <button onClick={() => openEdit(t)} title="Editează" className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-brand">
+                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></svg>
+                      </button>
+                      <button onClick={() => setDeleteTarget(t)} title="Șterge" className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600">
+                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" /></svg>
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -256,7 +250,8 @@ export function TasksView() {
             </Select>
           )}
           <div className="sm:col-span-2">
-            <Input label="Mașină (opțional)" value={form.carLabel} onChange={(e) => setF("carLabel", e.target.value)} placeholder="ex: BMW X5 2018" />
+            <CarStockPicker value={form.carLabel} inventoryId={form.inventoryId}
+              onChange={(label, invId) => setForm((f) => ({ ...f, carLabel: label, inventoryId: invId }))} />
           </div>
           <div className="sm:col-span-2">
             <Input label="Detalii" value={form.description} onChange={(e) => setF("description", e.target.value)} placeholder="Note suplimentare" />
@@ -267,6 +262,15 @@ export function TasksView() {
       <ConfirmDialog open={!!deleteTarget} title="Ștergere sarcină"
         message={`Sigur ștergeți sarcina „${deleteTarget?.title}"?`}
         confirmLabel="Șterge" loading={deleting} onConfirm={confirmDelete} onCancel={() => setDeleteTarget(null)} />
+
+      {detailTask && (
+        <TaskDetailModal
+          task={detailTask}
+          isAdmin={isAdmin}
+          onClose={() => setDetailTask(null)}
+          onUpdated={(u) => { setTasks((list) => list.map((x) => (x._id === u._id ? u : x))); setDetailTask(u); }}
+        />
+      )}
     </div>
   );
 }

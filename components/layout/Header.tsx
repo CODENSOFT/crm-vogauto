@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/Button";
 import { IconMenu, IconLogout } from "@/components/ui/Icons";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 
 export function Header({ onMenu }: { onMenu: () => void }) {
   const { data: session } = useSession();
@@ -27,6 +28,7 @@ export function Header({ onMenu }: { onMenu: () => void }) {
       </button>
       <div className="flex-1" />
       <div className="flex items-center gap-3 sm:gap-4">
+        <NotificationBell />
         <div className="hidden text-right sm:block">
           <div className="text-sm font-semibold text-slate-800">{name}</div>
           <div className="text-xs text-slate-500">{session?.user?.email}</div>

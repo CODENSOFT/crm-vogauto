@@ -16,13 +16,14 @@ export interface PublicListing {
   createdAt: string;
 }
 
-// Mașinile publicate ȘI disponibile (o vânzare/depublicare le scoate automat).
-// NU expune date sensibile (proprietar, telefon, preț cerut de client).
-export async function getPublishedListings(): Promise<PublicListing[]> {
+// Mașinile publicate pe un canal ("site" | "999") ȘI disponibile (o vânzare
+// sau depublicare le scoate automat). NU expune date sensibile.
+export async function getPublishedListings(channel: "site" | "999" = "site"): Promise<PublicListing[]> {
+  const flag = channel === "999" ? inventory.published999 : inventory.publishedSite;
   const rows = await db
     .select()
     .from(inventory)
-    .where(and(eq(inventory.isDeleted, false), eq(inventory.published, true), eq(inventory.status, "available")))
+    .where(and(eq(inventory.isDeleted, false), eq(flag, true), eq(inventory.status, "available")))
     .orderBy(asc(inventory.createdAt));
 
   if (rows.length === 0) return [];
