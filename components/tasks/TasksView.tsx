@@ -48,6 +48,8 @@ export function TasksView() {
   const [date, setDate] = useState(todayStr());
   const [allDays, setAllDays] = useState(false);
   const [status, setStatus] = useState("");
+  // „active" = tot ce nu e finalizat; „done" = arhiva sarcinilor finalizate.
+  const [view, setView] = useState<"active" | "done">("active");
   const [type, setType] = useState("");
   const [assignedTo, setAssignedTo] = useState("");
 
@@ -62,8 +64,14 @@ export function TasksView() {
   const load = useCallback(async () => {
     setLoading(true);
     const p = new URLSearchParams();
-    if (!allDays && date) p.set("date", date);
-    if (status) p.set("status", status);
+    if (view === "done") {
+      // Finalizatele se văd toate, indiferent de zi.
+      p.set("status", "done");
+    } else {
+      p.set("hideDone", "1");
+      if (!allDays && date) p.set("date", date);
+      if (status) p.set("status", status);
+    }
     if (type) p.set("type", type);
     if (isAdmin && assignedTo) p.set("assignedTo", assignedTo);
     const res = await fetch(`/api/tasks?${p}`);
@@ -71,7 +79,7 @@ export function TasksView() {
     if (res.ok) setTasks(data.tasks);
     else toast.error(data.error || "Eroare.");
     setLoading(false);
-  }, [allDays, date, status, type, assignedTo, isAdmin]);
+  }, [view, allDays, date, status, type, assignedTo, isAdmin]);
 
   useEffect(() => { const t = setTimeout(load, 200); return () => clearTimeout(t); }, [load]);
 
@@ -139,10 +147,29 @@ export function TasksView() {
               : "Sarcinile tale pe zi. Marchează progresul pe măsură ce le finalizezi."}
           </p>
         </div>
-        <Button onClick={openAdd}>Sarcină nouă</Button>
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-lg border border-slate-300 bg-white p-0.5 shadow-sm">
+            <button
+              type="button"
+              onClick={() => setView("active")}
+              className={`rounded-md px-3 py-1.5 text-sm font-semibold transition-colors ${view === "active" ? "bg-brand text-white shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
+            >
+              În lucru
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("done")}
+              className={`rounded-md px-3 py-1.5 text-sm font-semibold transition-colors ${view === "done" ? "bg-emerald-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900"}`}
+            >
+              Finalizate
+            </button>
+          </div>
+          <Button onClick={openAdd}>Sarcină nouă</Button>
+        </div>
       </div>
 
       <div className="mb-4 grid grid-cols-1 gap-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-card sm:grid-cols-2 lg:grid-cols-4">
+        {view === "active" && (
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">Ziua</label>
           <div className="flex gap-2">
@@ -156,12 +183,14 @@ export function TasksView() {
             </Button>
           </div>
         </div>
+        )}
+        {view === "active" && (
         <Select label="Status" value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="">Toate</option>
           <option value="todo">De făcut</option>
           <option value="in_progress">În lucru</option>
-          <option value="done">Finalizate</option>
         </Select>
+        )}
         <Select label="Tip" value={type} onChange={(e) => setType(e.target.value)}>
           <option value="">Toate</option>
           {Object.entries(TASK_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -178,7 +207,7 @@ export function TasksView() {
         <div className="py-12 text-center text-slate-400">Se încarcă...</div>
       ) : tasks.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 bg-white py-16 text-center text-slate-400">
-          Nicio sarcină {allDays ? "" : "pentru ziua selectată"}.
+          {view === "done" ? "Nicio sarcină finalizată încă." : `Nicio sarcină ${allDays ? "" : "pentru ziua selectată"}.`}
         </div>
       ) : (
         <div className="flex flex-col gap-3">
@@ -271,7 +300,13 @@ export function TasksView() {
           task={detailTask}
           isAdmin={isAdmin}
           onClose={() => setDetailTask(null)}
-          onUpdated={(u) => { setTasks((list) => list.map((x) => (x._id === u._id ? u : x))); setDetailTask(u); }}
+          onUpdated={(u) => {
+            // O sarcină finalizată pleacă din lista activă (și invers), ca să
+            // se vadă imediat mutarea, fără reîncărcarea paginii.
+            const belongs = view === "done" ? u.status === "done" : u.status !== "done";
+            setTasks((list) => (belongs ? list.map((x) => (x._id === u._id ? u : x)) : list.filter((x) => x._id !== u._id)));
+            setDetailTask(u);
+          }}
         />
       )}
     </div>

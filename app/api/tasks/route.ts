@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { and, eq, gte, lt, desc, asc, sql, type SQL } from "drizzle-orm";
+import { and, eq, ne, gte, lt, desc, asc, sql, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { tasks } from "@/lib/schema";
 import { requireSession, coordsOf } from "@/lib/guard";
@@ -37,6 +37,8 @@ export async function GET(request: Request) {
   else if (assignedTo && isUuid(assignedTo)) conds.push(sql`(${assignedTo} = ANY(${tasks.assignedToIds}) OR ${tasks.assignedTo} = ${assignedTo})`);
 
   if (status && STATUSES.includes(status)) conds.push(eq(tasks.status, status));
+  // Sarcinile finalizate au propria vizualizare, deci lipsesc din restul listelor.
+  if (searchParams.get("hideDone") === "1") conds.push(ne(tasks.status, "done"));
   if (type && TYPES.includes(type)) conds.push(eq(tasks.type, type));
   if (leadId && isUuid(leadId)) conds.push(eq(tasks.leadId, leadId));
 
@@ -50,11 +52,16 @@ export async function GET(request: Request) {
     if (dateTo) conds.push(lt(tasks.dueDate, new Date(dateTo + "T23:59:59")));
   }
 
+  // Finalizatele au sens cronologic invers (ultimele terminate primele).
   const rows = await db
     .select()
     .from(tasks)
     .where(and(...conds))
-    .orderBy(sql`${tasks.dueDate} asc nulls last`, asc(tasks.status), desc(tasks.createdAt));
+    .orderBy(
+      ...(status === "done"
+        ? [sql`${tasks.completedAt} desc nulls last`, desc(tasks.createdAt)]
+        : [sql`${tasks.dueDate} asc nulls last`, asc(tasks.status), desc(tasks.createdAt)]),
+    );
 
   return NextResponse.json({ tasks: rows.map(taskToDTO) });
 }
