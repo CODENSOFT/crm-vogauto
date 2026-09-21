@@ -209,7 +209,6 @@ export interface TaskDTO {
   carId?: string | null;
   inventoryId?: string | null;
   carLabel?: string | null;
-  workOrderId?: string | null;
   leadId?: string | null;
   dueDate?: string | null;
   completedAt?: string | null;
@@ -227,40 +226,6 @@ export interface PhotoDTO {
   createdAt: string;
 }
 
-// ---- Lucrări: service / spălătorie / detailing ----
-export type WorkType = "service" | "wash" | "detailing" | "other";
-export const WORK_TYPE_LABELS: Record<WorkType, string> = {
-  service: "Service",
-  wash: "Spălătorie",
-  detailing: "Detailing",
-  other: "Altă lucrare",
-};
-export type WorkStatus = "pending" | "in_progress" | "done";
-export const WORK_STATUS_LABELS: Record<WorkStatus, string> = {
-  pending: "În așteptare",
-  in_progress: "În lucru",
-  done: "Finalizat",
-};
-export interface WorkOrderDTO {
-  _id: string;
-  type: WorkType;
-  carId?: string | null;
-  inventoryId?: string | null;
-  carLabel?: string | null;
-  responsibleId?: string | null;
-  responsibleName?: string | null;
-  responsibleIds?: string[] | null;
-  responsibleNames?: string[] | null;
-  status: WorkStatus;
-  cost: number;
-  dateIn?: string | null;
-  dateOut?: string | null;
-  notes?: string | null;
-  createdByName?: string | null;
-  createdAt: string;
-}
-
-// ---- Import & devamare ----
 export type ImportStage = "in_transit" | "customs" | "ready";
 export const IMPORT_STAGE_LABELS: Record<ImportStage, string> = {
   in_transit: "În transport",

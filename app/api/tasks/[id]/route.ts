@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { tasks, workOrders } from "@/lib/schema";
+import { tasks } from "@/lib/schema";
 import { requireSession, requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
 import { isUuid } from "@/lib/utils";
@@ -68,27 +68,6 @@ export async function PUT(
 
   const [saved] = await db.update(tasks).set(updates).where(eq(tasks.id, params.id)).returning();
 
-  // Sincronizează lucrarea legată (dacă există): status + responsabil + termen.
-  if (saved.workOrderId) {
-    const woUpdates: Record<string, unknown> = {};
-    if (updates.status !== undefined) {
-      woUpdates.status = updates.status === "done" ? "done" : updates.status === "in_progress" ? "in_progress" : "pending";
-    }
-    if (isAdmin) {
-      if (updates.assignedToIds !== undefined) {
-        woUpdates.responsibleId = updates.assignedTo;
-        woUpdates.responsibleName = updates.assignedToName;
-        woUpdates.responsibleIds = updates.assignedToIds;
-        woUpdates.responsibleNames = updates.assignedToNames;
-      }
-      if (updates.dueDate !== undefined) woUpdates.dateIn = updates.dueDate;
-      if (updates.type !== undefined && ["service", "wash", "detailing"].includes(updates.type as string)) woUpdates.type = updates.type;
-    }
-    if (Object.keys(woUpdates).length) {
-      await db.update(workOrders).set(woUpdates).where(eq(workOrders.id, saved.workOrderId));
-    }
-  }
-
   await logAction({
     userId: user.id, userName: user.fullName, action: "EDIT_TASK",
     details: { taskId: params.id, title: saved.title, changes: Object.keys(updates) },
@@ -116,11 +95,6 @@ export async function DELETE(
   }
 
   await db.update(tasks).set({ isDeleted: true }).where(eq(tasks.id, params.id));
-
-  // Șterge și lucrarea generată automat, dacă există.
-  if (task.workOrderId) {
-    await db.update(workOrders).set({ isDeleted: true }).where(eq(workOrders.id, task.workOrderId));
-  }
 
   await logAction({
     userId: user.id, userName: user.fullName, action: "DELETE_TASK",

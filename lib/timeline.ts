@@ -1,7 +1,7 @@
 import { and, eq, or, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { cars, inventory, workOrders, imports } from "@/lib/schema";
-import { IMPORT_STAGE_LABELS, WORK_TYPE_LABELS, type ImportStage, type WorkType } from "@/types";
+import { cars, inventory, imports } from "@/lib/schema";
+import { IMPORT_STAGE_LABELS, type ImportStage } from "@/types";
 
 export interface TimelineEvent {
   date: string | null;
@@ -37,20 +37,6 @@ export async function computeTimeline(opts: { vin?: string | null; carId?: strin
     events.push({ date: new Date(inv.createdAt).toISOString(), kind: "stock", title: "Adăugată în stoc", detail: `${inv.brand} ${inv.model} ${inv.year}` });
     if (inv.publishedSite) events.push({ date: new Date(inv.createdAt).toISOString(), kind: "publish", title: "Publicată pe site" });
     if (inv.published999) events.push({ date: new Date(inv.createdAt).toISOString(), kind: "publish", title: "Publicată pe 999.md" });
-  }
-
-  // Lucrări (după inventar sau mașina vândută).
-  if (invIds.length || opts.carId) {
-    const parts = [];
-    if (invIds.length) parts.push(inArray(workOrders.inventoryId, invIds));
-    if (opts.carId) parts.push(eq(workOrders.carId, opts.carId));
-    const wos = await db.select().from(workOrders).where(and(eq(workOrders.isDeleted, false), parts.length === 1 ? parts[0] : or(...parts)!));
-    for (const w of wos) {
-      const label = WORK_TYPE_LABELS[w.type as WorkType] ?? w.type;
-      const resp = (w.responsibleNames && w.responsibleNames.length) ? w.responsibleNames.join(", ") : (w.responsibleName || undefined);
-      events.push({ date: w.dateIn ? new Date(w.dateIn).toISOString() : new Date(w.createdAt).toISOString(), kind: "work", title: `Intrare: ${label}`, detail: resp });
-      if (w.dateOut) events.push({ date: new Date(w.dateOut).toISOString(), kind: "work", title: `Finalizat: ${label}` });
-    }
   }
 
   // Vânzare.

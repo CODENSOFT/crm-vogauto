@@ -100,13 +100,6 @@ export function TaskDetailModal({
             <p className="whitespace-pre-wrap rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-700">{task.description}</p>
           )}
 
-          {task.workOrderId && (
-            <div className="flex items-center justify-between rounded-lg bg-brand-tint/50 px-3 py-2 text-sm">
-              <span className="text-slate-600">🔧 Apare și în <strong>Lucrări</strong> (status sincronizat)</span>
-              <Link href="/dashboard/work-orders" className="text-xs font-medium text-brand hover:underline">Deschide →</Link>
-            </div>
-          )}
-
           {/* Mașina + fotografii */}
           {(task.carLabel || urls.length > 0) && (
             <div className="rounded-xl border border-slate-200 p-3">

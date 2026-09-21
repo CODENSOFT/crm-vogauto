@@ -128,39 +128,12 @@ export const tasks = pgTable("tasks", {
   carId: uuid("car_id"),
   inventoryId: uuid("inventory_id"),
   carLabel: text("car_label"),
-  // Lucrarea generată automat pentru sarcinile service/spălat/detailing.
-  workOrderId: uuid("work_order_id"),
   // Lead-ul (clientul potențial) de care e legată sarcina.
   leadId: uuid("lead_id"),
   // Marcaj: s-a trimis reminderul „cu 30 min înainte".
   reminded: boolean("reminded").notNull().default(false),
   dueDate: timestamp("due_date", { withTimezone: true, mode: "date" }),
   completedAt: timestamp("completed_at", { withTimezone: true, mode: "date" }),
-  isDeleted: boolean("is_deleted").notNull().default(false),
-  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
-    .notNull()
-    .defaultNow(),
-});
-
-export const workOrders = pgTable("work_orders", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  // service | wash | detailing | other
-  type: text("type").notNull().default("service"),
-  carId: uuid("car_id"),
-  inventoryId: uuid("inventory_id"),
-  carLabel: text("car_label"),
-  responsibleId: uuid("responsible_id"), // primul responsabil (compatibilitate)
-  responsibleName: text("responsible_name"),
-  responsibleIds: uuid("responsible_ids").array(),
-  responsibleNames: text("responsible_names").array(),
-  // pending | in_progress | done
-  status: text("status").notNull().default("pending"),
-  cost: doublePrecision("cost").notNull().default(0),
-  dateIn: timestamp("date_in", { withTimezone: true, mode: "date" }),
-  dateOut: timestamp("date_out", { withTimezone: true, mode: "date" }),
-  notes: text("notes"),
-  createdBy: uuid("created_by"),
-  createdByName: text("created_by_name"),
   isDeleted: boolean("is_deleted").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
     .notNull()
@@ -280,7 +253,6 @@ export type InventoryRow = typeof inventory.$inferSelect;
 export type AuditLogRow = typeof auditLogs.$inferSelect;
 export type TaskRow = typeof tasks.$inferSelect;
 export type CarPhotoRow = typeof carPhotos.$inferSelect;
-export type WorkOrderRow = typeof workOrders.$inferSelect;
 export type ImportRow = typeof imports.$inferSelect;
 export type LeadRow = typeof leads.$inferSelect;
 export type NotificationRow = typeof notifications.$inferSelect;

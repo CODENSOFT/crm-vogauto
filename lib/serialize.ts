@@ -1,6 +1,6 @@
 import { maskPhone } from "@/lib/utils";
 import type {
-  CarRow, InventoryRow, UserRow, AuditLogRow, TaskRow, CarPhotoRow, WorkOrderRow, ImportRow,
+  CarRow, InventoryRow, UserRow, AuditLogRow, TaskRow, CarPhotoRow, ImportRow,
   LeadRow, NotificationRow,
 } from "@/lib/schema";
 
@@ -45,12 +45,6 @@ export function taskToDTO(row: TaskRow) {
 
 export function photoToDTO(row: CarPhotoRow) {
   const { id, ...rest } = row;
-  return { ...rest, _id: id };
-}
-
-export function workOrderToDTO(row: WorkOrderRow) {
-  const { id, isDeleted: _d, ...rest } = row;
-  void _d;
   return { ...rest, _id: id };
 }
 

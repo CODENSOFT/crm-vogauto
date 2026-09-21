@@ -1,6 +1,6 @@
 import { and, eq, lt, isNotNull, ne, sql, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { inventory, workOrders, carPhotos, leads } from "@/lib/schema";
+import { inventory, carPhotos, leads } from "@/lib/schema";
 
 export interface Alert {
   key: string;
@@ -32,20 +32,7 @@ export async function computeAlerts(): Promise<Alert[]> {
     });
   }
 
-  // 2. Lucrări restante (nefinalizate, cu data de intrare depășită).
-  const [{ n: overdue }] = await db
-    .select({ n: sql<number>`count(*)::int` })
-    .from(workOrders)
-    .where(and(eq(workOrders.isDeleted, false), ne(workOrders.status, "done"), isNotNull(workOrders.dateIn), lt(workOrders.dateIn, new Date(now))));
-  if (overdue > 0) {
-    alerts.push({
-      key: "wo_overdue", severity: "high",
-      title: `${overdue} ${overdue === 1 ? "lucrare restantă" : "lucrări restante"}`,
-      detail: "Service / spălătorie / detailing neterminate la termen.", count: overdue, link: "/dashboard/work-orders",
-    });
-  }
-
-  // 3. Mașini disponibile fără nicio poză (nu pot fi publicate).
+  // 2. Mașini disponibile fără nicio poză (nu pot fi publicate).
   const avail = await db
     .select({ id: inventory.id })
     .from(inventory)

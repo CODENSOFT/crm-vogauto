@@ -1,6 +1,5 @@
-import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { tasks, workOrders, type TaskRow } from "@/lib/schema";
+import { tasks, type TaskRow } from "@/lib/schema";
 import { notify } from "@/lib/notify";
 
 export const TASK_TYPES = [
@@ -8,9 +7,6 @@ export const TASK_TYPES = [
   "service", "wash", "detailing", "customs", "delivery",
 ];
 export const TASK_PRIORITIES = ["low", "normal", "high"];
-
-// Sarcinile de tip service/spălătorie/detailing generează automat o lucrare.
-const WORK_TYPES = ["service", "wash", "detailing"];
 
 export interface CreateTaskInput {
   title: string;
@@ -57,29 +53,6 @@ export async function createTaskCore(input: CreateTaskInput): Promise<TaskRow> {
     })
     .returning();
 
-  let taskOut = task;
-  if (WORK_TYPES.includes(task.type)) {
-    const [wo] = await db
-      .insert(workOrders)
-      .values({
-        type: task.type,
-        carId: task.carId,
-        inventoryId: task.inventoryId,
-        carLabel: task.carLabel,
-        responsibleId: task.assignedTo,
-        responsibleName: task.assignedToName,
-        responsibleIds: task.assignedToIds,
-        responsibleNames: task.assignedToNames,
-        status: "pending",
-        dateIn: task.dueDate,
-        notes: task.description || task.title,
-        createdBy: creator.id,
-        createdByName: creator.fullName,
-      })
-      .returning();
-    [taskOut] = await db.update(tasks).set({ workOrderId: wo.id }).where(eq(tasks.id, task.id)).returning();
-  }
-
   // Notifică fiecare responsabil căruia i s-a atribuit sarcina (de altcineva).
   for (const aid of ids) {
     if (aid === creator.id) continue;
@@ -92,5 +65,5 @@ export async function createTaskCore(input: CreateTaskInput): Promise<TaskRow> {
     });
   }
 
-  return taskOut;
+  return task;
 }

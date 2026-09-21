@@ -124,40 +124,17 @@ async function main() {
       car_id uuid,
       inventory_id uuid,
       car_label text,
-      work_order_id uuid,
       due_date timestamptz,
       completed_at timestamptz,
       is_deleted boolean not null default false,
       created_at timestamptz not null default now()
     )
   `;
-  await sql`alter table tasks add column if not exists work_order_id uuid`;
   await sql`alter table tasks add column if not exists lead_id uuid`;
   await sql`alter table tasks add column if not exists reminded boolean not null default false`;
   await sql`create index if not exists tasks_due_idx on tasks (is_deleted, due_date)`;
   await sql`create index if not exists tasks_assigned_idx on tasks (assigned_to, status)`;
 
-  await sql`
-    create table if not exists work_orders (
-      id uuid primary key default gen_random_uuid(),
-      type text not null default 'service',
-      car_id uuid,
-      inventory_id uuid,
-      car_label text,
-      responsible_id uuid,
-      responsible_name text,
-      status text not null default 'pending',
-      cost double precision not null default 0,
-      date_in timestamptz,
-      date_out timestamptz,
-      notes text,
-      created_by uuid,
-      created_by_name text,
-      is_deleted boolean not null default false,
-      created_at timestamptz not null default now()
-    )
-  `;
-  await sql`create index if not exists work_orders_idx on work_orders (is_deleted, type, status, created_at desc)`;
 
   await sql`
     create table if not exists imports (
@@ -251,15 +228,12 @@ async function main() {
   // Responsabili multipli (liste) — coloane adăugate ulterior.
   await sql`alter table tasks add column if not exists assigned_to_ids uuid[]`;
   await sql`alter table tasks add column if not exists assigned_to_names text[]`;
-  await sql`alter table work_orders add column if not exists responsible_ids uuid[]`;
-  await sql`alter table work_orders add column if not exists responsible_names text[]`;
   await sql`alter table imports add column if not exists responsible_ids uuid[]`;
   await sql`alter table imports add column if not exists responsible_names text[]`;
   await sql`alter table leads add column if not exists assigned_to_ids uuid[]`;
   await sql`alter table leads add column if not exists assigned_to_names text[]`;
   // Migrează responsabilul unic existent în listă (o singură dată).
   await sql`update tasks set assigned_to_ids = array[assigned_to], assigned_to_names = array[coalesce(assigned_to_name,'')] where assigned_to is not null and assigned_to_ids is null`;
-  await sql`update work_orders set responsible_ids = array[responsible_id], responsible_names = array[coalesce(responsible_name,'')] where responsible_id is not null and responsible_ids is null`;
   await sql`update imports set responsible_ids = array[responsible_id], responsible_names = array[coalesce(responsible_name,'')] where responsible_id is not null and responsible_ids is null`;
   await sql`update leads set assigned_to_ids = array[assigned_to], assigned_to_names = array[coalesce(assigned_to_name,'')] where assigned_to is not null and assigned_to_ids is null`;
 
@@ -279,7 +253,7 @@ async function main() {
   `;
   await sql`create index if not exists telegram_pending_created_idx on telegram_pending (created_at desc)`;
 
-  console.log("✓ Tabele + responsabili multipli: users, cars, inventory, tasks, car_photos, work_orders, imports, leads, notifications, audit_logs");
+  console.log("✓ Tabele + responsabili multipli: users, cars, inventory, tasks, car_photos, imports, leads, notifications, audit_logs");
   await sql.end({ timeout: 5 });
 }
 

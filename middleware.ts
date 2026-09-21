@@ -21,7 +21,6 @@ export default withAuth(
       "/dashboard/cars",
       "/dashboard/inventory",
       "/dashboard/imports",
-      "/dashboard/work-orders",
       "/dashboard/publishing",
       "/dashboard/statistics",
       "/dashboard/managers",
