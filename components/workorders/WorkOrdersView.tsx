@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
 import { Modal, ConfirmDialog } from "@/components/ui/Modal";
 import { CarStockPicker } from "@/components/shared/CarStockPicker";
+import { MultiUserPicker } from "@/components/shared/MultiUserPicker";
 import { InlineEdit, InlinePill } from "@/components/shared/Inline";
 import { formatMoney, formatDateShort } from "@/lib/utils";
 import {
@@ -14,7 +15,7 @@ import {
 } from "@/types";
 
 const EMPTY = {
-  type: "service" as WorkType, carLabel: "", inventoryId: "", responsibleId: "", status: "pending",
+  type: "service" as WorkType, carLabel: "", inventoryId: "", responsibleIds: [] as string[], status: "pending",
   cost: "", dateIn: "", dateOut: "", notes: "",
 };
 
@@ -65,7 +66,7 @@ export function WorkOrdersView() {
   function openEdit(w: WorkOrderDTO) {
     setEditing(w);
     setForm({
-      type: w.type, carLabel: w.carLabel ?? "", inventoryId: w.inventoryId ?? "", responsibleId: w.responsibleId ?? "",
+      type: w.type, carLabel: w.carLabel ?? "", inventoryId: w.inventoryId ?? "", responsibleIds: w.responsibleIds ?? (w.responsibleId ? [w.responsibleId] : []),
       status: w.status, cost: String(w.cost ?? ""), dateIn: dateInput(w.dateIn), dateOut: dateInput(w.dateOut),
       notes: w.notes ?? "",
     });
@@ -77,7 +78,7 @@ export function WorkOrdersView() {
     const url = editing ? `/api/work-orders/${editing._id}` : "/api/work-orders";
     const res = await fetch(url, {
       method: editing ? "PUT" : "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, responsibleId: form.responsibleId || null }),
+      body: JSON.stringify(form),
     });
     const data = await res.json();
     setSaving(false);
@@ -146,7 +147,7 @@ export function WorkOrdersView() {
                 <tr key={w._id} className="transition-colors hover:bg-brand-tint/50">
                   <td className="whitespace-nowrap px-3 py-2.5 font-medium text-slate-800">{WORK_TYPE_LABELS[w.type]}</td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-slate-700">{w.carLabel || "—"}</td>
-                  <td className="whitespace-nowrap px-3 py-2.5 text-slate-700">{w.responsibleName || "—"}</td>
+                  <td className="whitespace-nowrap px-3 py-2.5 text-slate-700">{w.responsibleNames?.length ? w.responsibleNames.join(", ") : (w.responsibleName || "—")}</td>
                   <td className="px-3 py-2.5">
                     <InlinePill value={w.status} options={STATUS_OPTS} className={statusPill[w.status]} onChange={(v) => patch(w, { status: v })} />
                   </td>
@@ -184,10 +185,8 @@ export function WorkOrdersView() {
             <CarStockPicker value={form.carLabel} inventoryId={form.inventoryId}
               onChange={(label, invId) => setForm((f) => ({ ...f, carLabel: label, inventoryId: invId }))} label="Mașină" />
           </div>
-          <Select label="Responsabil" value={form.responsibleId} onChange={(e) => setF("responsibleId", e.target.value)}>
-            <option value="">— fără —</option>
-            {workers.map((w) => <option key={w._id} value={w._id}>{w.fullName}</option>)}
-          </Select>
+          <MultiUserPicker label="Responsabili" workers={workers}
+            value={form.responsibleIds} onChange={(ids) => setForm((f) => ({ ...f, responsibleIds: ids }))} />
           <Input label="Cost (€)" type="number" value={form.cost} onChange={(e) => setF("cost", e.target.value)} />
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">Data intrare</label>

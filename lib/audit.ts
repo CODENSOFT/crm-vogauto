@@ -55,9 +55,17 @@ export async function logAction({
   coords?: { lat: number; lon: number } | null;
 }) {
   try {
+    // IP-ul real al dispozitivului: primul din x-forwarded-for (lanțul de proxy),
+    // apoi anteturile Vercel/proxy. Pe Vercel, primul din x-forwarded-for e clientul.
+    const firstOf = (h: string) => {
+      const v = getHeader(request, h);
+      return v ? v.split(",")[0].trim() : "";
+    };
     let ip =
-      getHeader(request, "x-forwarded-for").split(",")[0].trim() ||
+      firstOf("x-forwarded-for") ||
+      firstOf("x-vercel-forwarded-for") ||
       getHeader(request, "x-real-ip") ||
+      firstOf("cf-connecting-ip") ||
       "unknown";
 
     // IP local/privat (dezvoltare) → nu poate fi geolocalizat direct.

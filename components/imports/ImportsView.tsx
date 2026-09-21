@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
 import { Modal, ConfirmDialog } from "@/components/ui/Modal";
 import { InlineEdit, InlinePill } from "@/components/shared/Inline";
+import { MultiUserPicker } from "@/components/shared/MultiUserPicker";
 import { formatMoney } from "@/lib/utils";
 import { IMPORT_STAGE_LABELS, type ImportDTO, type ImportStage, type UserDTO } from "@/types";
 
 const EMPTY = {
   brand: "", model: "", year: String(new Date().getFullYear()), vin: "", source: "", supplierName: "",
   stage: "in_transit", purchasePrice: "", customsCost: "", otherCosts: "",
-  responsibleId: "", expectedDate: "", arrivedDate: "", notes: "",
+  responsibleIds: [] as string[], expectedDate: "", arrivedDate: "", notes: "",
 };
 
 const stagePill: Record<ImportStage, string> = {
@@ -64,7 +65,7 @@ export function ImportsView() {
       brand: im.brand, model: im.model, year: String(im.year ?? ""), vin: im.vin ?? "",
       source: im.source ?? "", supplierName: im.supplierName ?? "", stage: im.stage,
       purchasePrice: String(im.purchasePrice ?? ""), customsCost: String(im.customsCost ?? ""), otherCosts: String(im.otherCosts ?? ""),
-      responsibleId: im.responsibleId ?? "", expectedDate: dateInput(im.expectedDate), arrivedDate: dateInput(im.arrivedDate),
+      responsibleIds: im.responsibleIds ?? (im.responsibleId ? [im.responsibleId] : []), expectedDate: dateInput(im.expectedDate), arrivedDate: dateInput(im.arrivedDate),
       notes: im.notes ?? "",
     });
     setFormOpen(true);
@@ -76,7 +77,7 @@ export function ImportsView() {
     const url = editing ? `/api/imports/${editing._id}` : "/api/imports";
     const res = await fetch(url, {
       method: editing ? "PUT" : "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, responsibleId: form.responsibleId || null }),
+      body: JSON.stringify(form),
     });
     const data = await res.json();
     setSaving(false);
@@ -154,7 +155,7 @@ export function ImportsView() {
                     <InlineEdit type="number" width="w-24" inputValue={String(im.customsCost ?? "")} display={formatMoney(im.customsCost)} onSave={(v) => patch(im, { customsCost: v })} />
                   </td>
                   <td className="whitespace-nowrap px-3 py-2.5 font-semibold text-slate-900">{formatMoney(im.totalCost)}</td>
-                  <td className="whitespace-nowrap px-3 py-2.5 text-slate-700">{im.responsibleName || "—"}</td>
+                  <td className="whitespace-nowrap px-3 py-2.5 text-slate-700">{im.responsibleNames?.length ? im.responsibleNames.join(", ") : (im.responsibleName || "—")}</td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-right">
                     <Button variant="ghost" size="sm" className="text-brand" onClick={() => openEdit(im)}>Editează</Button>
                     <Button variant="ghost" size="sm" className="text-red-600" onClick={() => setDeleteTarget(im)}>Șterge</Button>
@@ -179,10 +180,8 @@ export function ImportsView() {
           <Select label="Etapă" value={form.stage} onChange={(e) => setF("stage", e.target.value)}>
             {Object.entries(IMPORT_STAGE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </Select>
-          <Select label="Responsabil" value={form.responsibleId} onChange={(e) => setF("responsibleId", e.target.value)}>
-            <option value="">— fără —</option>
-            {workers.map((w) => <option key={w._id} value={w._id}>{w.fullName}</option>)}
-          </Select>
+          <MultiUserPicker label="Responsabili" workers={workers}
+            value={form.responsibleIds} onChange={(ids) => setForm((f) => ({ ...f, responsibleIds: ids }))} />
           <Input label="Preț achiziție (€)" type="number" value={form.purchasePrice} onChange={(e) => setF("purchasePrice", e.target.value)} />
           <Input label="Cost devamare (€)" type="number" value={form.customsCost} onChange={(e) => setF("customsCost", e.target.value)} />
           <Input label="Alte costuri (€)" type="number" value={form.otherCosts} onChange={(e) => setF("otherCosts", e.target.value)} />

@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { and, eq, desc, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { leads, users } from "@/lib/schema";
+import { leads } from "@/lib/schema";
 import { requireSession, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
 import { isUuid } from "@/lib/utils";
 import { leadToDTO } from "@/lib/serialize";
 import { notify } from "@/lib/notify";
+import { resolveResponsibles } from "@/lib/resolveUsers";
 
 const SOURCES = ["call", "site", "999", "instagram", "walk_in", "referral", "other"];
 const STATUSES = ["new", "contacted", "viewing", "negotiating", "won", "lost"];
@@ -31,19 +32,13 @@ export async function POST(request: Request) {
   if (error) return error;
 
   const body = await request.json();
-  const { clientName, clientPhone, source, interestBrand, interestModel, budget, inventoryId, status, notes } = body;
-  let { assignedTo } = body;
+  const { clientName, clientPhone, source, interestBrand, interestModel, budget, inventoryId, status, notes, assignedTo, assignedToIds } = body;
 
   if (!clientName || !String(clientName).trim()) {
     return NextResponse.json({ error: "Numele clientului este obligatoriu." }, { status: 400 });
   }
 
-  let assignedToName: string | null = null;
-  if (assignedTo && isUuid(assignedTo)) {
-    const [u] = await db.select({ fullName: users.fullName }).from(users).where(eq(users.id, assignedTo)).limit(1);
-    assignedToName = u?.fullName ?? null;
-    if (!u) assignedTo = null;
-  } else assignedTo = null;
+  const r = await resolveResponsibles(assignedToIds ?? assignedTo);
 
   const [lead] = await db
     .insert(leads)
@@ -56,14 +51,18 @@ export async function POST(request: Request) {
       budget: budget !== undefined && budget !== "" ? Number(budget) : null,
       inventoryId: inventoryId && isUuid(inventoryId) ? inventoryId : null,
       status: STATUSES.includes(status) ? status : "new",
-      assignedTo, assignedToName,
+      assignedTo: r.ids[0] ?? null,
+      assignedToName: r.names[0] ?? null,
+      assignedToIds: r.ids,
+      assignedToNames: r.names,
       notes: notes || null,
       createdBy: user.id, createdByName: user.fullName,
     })
     .returning();
 
-  if (assignedTo && assignedTo !== user.id) {
-    await notify({ userId: assignedTo, type: "lead", title: "Lead nou atribuit", body: `${lead.clientName}${lead.clientPhone ? ` · ${lead.clientPhone}` : ""}`, link: "/dashboard/leads" });
+  for (const aid of r.ids) {
+    if (aid === user.id) continue;
+    await notify({ userId: aid, type: "lead", title: "Client potențial nou atribuit", body: `${lead.clientName}${lead.clientPhone ? ` · ${lead.clientPhone}` : ""}`, link: "/dashboard/leads" });
   }
 
   await logAction({

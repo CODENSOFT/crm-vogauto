@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Table";
 import { PhotoManager } from "@/components/photos/PhotoManager";
+import { InventoryFormModal } from "@/components/inventory/InventoryFormModal";
 import { formatMoney, formatDateShort } from "@/lib/utils";
 import { STOCK_STATUS_LABELS, type InventoryDTO, type PhotoDTO } from "@/types";
 import type { TimelineEvent } from "@/lib/timeline";
@@ -27,6 +28,7 @@ export function InventoryDetail({ id }: { id: string }) {
   const [sel, setSel] = useState(0);
   const [zoom, setZoom] = useState(false);
   const [photoOpen, setPhotoOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
 
@@ -73,6 +75,7 @@ export function InventoryDetail({ id }: { id: string }) {
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={() => setPhotoOpen(true)}>Gestionează poze</Button>
+          <Button onClick={() => setEditOpen(true)}>Editează</Button>
         </div>
       </div>
 
@@ -111,10 +114,10 @@ export function InventoryDetail({ id }: { id: string }) {
               <Spec label="Culoare" value={item.color || "—"} />
               <Spec label="VIN" value={<span className="font-mono text-xs">{item.vin || "—"}</span>} />
               <Spec label="Status" value={STOCK_STATUS_LABELS[item.status]} />
-              <Spec label="Preț cerut client" value={formatMoney(item.clientWantPrice)} />
+              <Spec label="Preț cerut client" value={item.clientWantPrice ? formatMoney(item.clientWantPrice) : "—"} />
               <Spec label="Adaus parcare" value={<span className={item.markup >= 0 ? "text-emerald-700" : "text-red-600"}>{formatMoney(item.markup)}</span>} />
               <Spec label="Proprietar" value={item.ownerName} />
-              <Spec label="Telefon" value={<span className="font-mono">{item.ownerPhone}</span>} />
+              <Spec label="Telefon" value={<span className="font-mono">{item.ownerPhone && item.ownerPhone !== "—" ? item.ownerPhone : "—"}</span>} />
               <Spec label="Adăugată de" value={item.addedByName || "—"} />
               <Spec label="Data adăugării" value={formatDateShort(item.createdAt)} />
             </div>
@@ -165,6 +168,8 @@ export function InventoryDetail({ id }: { id: string }) {
       )}
 
       <PhotoManager open={photoOpen} onClose={() => { setPhotoOpen(false); load(); }} inventoryId={id} label={`${item.brand} ${item.model}`} />
+
+      <InventoryFormModal open={editOpen} editing={item} onClose={() => setEditOpen(false)} onSaved={load} />
     </div>
   );
 }

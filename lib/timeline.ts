@@ -24,12 +24,14 @@ export async function computeTimeline(opts: { vin?: string | null; carId?: strin
     }
   }
 
-  // Stoc (după id sau VIN).
-  const invConds = [eq(inventory.isDeleted, false)];
-  const invWhere = opts.inventoryId
-    ? or(eq(inventory.id, opts.inventoryId), vin ? eq(inventory.vin, vin) : eq(inventory.id, opts.inventoryId))
-    : vin ? eq(inventory.vin, vin) : undefined;
-  const invs = invWhere ? await db.select().from(inventory).where(and(...invConds, invWhere)) : [];
+  // Stoc (după id, după vânzarea legată — saleId — sau după VIN).
+  const invOr = [];
+  if (opts.inventoryId) invOr.push(eq(inventory.id, opts.inventoryId));
+  if (opts.carId) invOr.push(eq(inventory.saleId, opts.carId));
+  if (vin) invOr.push(eq(inventory.vin, vin));
+  const invs = invOr.length
+    ? await db.select().from(inventory).where(and(eq(inventory.isDeleted, false), invOr.length === 1 ? invOr[0] : or(...invOr)!))
+    : [];
   const invIds = invs.map((i) => i.id);
   for (const inv of invs) {
     events.push({ date: new Date(inv.createdAt).toISOString(), kind: "stock", title: "Adăugată în stoc", detail: `${inv.brand} ${inv.model} ${inv.year}` });
@@ -45,7 +47,8 @@ export async function computeTimeline(opts: { vin?: string | null; carId?: strin
     const wos = await db.select().from(workOrders).where(and(eq(workOrders.isDeleted, false), parts.length === 1 ? parts[0] : or(...parts)!));
     for (const w of wos) {
       const label = WORK_TYPE_LABELS[w.type as WorkType] ?? w.type;
-      events.push({ date: w.dateIn ? new Date(w.dateIn).toISOString() : new Date(w.createdAt).toISOString(), kind: "work", title: `Intrare: ${label}`, detail: w.responsibleName || undefined });
+      const resp = (w.responsibleNames && w.responsibleNames.length) ? w.responsibleNames.join(", ") : (w.responsibleName || undefined);
+      events.push({ date: w.dateIn ? new Date(w.dateIn).toISOString() : new Date(w.createdAt).toISOString(), kind: "work", title: `Intrare: ${label}`, detail: resp });
       if (w.dateOut) events.push({ date: new Date(w.dateOut).toISOString(), kind: "work", title: `Finalizat: ${label}` });
     }
   }

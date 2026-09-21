@@ -3,12 +3,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
-import { Table, Badge } from "@/components/ui/Table";
+import { Badge } from "@/components/ui/Table";
 import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
 import { Modal, ConfirmDialog } from "@/components/ui/Modal";
 import { formatDate } from "@/lib/utils";
 import { type UserDTO } from "@/types";
+import { TelegramCard } from "@/components/users/TelegramCard";
 
 // Celulă numerică editabilă pentru un câmp al utilizatorului (taxă sau bonus).
 function NumCell({ user, field, onSaved }: { user: UserDTO; field: "fixedFee" | "bonus"; onSaved: () => void }) {
@@ -31,6 +32,19 @@ function NumCell({ user, field, onSaved }: { user: UserDTO; field: "fixedFee" | 
         onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
         className="w-20 rounded-md border border-slate-300 px-2 py-1 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" />
       <span className="text-xs text-slate-400">€</span>
+    </div>
+  );
+}
+
+function initials(name: string) {
+  return name.split(" ").map((w) => w.charAt(0)).slice(0, 2).join("").toUpperCase();
+}
+
+function StatCard({ label, value, tone }: { label: string; value: number | string; tone?: string }) {
+  return (
+    <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-card">
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className={`mt-1 text-xl font-bold ${tone ?? "text-slate-900"}`}>{value}</p>
     </div>
   );
 }
@@ -70,34 +84,70 @@ export function UsersView() {
     toast.success("Utilizator șters"); setDeleteTarget(null); load();
   }
 
-  const columns = [
-    { key: "fullName", header: "Nume", render: (u: UserDTO) => <span className="font-medium">{u.fullName}</span> },
-    { key: "username", header: "Utilizator", render: (u: UserDTO) => <span className="font-mono text-xs text-slate-600">{u.username}</span> },
-    { key: "role", header: "Rol", render: (u: UserDTO) => <Badge color={u.role === "admin" ? "blue" : "gray"}>{u.role === "admin" ? "Administrator" : "Angajat"}</Badge> },
-    { key: "isActive", header: "Status", render: (u: UserDTO) => <Badge color={u.isActive ? "green" : "red"}>{u.isActive ? "Activ" : "Inactiv"}</Badge> },
-    { key: "fixedFee", header: "Taxă (€)", render: (u: UserDTO) => <NumCell user={u} field="fixedFee" onSaved={load} /> },
-    { key: "bonus", header: "Bonus (€)", render: (u: UserDTO) => <NumCell user={u} field="bonus" onSaved={load} /> },
-    { key: "lastLogin", header: "Ultima conectare", render: (u: UserDTO) => formatDate(u.lastLogin ?? null) },
-    {
-      key: "actions", header: "",
-      render: (u: UserDTO) => (
-        <div className="flex justify-end gap-1.5">
-          <Button variant="ghost" className="px-2 py-1 text-xs text-brand" onClick={() => setEditTarget(u)}>Editează</Button>
-          {u._id !== meId && <Button variant="ghost" className="px-2 py-1 text-xs" onClick={() => toggleActive(u)}>{u.isActive ? "Dezactivează" : "Activează"}</Button>}
-          {u._id !== meId && <Button variant="ghost" className="px-2 py-1 text-xs text-red-600" onClick={() => setDeleteTarget(u)}>Șterge</Button>}
-        </div>
-      ),
-    },
-  ];
+  const admins = users.filter((u) => u.role === "admin").length;
+  const active = users.filter((u) => u.isActive).length;
 
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Utilizatori</h1>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Utilizatori</h1>
+          <p className="mt-1 text-sm text-slate-500">Conturi, roluri și comisioane (taxă + bonus per angajat).</p>
+        </div>
         <Button onClick={() => setAddOpen(true)}>Adaugă angajat</Button>
       </div>
 
-      {loading ? <div className="py-12 text-center text-slate-400">Se încarcă...</div> : <Table columns={columns} data={users} rowKey={(u) => u._id} emptyMessage="Niciun utilizator." />}
+      <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatCard label="Total conturi" value={users.length} />
+        <StatCard label="Administratori" value={admins} tone="text-brand" />
+        <StatCard label="Active" value={active} tone="text-emerald-700" />
+        <StatCard label="Inactive" value={users.length - active} tone={users.length - active ? "text-red-600" : undefined} />
+      </div>
+
+      <TelegramCard />
+
+      {loading ? (
+        <div className="py-12 text-center text-slate-400">Se încarcă...</div>
+      ) : (
+        <div className="overflow-x-auto rounded-xl border border-slate-200/80 bg-white shadow-card">
+          <table className="min-w-full divide-y divide-slate-200 text-sm">
+            <thead className="bg-slate-50/80">
+              <tr>
+                {["Utilizator", "Rol", "Status", "Taxă / vânzare", "Bonus", "Ultima conectare", ""].map((h) => (
+                  <th key={h} className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {users.length === 0 ? (
+                <tr><td colSpan={7} className="px-4 py-12 text-center text-slate-400">Niciun utilizator.</td></tr>
+              ) : users.map((u) => (
+                <tr key={u._id} className="transition-colors hover:bg-brand-tint/40">
+                  <td className="whitespace-nowrap px-3 py-2.5">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-gradient text-xs font-bold text-white ring-1 ring-white/20">{initials(u.fullName)}</span>
+                      <div className="leading-tight">
+                        <div className="font-medium text-slate-800">{u.fullName}{u._id === meId && <span className="ml-1.5 text-[10px] font-semibold text-brand">(tu)</span>}</div>
+                        <div className="font-mono text-[11px] text-slate-400">{u.username}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-3 py-2.5"><Badge color={u.role === "admin" ? "blue" : "gray"}>{u.role === "admin" ? "Administrator" : "Angajat"}</Badge></td>
+                  <td className="px-3 py-2.5"><Badge color={u.isActive ? "green" : "red"}>{u.isActive ? "Activ" : "Inactiv"}</Badge></td>
+                  <td className="px-3 py-2.5"><NumCell user={u} field="fixedFee" onSaved={load} /></td>
+                  <td className="px-3 py-2.5"><NumCell user={u} field="bonus" onSaved={load} /></td>
+                  <td className="whitespace-nowrap px-3 py-2.5 text-slate-500">{u.lastLogin ? formatDate(u.lastLogin) : <span className="text-slate-400">niciodată</span>}</td>
+                  <td className="whitespace-nowrap px-3 py-2.5 text-right">
+                    <Button variant="ghost" size="sm" className="text-brand" onClick={() => setEditTarget(u)}>Editează</Button>
+                    {u._id !== meId && <Button variant="ghost" size="sm" className="text-slate-600" onClick={() => toggleActive(u)}>{u.isActive ? "Dezactivează" : "Activează"}</Button>}
+                    {u._id !== meId && <Button variant="ghost" size="sm" className="text-red-600" onClick={() => setDeleteTarget(u)}>Șterge</Button>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {addOpen && <AddUserModal onClose={() => setAddOpen(false)} onSaved={() => { setAddOpen(false); load(); }} />}
       {editTarget && <EditUserModal user={editTarget} isSelf={editTarget._id === meId} onClose={() => setEditTarget(null)} onSaved={() => { setEditTarget(null); load(); }} />}

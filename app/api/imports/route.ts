@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { and, eq, desc, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { imports, users } from "@/lib/schema";
+import { imports } from "@/lib/schema";
 import { requireSession, requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
-import { isUuid } from "@/lib/utils";
 import { importToDTO } from "@/lib/serialize";
+import { resolveResponsibles } from "@/lib/resolveUsers";
 
 const STAGES = ["in_transit", "customs", "ready"];
 
@@ -30,16 +30,11 @@ export async function POST(request: Request) {
   if (error) return error;
 
   const body = await request.json();
-  const { brand, model, year, vin, source, supplierName, stage, purchasePrice, customsCost, otherCosts, responsibleId, expectedDate, arrivedDate, notes } = body;
+  const { brand, model, year, vin, source, supplierName, stage, purchasePrice, customsCost, otherCosts, responsibleId, responsibleIds, expectedDate, arrivedDate, notes } = body;
 
   if (!brand || !model) return NextResponse.json({ error: "Marca și modelul sunt obligatorii." }, { status: 400 });
 
-  let responsibleName: string | null = null;
-  let respId: string | null = null;
-  if (responsibleId && isUuid(responsibleId)) {
-    const [u] = await db.select({ id: users.id, fullName: users.fullName }).from(users).where(eq(users.id, responsibleId)).limit(1);
-    if (u) { respId = u.id; responsibleName = u.fullName; }
-  }
+  const r = await resolveResponsibles(responsibleIds ?? responsibleId);
 
   const [imp] = await db
     .insert(imports)
@@ -53,8 +48,10 @@ export async function POST(request: Request) {
       purchasePrice: Number(purchasePrice) || 0,
       customsCost: Number(customsCost) || 0,
       otherCosts: Number(otherCosts) || 0,
-      responsibleId: respId,
-      responsibleName,
+      responsibleId: r.ids[0] ?? null,
+      responsibleName: r.names[0] ?? null,
+      responsibleIds: r.ids,
+      responsibleNames: r.names,
       expectedDate: expectedDate ? new Date(expectedDate) : null,
       arrivedDate: arrivedDate ? new Date(arrivedDate) : null,
       notes: notes ? String(notes) : null,

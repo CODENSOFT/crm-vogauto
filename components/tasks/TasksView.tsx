@@ -8,6 +8,7 @@ import { Input, Select } from "@/components/ui/Input";
 import { Modal, ConfirmDialog } from "@/components/ui/Modal";
 import { TaskDetailModal } from "@/components/tasks/TaskDetailModal";
 import { CarStockPicker } from "@/components/shared/CarStockPicker";
+import { MultiUserPicker } from "@/components/shared/MultiUserPicker";
 import { IconClock, IconUser, IconCar } from "@/components/ui/Icons";
 import { formatDate } from "@/lib/utils";
 import {
@@ -33,7 +34,7 @@ function toLocalInput(iso?: string | null) {
 
 const EMPTY = {
   title: "", description: "", type: "general" as TaskType, priority: "normal",
-  assignedTo: "", dueDate: "", carLabel: "", inventoryId: "",
+  assignedToIds: [] as string[], dueDate: "", carLabel: "", inventoryId: "",
 };
 
 export function TasksView() {
@@ -93,7 +94,7 @@ export function TasksView() {
     setEditing(t);
     setForm({
       title: t.title, description: t.description ?? "", type: t.type, priority: t.priority,
-      assignedTo: t.assignedTo ?? "", dueDate: toLocalInput(t.dueDate), carLabel: t.carLabel ?? "",
+      assignedToIds: t.assignedToIds ?? (t.assignedTo ? [t.assignedTo] : []), dueDate: toLocalInput(t.dueDate), carLabel: t.carLabel ?? "",
       inventoryId: t.inventoryId ?? "",
     });
     setFormOpen(true);
@@ -106,7 +107,7 @@ export function TasksView() {
     const res = await fetch(url, {
       method: editing ? "PUT" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, assignedTo: form.assignedTo || undefined }),
+      body: JSON.stringify(form),
     });
     const data = await res.json();
     setSaving(false);
@@ -201,7 +202,7 @@ export function TasksView() {
                   {t.description && <p className="mt-1.5 line-clamp-1 text-sm text-slate-500">{t.description}</p>}
                   <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
                     {t.dueDate && <span className="inline-flex items-center gap-1.5"><IconClock className="h-3.5 w-3.5 text-slate-400" />{formatDate(t.dueDate)}</span>}
-                    {isAdmin && t.assignedToName && <span className="inline-flex items-center gap-1.5"><IconUser className="h-3.5 w-3.5 text-slate-400" />{t.assignedToName}</span>}
+                    {isAdmin && (t.assignedToNames?.length || t.assignedToName) && <span className="inline-flex items-center gap-1.5"><IconUser className="h-3.5 w-3.5 text-slate-400" />{t.assignedToNames?.length ? t.assignedToNames.join(", ") : t.assignedToName}</span>}
                     {t.carLabel && <span className="inline-flex items-center gap-1.5"><IconCar className="h-3.5 w-3.5 text-slate-400" />{t.carLabel}</span>}
                   </div>
                 </div>
@@ -244,10 +245,12 @@ export function TasksView() {
               className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" />
           </div>
           {isAdmin && (
-            <Select label="Atribuie lucrătorului" value={form.assignedTo} onChange={(e) => setF("assignedTo", e.target.value)}>
-              <option value="">— eu însumi —</option>
-              {workers.map((w) => <option key={w._id} value={w._id}>{w.fullName}</option>)}
-            </Select>
+            <div className="sm:col-span-2">
+              <MultiUserPicker label="Responsabili (unul sau mai mulți)" workers={workers}
+                value={form.assignedToIds}
+                onChange={(ids) => setForm((f) => ({ ...f, assignedToIds: ids }))}
+                placeholder="— eu însumi (dacă lași gol) —" />
+            </div>
           )}
           <div className="sm:col-span-2">
             <CarStockPicker value={form.carLabel} inventoryId={form.inventoryId}

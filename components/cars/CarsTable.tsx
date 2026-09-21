@@ -7,6 +7,7 @@ import { Pagination } from "@/components/ui/Table";
 import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
 import { Modal, ConfirmDialog } from "@/components/ui/Modal";
+import { CarStockPicker } from "@/components/shared/CarStockPicker";
 import { IconDownload, IconEye } from "@/components/ui/Icons";
 import { formatMoney, formatDateShort } from "@/lib/utils";
 import { type CarDTO, type InventoryDTO } from "@/types";
@@ -36,6 +37,7 @@ export function CarsTable() {
   const [newSale, setNewSale] = useState({ ...NEW_SALE });
   const [savingNew, setSavingNew] = useState(false);
   const [stock, setStock] = useState<InventoryDTO[]>([]);
+  const [stockQuery, setStockQuery] = useState(""); // textul din selectorul de stoc
 
   const [deleteTarget, setDeleteTarget] = useState<CarDTO | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -101,7 +103,7 @@ export function CarsTable() {
     const data = await res.json();
     setSavingNew(false);
     if (!res.ok) { toast.error(data.error || "Eroare."); return; }
-    toast.success("Vânzare adăugată"); setAddOpen(false); setNewSale({ ...NEW_SALE }); load();
+    toast.success("Vânzare adăugată"); setAddOpen(false); setNewSale({ ...NEW_SALE }); setStockQuery(""); load();
   }
 
   async function confirmDelete() {
@@ -141,7 +143,7 @@ export function CarsTable() {
           <Button variant="secondary" onClick={() => { window.location.href = "/api/export"; toast("Se generează Excel..."); }}>
             <IconDownload className="h-4 w-4" /> Export Excel
           </Button>
-          <Button onClick={() => setAddOpen(true)}>Adaugă vânzare</Button>
+          <Button onClick={() => { setNewSale({ ...NEW_SALE }); setStockQuery(""); setAddOpen(true); }}>Adaugă vânzare</Button>
         </div>
       </div>
 
@@ -247,17 +249,16 @@ export function CarsTable() {
 
       <Modal open={addOpen} onClose={() => setAddOpen(false)} title="Adaugă vânzare"
         footer={<><Button variant="secondary" onClick={() => setAddOpen(false)} disabled={savingNew}>Anulează</Button><Button onClick={saveNew} loading={savingNew}>Salvează</Button></>}>
-        {stock.length > 0 && (
-          <div className="mb-3 rounded-lg border border-brand/20 bg-brand-tint/60 p-3">
-            <Select label="Alege din stoc (opțional)" value={newSale.inventoryId} onChange={(e) => pickFromStock(e.target.value)}>
-              <option value="">— Introdu manual —</option>
-              {stock.map((s) => (
-                <option key={s._id} value={s._id}>{s.brand} {s.model} ({s.year}) · {formatMoney(s.sellPrice)}</option>
-              ))}
-            </Select>
-            <p className="mt-1.5 text-xs text-slate-500">Completează automat datele mașinii și prețurile din stoc.</p>
-          </div>
-        )}
+        <div className="mb-3 rounded-lg border border-brand/20 bg-brand-tint/60 p-3">
+          <CarStockPicker
+            value={stockQuery}
+            inventoryId={newSale.inventoryId}
+            onChange={(label, invId) => { setStockQuery(label); pickFromStock(invId); }}
+            label="Alege din stoc (opțional)"
+            placeholder="Scrie marca (ex: Audi) și alege mașina disponibilă..."
+          />
+          <p className="mt-1.5 text-xs text-slate-500">Completează automat datele mașinii și prețurile din stoc. Sau lasă gol și introdu manual.</p>
+        </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Input label="Nume client *" value={newSale.clientName} onChange={(e) => setNewSale((s) => ({ ...s, clientName: e.target.value }))} />
           <Input label="Telefon *" value={newSale.clientPhone} onChange={(e) => setNewSale((s) => ({ ...s, clientPhone: e.target.value }))} />

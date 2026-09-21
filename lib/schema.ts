@@ -32,6 +32,10 @@ export const users = pgTable("users", {
     .notNull()
     .defaultNow(),
   lastLogin: timestamp("last_login", { withTimezone: true, mode: "date" }),
+  // Legătura cu botul de Telegram (comenzi în chat privat).
+  telegramId: text("telegram_id"),
+  telegramLinkCode: text("telegram_link_code"),
+  telegramLinkExpires: timestamp("telegram_link_expires", { withTimezone: true, mode: "date" }),
 });
 
 export const cars = pgTable("cars", {
@@ -115,8 +119,10 @@ export const tasks = pgTable("tasks", {
   status: text("status").notNull().default("todo"),
   // low | normal | high
   priority: text("priority").notNull().default("normal"),
-  assignedTo: uuid("assigned_to"),
+  assignedTo: uuid("assigned_to"), // primul responsabil (compatibilitate)
   assignedToName: text("assigned_to_name"),
+  assignedToIds: uuid("assigned_to_ids").array(),
+  assignedToNames: text("assigned_to_names").array(),
   createdBy: uuid("created_by"),
   createdByName: text("created_by_name"),
   carId: uuid("car_id"),
@@ -143,8 +149,10 @@ export const workOrders = pgTable("work_orders", {
   carId: uuid("car_id"),
   inventoryId: uuid("inventory_id"),
   carLabel: text("car_label"),
-  responsibleId: uuid("responsible_id"),
+  responsibleId: uuid("responsible_id"), // primul responsabil (compatibilitate)
   responsibleName: text("responsible_name"),
+  responsibleIds: uuid("responsible_ids").array(),
+  responsibleNames: text("responsible_names").array(),
   // pending | in_progress | done
   status: text("status").notNull().default("pending"),
   cost: doublePrecision("cost").notNull().default(0),
@@ -172,8 +180,10 @@ export const imports = pgTable("imports", {
   purchasePrice: doublePrecision("purchase_price").notNull().default(0),
   customsCost: doublePrecision("customs_cost").notNull().default(0),
   otherCosts: doublePrecision("other_costs").notNull().default(0),
-  responsibleId: uuid("responsible_id"),
+  responsibleId: uuid("responsible_id"), // primul responsabil (compatibilitate)
   responsibleName: text("responsible_name"),
+  responsibleIds: uuid("responsible_ids").array(),
+  responsibleNames: text("responsible_names").array(),
   // Mașina din stoc creată automat când importul devine „gata de vânzare".
   inventoryId: uuid("inventory_id"),
   expectedDate: timestamp("expected_date", { withTimezone: true, mode: "date" }),
@@ -199,8 +209,10 @@ export const leads = pgTable("leads", {
   inventoryId: uuid("inventory_id"), // mașina de interes din stoc
   // new | contacted | viewing | negotiating | won | lost
   status: text("status").notNull().default("new"),
-  assignedTo: uuid("assigned_to"),
+  assignedTo: uuid("assigned_to"), // primul responsabil (compatibilitate)
   assignedToName: text("assigned_to_name"),
+  assignedToIds: uuid("assigned_to_ids").array(),
+  assignedToNames: text("assigned_to_names").array(),
   notes: text("notes"),
   lastContactAt: timestamp("last_contact_at", { withTimezone: true, mode: "date" }),
   createdBy: uuid("created_by"),
@@ -249,6 +261,19 @@ export const auditLogs = pgTable("audit_logs", {
     .defaultNow(),
 });
 
+// Comenzi Telegram în așteptarea unei alegeri (butoane inline). callback_data
+// din Telegram e limitat la 64 de octeți, așa că ținem aici datele complete și
+// trimitem doar un id scurt.
+export const telegramPending = pgTable("telegram_pending", {
+  id: text("id").primaryKey(),
+  chatId: text("chat_id").notNull(),
+  userId: uuid("user_id"),
+  payload: jsonb("payload").$type<Record<string, unknown>>().notNull().default({}),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+    .notNull()
+    .defaultNow(),
+});
+
 export type UserRow = typeof users.$inferSelect;
 export type CarRow = typeof cars.$inferSelect;
 export type InventoryRow = typeof inventory.$inferSelect;
@@ -259,3 +284,4 @@ export type WorkOrderRow = typeof workOrders.$inferSelect;
 export type ImportRow = typeof imports.$inferSelect;
 export type LeadRow = typeof leads.$inferSelect;
 export type NotificationRow = typeof notifications.$inferSelect;
+export type TelegramPendingRow = typeof telegramPending.$inferSelect;

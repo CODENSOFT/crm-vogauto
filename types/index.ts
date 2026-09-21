@@ -203,6 +203,8 @@ export interface TaskDTO {
   priority: TaskPriority;
   assignedTo?: string | null;
   assignedToName?: string | null;
+  assignedToIds?: string[] | null;
+  assignedToNames?: string[] | null;
   createdByName?: string | null;
   carId?: string | null;
   inventoryId?: string | null;
@@ -247,6 +249,8 @@ export interface WorkOrderDTO {
   carLabel?: string | null;
   responsibleId?: string | null;
   responsibleName?: string | null;
+  responsibleIds?: string[] | null;
+  responsibleNames?: string[] | null;
   status: WorkStatus;
   cost: number;
   dateIn?: string | null;
@@ -278,6 +282,8 @@ export interface ImportDTO {
   totalCost: number;
   responsibleId?: string | null;
   responsibleName?: string | null;
+  responsibleIds?: string[] | null;
+  responsibleNames?: string[] | null;
   expectedDate?: string | null;
   arrivedDate?: string | null;
   notes?: string | null;
@@ -317,6 +323,8 @@ export interface LeadDTO {
   status: LeadStatus;
   assignedTo?: string | null;
   assignedToName?: string | null;
+  assignedToIds?: string[] | null;
+  assignedToNames?: string[] | null;
   notes?: string | null;
   lastContactAt?: string | null;
   createdByName?: string | null;

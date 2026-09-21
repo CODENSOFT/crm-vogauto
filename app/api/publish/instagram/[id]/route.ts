@@ -27,31 +27,43 @@ export async function POST(request: Request, { params }: { params: { id: string 
     return NextResponse.json({ error: "Adăugați cel puțin o poză înainte de publicare." }, { status: 400 });
   }
 
-  const caption = buildCaption({
-    brand: item.brand, model: item.model, year: item.year,
-    price: Number(item.sellPrice), description: item.listingDescription || undefined, color: item.color,
-  });
-  const imageUrl = photos[0].url;
+  const body = await request.json().catch(() => ({} as Record<string, unknown>));
+  // Textul: cel editat de utilizator (dacă a fost trimis), altfel unul generat.
+  const caption = typeof body.caption === "string" && body.caption.trim()
+    ? body.caption
+    : buildCaption({
+        brand: item.brand, model: item.model, year: item.year,
+        price: Number(item.sellPrice), description: item.listingDescription || undefined, color: item.color,
+      });
+  const imageUrls = photos.map((p) => p.url);
+  const imageUrl = imageUrls[0];
 
-  // Fără token → întoarcem pachetul pregătit pentru postare manuală.
+  // Pas 1 (preview): fără confirmare → doar întoarce textul + pozele, ca să
+  // poată fi editat înainte de postare. Nu postează încă.
+  if (!body.confirm) {
+    return NextResponse.json({ preview: true, posted: false, caption, imageUrl, photos: imageUrls, configured: instagramConfigured() });
+  }
+
+  // Fără token → întoarcem pachetul pregătit pentru postare manuală (toate pozele).
   if (!instagramConfigured()) {
     return NextResponse.json({
       posted: false,
       prepared: true,
       caption,
       imageUrl,
-      photos: photos.map((p) => p.url),
-      note: "Instagram nu este configurat (IG_ACCESS_TOKEN / IG_USER_ID). Copiați textul și postați manual.",
+      photos: imageUrls,
+      note: "Instagram nu este configurat. Copiați textul și postați manual toate pozele.",
     });
   }
 
   try {
-    const mediaId = await postToInstagram(imageUrl, caption);
+    // Postează TOATE pozele (carusel dacă sunt mai multe).
+    const mediaId = await postToInstagram(imageUrls, caption);
     await logAction({
       userId: user.id, userName: user.fullName, action: "PUBLISH_INSTAGRAM",
-      details: { inventoryId: params.id, mediaId }, request, coords: coordsOf(user),
+      details: { inventoryId: params.id, mediaId, photos: imageUrls.length }, request, coords: coordsOf(user),
     });
-    return NextResponse.json({ posted: true, mediaId, caption });
+    return NextResponse.json({ posted: true, mediaId, caption, photoCount: imageUrls.length });
   } catch (e) {
     console.error("[instagram]", e);
     return NextResponse.json({ error: "Publicarea pe Instagram a eșuat.", caption, imageUrl }, { status: 502 });

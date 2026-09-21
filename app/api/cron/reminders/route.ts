@@ -35,13 +35,16 @@ export async function GET(request: Request) {
   for (const t of due) {
     const time = t.dueDate ? new Date(t.dueDate).toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" }) : "";
     const typeLabel = TASK_TYPE_LABELS[t.type as TaskType] ?? t.type;
-    await notify({
-      userId: t.assignedTo,
-      type: "reminder",
-      title: `⏰ În curând: ${t.title}`,
-      body: `${typeLabel} la ${time}${t.carLabel ? ` · ${t.carLabel}` : ""}`,
-      link: "/dashboard/tasks",
-    });
+    const recipients = (t.assignedToIds && t.assignedToIds.length) ? t.assignedToIds : (t.assignedTo ? [t.assignedTo] : []);
+    for (const uid of recipients) {
+      await notify({
+        userId: uid,
+        type: "reminder",
+        title: `⏰ În curând: ${t.title}`,
+        body: `${typeLabel} la ${time}${t.carLabel ? ` · ${t.carLabel}` : ""}`,
+        link: "/dashboard/tasks",
+      });
+    }
     await db.update(tasks).set({ reminded: true }).where(eq(tasks.id, t.id));
   }
 

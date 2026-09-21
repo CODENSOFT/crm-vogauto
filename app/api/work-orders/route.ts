@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { and, eq, or, desc, isNull, notInArray, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { workOrders, users, inventory } from "@/lib/schema";
+import { workOrders, inventory } from "@/lib/schema";
+import { resolveResponsibles } from "@/lib/resolveUsers";
 import { requireSession, requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
 import { isUuid } from "@/lib/utils";
@@ -45,14 +46,9 @@ export async function POST(request: Request) {
   if (error) return error;
 
   const body = await request.json();
-  const { type, carLabel, carId, inventoryId, responsibleId, status, cost, dateIn, dateOut, notes } = body;
+  const { type, carLabel, carId, inventoryId, responsibleId, responsibleIds, status, cost, dateIn, dateOut, notes } = body;
 
-  let responsibleName: string | null = null;
-  let respId: string | null = null;
-  if (responsibleId && isUuid(responsibleId)) {
-    const [u] = await db.select({ id: users.id, fullName: users.fullName }).from(users).where(eq(users.id, responsibleId)).limit(1);
-    if (u) { respId = u.id; responsibleName = u.fullName; }
-  }
+  const r = await resolveResponsibles(responsibleIds ?? responsibleId);
 
   const [wo] = await db
     .insert(workOrders)
@@ -61,8 +57,10 @@ export async function POST(request: Request) {
       carLabel: carLabel ? String(carLabel) : null,
       carId: carId && isUuid(carId) ? carId : null,
       inventoryId: inventoryId && isUuid(inventoryId) ? inventoryId : null,
-      responsibleId: respId,
-      responsibleName,
+      responsibleId: r.ids[0] ?? null,
+      responsibleName: r.names[0] ?? null,
+      responsibleIds: r.ids,
+      responsibleNames: r.names,
       status: STATUSES.includes(status) ? status : "pending",
       cost: Number(cost) || 0,
       dateIn: dateIn ? new Date(dateIn) : null,

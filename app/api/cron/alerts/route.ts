@@ -35,13 +35,15 @@ export async function GET(request: Request) {
       isNotNull(tasks.assignedTo), isNotNull(tasks.dueDate),
       gte(tasks.dueDate, start), lt(tasks.dueDate, end),
     ));
-  const byUser = new Map<string, { name: string; items: string[] }>();
+  const byUser = new Map<string, { items: string[] }>();
   for (const t of todays) {
-    if (!t.assignedTo) continue;
+    const recipients = (t.assignedToIds && t.assignedToIds.length) ? t.assignedToIds : (t.assignedTo ? [t.assignedTo] : []);
     const time = t.dueDate ? new Date(t.dueDate).toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" }) : "";
-    const g = byUser.get(t.assignedTo) ?? { name: t.assignedToName ?? "", items: [] };
-    g.items.push(`${time} — ${t.title}${t.carLabel ? ` (${t.carLabel})` : ""}`);
-    byUser.set(t.assignedTo, g);
+    for (const uid of recipients) {
+      const g = byUser.get(uid) ?? { items: [] };
+      g.items.push(`${time} — ${t.title}${t.carLabel ? ` (${t.carLabel})` : ""}`);
+      byUser.set(uid, g);
+    }
   }
   for (const [userId, g] of byUser) {
     await notify({

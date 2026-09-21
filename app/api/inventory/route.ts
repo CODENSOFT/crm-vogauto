@@ -75,7 +75,9 @@ export async function POST(request: Request) {
     ownerName, ownerPhone, clientWantPrice, sellPrice, status, notes,
   } = body;
 
-  if (!brand || !model || !year || !ownerName || !ownerPhone || sellPrice === undefined || sellPrice === "") {
+  // Dacă proprietarul e „Parcarea", telefonul și prețul clientului nu sunt cerute.
+  const isParcare = String(ownerName || "").trim().toLowerCase() === "parcarea";
+  if (!brand || !model || !year || !ownerName || sellPrice === undefined || sellPrice === "" || (!isParcare && !ownerPhone)) {
     return NextResponse.json({ error: "Completați marca, modelul, anul, proprietarul, telefonul și prețul de vânzare." }, { status: 400 });
   }
 
@@ -85,7 +87,7 @@ export async function POST(request: Request) {
       brand, model, year: Number(year),
       vin: vin ? String(vin).trim() : null,
       color: color || null,
-      ownerName, ownerPhone,
+      ownerName, ownerPhone: ownerPhone ? String(ownerPhone) : "—",
       clientWantPrice: Number(clientWantPrice) || 0,
       sellPrice: Number(sellPrice),
       status: status === "sold" ? "sold" : "available",

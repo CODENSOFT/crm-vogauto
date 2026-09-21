@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
 import { Modal, ConfirmDialog } from "@/components/ui/Modal";
 import { CarStockPicker } from "@/components/shared/CarStockPicker";
+import { MultiUserPicker } from "@/components/shared/MultiUserPicker";
 import { formatMoney, formatDateShort, formatDate } from "@/lib/utils";
 import {
   LEAD_SOURCE_LABELS, LEAD_STATUS_LABELS, TASK_TYPE_LABELS, TASK_STATUS_LABELS,
@@ -14,7 +15,7 @@ import {
 
 const EMPTY = {
   clientName: "", clientPhone: "", source: "call" as LeadSource, interestBrand: "", interestModel: "",
-  budget: "", inventoryId: "", carLabel: "", status: "new", assignedTo: "", notes: "",
+  budget: "", inventoryId: "", carLabel: "", status: "new", assignedToIds: [] as string[], notes: "",
 };
 
 const statusPill: Record<LeadStatus, string> = {
@@ -74,7 +75,7 @@ export function LeadsView() {
       clientName: l.clientName, clientPhone: l.clientPhone ?? "", source: l.source,
       interestBrand: l.interestBrand ?? "", interestModel: l.interestModel ?? "",
       budget: String(l.budget ?? ""), inventoryId: l.inventoryId ?? "", carLabel: "",
-      status: l.status, assignedTo: l.assignedTo ?? "", notes: l.notes ?? "",
+      status: l.status, assignedToIds: l.assignedToIds ?? (l.assignedTo ? [l.assignedTo] : []), notes: l.notes ?? "",
     });
     setFormOpen(true);
   }
@@ -85,12 +86,12 @@ export function LeadsView() {
     const url = editing ? `/api/leads/${editing._id}` : "/api/leads";
     const res = await fetch(url, {
       method: editing ? "PUT" : "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, assignedTo: form.assignedTo || null }),
+      body: JSON.stringify(form),
     });
     const data = await res.json();
     setSaving(false);
     if (!res.ok) { toast.error(data.error || "Eroare."); return; }
-    toast.success(editing ? "Lead actualizat" : "Lead adăugat");
+    toast.success(editing ? "Client potențial actualizat" : "Client potențial adăugat");
     setFormOpen(false); load();
   }
 
@@ -122,7 +123,7 @@ export function LeadsView() {
         title: ntTitle.trim(), type: ntType, dueDate: ntDate || undefined,
         leadId: tasksLead._id, inventoryId: tasksLead.inventoryId || undefined,
         carLabel: [tasksLead.interestBrand, tasksLead.interestModel].filter(Boolean).join(" ") || undefined,
-        assignedTo: tasksLead.assignedTo || undefined,
+        assignedToIds: tasksLead.assignedToIds ?? (tasksLead.assignedTo ? [tasksLead.assignedTo] : []),
         description: `Client: ${tasksLead.clientName}${tasksLead.clientPhone ? ` · ${tasksLead.clientPhone}` : ""}`,
       }),
     });
@@ -141,17 +142,17 @@ export function LeadsView() {
     const data = await res.json();
     setDeleting(false);
     if (!res.ok) { toast.error(data.error || "Eroare."); return; }
-    toast.success("Lead șters"); setDeleteTarget(null); load();
+    toast.success("Client potențial șters"); setDeleteTarget(null); load();
   }
 
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Lead-uri (clienți potențiali)</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Clienți potențiali</h1>
           <p className="mt-1 text-sm text-slate-500">Cine a sunat, ce mașină vrea și în ce etapă e — de la primul contact până la vânzare.</p>
         </div>
-        <Button onClick={openAdd}>Lead nou</Button>
+        <Button onClick={openAdd}>Client potențial nou</Button>
       </div>
 
       <div className="mb-4 grid grid-cols-1 gap-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-card sm:grid-cols-3">
@@ -175,7 +176,7 @@ export function LeadsView() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {items.length === 0 ? (
-                <tr><td colSpan={8} className="px-4 py-12 text-center text-slate-400">Niciun lead.</td></tr>
+                <tr><td colSpan={8} className="px-4 py-12 text-center text-slate-400">Niciun client potențial.</td></tr>
               ) : items.map((l) => (
                 <tr key={l._id} className="transition-colors hover:bg-brand-tint/50">
                   <td className="whitespace-nowrap px-3 py-2.5 font-medium text-slate-800">{l.clientName}</td>
@@ -189,7 +190,7 @@ export function LeadsView() {
                       {Object.entries(LEAD_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                     </select>
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2.5 text-slate-600">{l.assignedToName || "—"}</td>
+                  <td className="whitespace-nowrap px-3 py-2.5 text-slate-600">{l.assignedToNames?.length ? l.assignedToNames.join(", ") : (l.assignedToName || "—")}</td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-right">
                     <span className="mr-2 text-xs text-slate-400">{formatDateShort(l.createdAt)}</span>
                     <Button variant="ghost" size="sm" className="text-slate-600" onClick={() => openTasks(l)}>Sarcini</Button>
@@ -203,7 +204,7 @@ export function LeadsView() {
         </div>
       )}
 
-      <Modal open={formOpen} onClose={() => setFormOpen(false)} title={editing ? "Editează lead" : "Lead nou"}
+      <Modal open={formOpen} onClose={() => setFormOpen(false)} title={editing ? "Editează client potențial" : "Client potențial nou"}
         footer={<><Button variant="secondary" onClick={() => setFormOpen(false)} disabled={saving}>Anulează</Button><Button onClick={save} loading={saving}>Salvează</Button></>}>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Input label="Nume client *" value={form.clientName} onChange={(e) => setF("clientName", e.target.value)} />
@@ -217,10 +218,8 @@ export function LeadsView() {
           <Input label="Marcă dorită" value={form.interestBrand} onChange={(e) => setF("interestBrand", e.target.value)} />
           <Input label="Model dorit" value={form.interestModel} onChange={(e) => setF("interestModel", e.target.value)} />
           <Input label="Buget (€)" type="number" value={form.budget} onChange={(e) => setF("budget", e.target.value)} />
-          <Select label="Responsabil" value={form.assignedTo} onChange={(e) => setF("assignedTo", e.target.value)}>
-            <option value="">— fără —</option>
-            {workers.map((w) => <option key={w._id} value={w._id}>{w.fullName}</option>)}
-          </Select>
+          <MultiUserPicker label="Responsabili" workers={workers}
+            value={form.assignedToIds} onChange={(ids) => setForm((f) => ({ ...f, assignedToIds: ids }))} />
           <div className="sm:col-span-2">
             <CarStockPicker value={form.carLabel} inventoryId={form.inventoryId}
               onChange={(label, invId) => setForm((f) => ({ ...f, carLabel: label, inventoryId: invId }))} label="Mașina de interes (din stoc, opțional)" />
@@ -231,8 +230,8 @@ export function LeadsView() {
         </div>
       </Modal>
 
-      <ConfirmDialog open={!!deleteTarget} title="Ștergere lead"
-        message={`Sigur ștergeți lead-ul „${deleteTarget?.clientName}"?`}
+      <ConfirmDialog open={!!deleteTarget} title="Ștergere client potențial"
+        message={`Sigur ștergeți clientul potențial „${deleteTarget?.clientName}"?`}
         confirmLabel="Șterge" loading={deleting} onConfirm={confirmDelete} onCancel={() => setDeleteTarget(null)} />
 
       {/* Sarcinile clientului (vizionări, follow-up) */}

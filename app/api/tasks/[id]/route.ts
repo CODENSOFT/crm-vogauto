@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { tasks, users, workOrders } from "@/lib/schema";
+import { tasks, workOrders } from "@/lib/schema";
 import { requireSession, requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
 import { isUuid } from "@/lib/utils";
 import { taskToDTO } from "@/lib/serialize";
+import { resolveResponsibles } from "@/lib/resolveUsers";
 
 const TYPES = ["general", "test_drive", "bring_car", "to_asp", "service", "wash", "detailing", "customs", "delivery"];
 const STATUSES = ["todo", "in_progress", "done"];
@@ -33,9 +34,11 @@ export async function PUT(
   const body = await request.json();
   const updates: Record<string, unknown> = {};
 
-  // Schimbare de status (permisă și workerului pe sarcina proprie).
+  const isAssignee = (task.assignedToIds ?? []).includes(user.id) || task.assignedTo === user.id;
+
+  // Schimbare de status (permisă și responsabililor sarcinii).
   if (body.status !== undefined && STATUSES.includes(body.status)) {
-    if (!isAdmin && task.assignedTo !== user.id) {
+    if (!isAdmin && !isAssignee) {
       return NextResponse.json({ error: "Puteți modifica doar sarcinile proprii." }, { status: 403 });
     }
     updates.status = body.status;
@@ -50,9 +53,12 @@ export async function PUT(
     if (body.priority !== undefined && PRIORITIES.includes(body.priority)) updates.priority = body.priority;
     if (body.dueDate !== undefined) { updates.dueDate = body.dueDate ? new Date(body.dueDate) : null; updates.reminded = false; }
     if (body.carLabel !== undefined) updates.carLabel = body.carLabel ? String(body.carLabel) : null;
-    if (body.assignedTo !== undefined && isUuid(body.assignedTo)) {
-      const [u] = await db.select({ id: users.id, fullName: users.fullName }).from(users).where(eq(users.id, body.assignedTo)).limit(1);
-      if (u) { updates.assignedTo = u.id; updates.assignedToName = u.fullName; }
+    if (body.assignedToIds !== undefined || body.assignedTo !== undefined) {
+      const r = await resolveResponsibles(body.assignedToIds ?? body.assignedTo);
+      updates.assignedToIds = r.ids;
+      updates.assignedToNames = r.names;
+      updates.assignedTo = r.ids[0] ?? null;
+      updates.assignedToName = r.names[0] ?? null;
     }
   }
 
@@ -69,7 +75,12 @@ export async function PUT(
       woUpdates.status = updates.status === "done" ? "done" : updates.status === "in_progress" ? "in_progress" : "pending";
     }
     if (isAdmin) {
-      if (updates.assignedTo !== undefined) { woUpdates.responsibleId = updates.assignedTo; woUpdates.responsibleName = updates.assignedToName; }
+      if (updates.assignedToIds !== undefined) {
+        woUpdates.responsibleId = updates.assignedTo;
+        woUpdates.responsibleName = updates.assignedToName;
+        woUpdates.responsibleIds = updates.assignedToIds;
+        woUpdates.responsibleNames = updates.assignedToNames;
+      }
       if (updates.dueDate !== undefined) woUpdates.dateIn = updates.dueDate;
       if (updates.type !== undefined && ["service", "wash", "detailing"].includes(updates.type as string)) woUpdates.type = updates.type;
     }

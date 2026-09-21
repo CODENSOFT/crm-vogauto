@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { and, eq, gte, lt, desc, asc, sql, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { tasks, users, workOrders } from "@/lib/schema";
+import { tasks } from "@/lib/schema";
 import { requireSession, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
 import { isUuid } from "@/lib/utils";
 import { taskToDTO } from "@/lib/serialize";
 import { notify } from "@/lib/notify";
+import { resolveResponsibles } from "@/lib/resolveUsers";
+import { createTaskCore } from "@/lib/createTask";
 
 const TYPES = ["general", "test_drive", "bring_car", "to_asp", "service", "wash", "detailing", "customs", "delivery"];
 const STATUSES = ["todo", "in_progress", "done"];
@@ -29,9 +31,10 @@ export async function GET(request: Request) {
 
   const conds: SQL[] = [eq(tasks.isDeleted, false)];
 
-  // Workerii văd exclusiv sarcinile proprii; adminul poate filtra pe oricine.
-  if (!isAdmin) conds.push(eq(tasks.assignedTo, user.id));
-  else if (assignedTo && isUuid(assignedTo)) conds.push(eq(tasks.assignedTo, assignedTo));
+  // Workerii văd exclusiv sarcinile proprii (oriunde apar ca responsabil);
+  // adminul poate filtra pe oricine.
+  if (!isAdmin) conds.push(sql`(${user.id} = ANY(${tasks.assignedToIds}) OR ${tasks.assignedTo} = ${user.id})`);
+  else if (assignedTo && isUuid(assignedTo)) conds.push(sql`(${assignedTo} = ANY(${tasks.assignedToIds}) OR ${tasks.assignedTo} = ${assignedTo})`);
 
   if (status && STATUSES.includes(status)) conds.push(eq(tasks.status, status));
   if (type && TYPES.includes(type)) conds.push(eq(tasks.type, type));
@@ -63,8 +66,7 @@ export async function POST(request: Request) {
   if (error) return error;
 
   const body = await request.json();
-  const { title, description, type, priority, dueDate, carId, inventoryId, carLabel, leadId } = body;
-  let { assignedTo } = body;
+  const { title, description, type, priority, dueDate, carId, inventoryId, carLabel, leadId, assignedTo, assignedToIds } = body;
 
   if (!title || !String(title).trim()) {
     return NextResponse.json({ error: "Titlul sarcinii este obligatoriu." }, { status: 400 });
@@ -72,74 +74,34 @@ export async function POST(request: Request) {
 
   const isAdmin = user.role === "admin";
 
-  // Rezolvă persoana atribuită.
-  let assignedToId = user.id;
-  let assignedToName = user.fullName;
-  if (isAdmin && assignedTo && isUuid(assignedTo)) {
-    const [u] = await db.select({ id: users.id, fullName: users.fullName }).from(users).where(eq(users.id, assignedTo)).limit(1);
-    if (u) { assignedToId = u.id; assignedToName = u.fullName; }
-  } else if (!isAdmin) {
-    assignedTo = user.id; // workerii nu pot atribui altcuiva
+  // Responsabili: adminul poate atribui mai multora; workerul doar sieși.
+  let ids: string[], names: string[];
+  if (isAdmin) {
+    const r = await resolveResponsibles(assignedToIds ?? assignedTo);
+    if (r.ids.length) { ids = r.ids; names = r.names; }
+    else { ids = [user.id]; names = [user.fullName]; } // implicit: creatorul
+  } else {
+    ids = [user.id]; names = [user.fullName];
   }
 
-  const [task] = await db
-    .insert(tasks)
-    .values({
-      title: String(title).trim(),
-      description: description ? String(description) : null,
-      type: TYPES.includes(type) ? type : "general",
-      status: "todo",
-      priority: PRIORITIES.includes(priority) ? priority : "normal",
-      assignedTo: assignedToId,
-      assignedToName,
-      createdBy: user.id,
-      createdByName: user.fullName,
-      carId: carId && isUuid(carId) ? carId : null,
-      inventoryId: inventoryId && isUuid(inventoryId) ? inventoryId : null,
-      carLabel: carLabel ? String(carLabel) : null,
-      leadId: leadId && isUuid(leadId) ? leadId : null,
-      dueDate: dueDate ? new Date(dueDate) : null,
-    })
-    .returning();
-
-  // Sarcinile de tip service/spălătorie/detailing generează automat o lucrare
-  // în pagina Lucrări (legată de sarcină, cu status sincronizat).
-  const WORK_TYPES = ["service", "wash", "detailing"];
-  let taskOut = task;
-  if (WORK_TYPES.includes(task.type)) {
-    const [wo] = await db
-      .insert(workOrders)
-      .values({
-        type: task.type,
-        carId: task.carId,
-        inventoryId: task.inventoryId,
-        carLabel: task.carLabel,
-        responsibleId: task.assignedTo,
-        responsibleName: task.assignedToName,
-        status: "pending",
-        dateIn: task.dueDate,
-        notes: task.description || task.title,
-        createdBy: user.id,
-        createdByName: user.fullName,
-      })
-      .returning();
-    [taskOut] = await db.update(tasks).set({ workOrderId: wo.id }).where(eq(tasks.id, task.id)).returning();
-  }
-
-  // Notifică angajatul dacă i s-a atribuit o sarcină (de altcineva).
-  if (assignedToId !== user.id) {
-    await notify({
-      userId: assignedToId,
-      type: "task",
-      title: "Sarcină nouă",
-      body: `${task.title}${task.dueDate ? ` — termen ${new Date(task.dueDate).toLocaleString("ro-RO")}` : ""}`,
-      link: "/dashboard/tasks",
-    });
-  }
+  const taskOut = await createTaskCore({
+    title: String(title),
+    description,
+    type,
+    priority,
+    dueDate: dueDate ? new Date(dueDate) : null,
+    carId: carId && isUuid(carId) ? carId : null,
+    inventoryId: inventoryId && isUuid(inventoryId) ? inventoryId : null,
+    carLabel,
+    leadId: leadId && isUuid(leadId) ? leadId : null,
+    responsibleIds: ids,
+    responsibleNames: names,
+    creator: { id: user.id, fullName: user.fullName },
+  });
 
   await logAction({
     userId: user.id, userName: user.fullName, action: "CREATE_TASK",
-    details: { taskId: task.id, title: task.title, assignedTo: assignedToName },
+    details: { taskId: taskOut.id, title: taskOut.title, assignedTo: names.join(", ") },
     request, coords: coordsOf(user),
   });
 

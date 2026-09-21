@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { imports, users, inventory } from "@/lib/schema";
+import { imports, inventory } from "@/lib/schema";
 import { requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
 import { isUuid } from "@/lib/utils";
 import { importToDTO } from "@/lib/serialize";
 import { notifyAdmins } from "@/lib/notify";
+import { resolveResponsibles } from "@/lib/resolveUsers";
 
 const STAGES = ["in_transit", "customs", "ready"];
 
@@ -30,11 +31,12 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   if (body.otherCosts !== undefined) updates.otherCosts = Number(body.otherCosts) || 0;
   if (body.expectedDate !== undefined) updates.expectedDate = body.expectedDate ? new Date(body.expectedDate) : null;
   if (body.arrivedDate !== undefined) updates.arrivedDate = body.arrivedDate ? new Date(body.arrivedDate) : null;
-  if (body.responsibleId !== undefined) {
-    if (body.responsibleId && isUuid(body.responsibleId)) {
-      const [u] = await db.select({ id: users.id, fullName: users.fullName }).from(users).where(eq(users.id, body.responsibleId)).limit(1);
-      if (u) { updates.responsibleId = u.id; updates.responsibleName = u.fullName; }
-    } else { updates.responsibleId = null; updates.responsibleName = null; }
+  if (body.responsibleIds !== undefined || body.responsibleId !== undefined) {
+    const r = await resolveResponsibles(body.responsibleIds ?? body.responsibleId);
+    updates.responsibleId = r.ids[0] ?? null;
+    updates.responsibleName = r.names[0] ?? null;
+    updates.responsibleIds = r.ids;
+    updates.responsibleNames = r.names;
   }
 
   // Când importul devine „gata de vânzare", creează automat mașina în stoc

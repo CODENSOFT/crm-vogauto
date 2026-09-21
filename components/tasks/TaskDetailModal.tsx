@@ -93,7 +93,7 @@ export function TaskDetailModal({
 
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
             {task.dueDate && <div><span className="text-slate-400">Termen: </span><span className="text-slate-800">{formatDate(task.dueDate)}</span></div>}
-            {isAdmin && task.assignedToName && <div><span className="text-slate-400">Responsabil: </span><span className="text-slate-800">{task.assignedToName}</span></div>}
+            {isAdmin && (task.assignedToNames?.length || task.assignedToName) && <div><span className="text-slate-400">Responsabili: </span><span className="text-slate-800">{task.assignedToNames?.length ? task.assignedToNames.join(", ") : task.assignedToName}</span></div>}
           </div>
 
           {task.description && (

@@ -248,7 +248,38 @@ async function main() {
   await sql`create index if not exists audit_user_idx on audit_logs (user_id)`;
   await sql`create index if not exists audit_action_idx on audit_logs (action)`;
 
-  console.log("✓ Tabele: users, cars, inventory, tasks, car_photos, work_orders, imports, leads, notifications, audit_logs");
+  // Responsabili multipli (liste) — coloane adăugate ulterior.
+  await sql`alter table tasks add column if not exists assigned_to_ids uuid[]`;
+  await sql`alter table tasks add column if not exists assigned_to_names text[]`;
+  await sql`alter table work_orders add column if not exists responsible_ids uuid[]`;
+  await sql`alter table work_orders add column if not exists responsible_names text[]`;
+  await sql`alter table imports add column if not exists responsible_ids uuid[]`;
+  await sql`alter table imports add column if not exists responsible_names text[]`;
+  await sql`alter table leads add column if not exists assigned_to_ids uuid[]`;
+  await sql`alter table leads add column if not exists assigned_to_names text[]`;
+  // Migrează responsabilul unic existent în listă (o singură dată).
+  await sql`update tasks set assigned_to_ids = array[assigned_to], assigned_to_names = array[coalesce(assigned_to_name,'')] where assigned_to is not null and assigned_to_ids is null`;
+  await sql`update work_orders set responsible_ids = array[responsible_id], responsible_names = array[coalesce(responsible_name,'')] where responsible_id is not null and responsible_ids is null`;
+  await sql`update imports set responsible_ids = array[responsible_id], responsible_names = array[coalesce(responsible_name,'')] where responsible_id is not null and responsible_ids is null`;
+  await sql`update leads set assigned_to_ids = array[assigned_to], assigned_to_names = array[coalesce(assigned_to_name,'')] where assigned_to is not null and assigned_to_ids is null`;
+
+  // Telegram: legătura cont + starea comenzilor în așteptare.
+  await sql`alter table users add column if not exists telegram_id text`;
+  await sql`alter table users add column if not exists telegram_link_code text`;
+  await sql`alter table users add column if not exists telegram_link_expires timestamptz`;
+  await sql`create unique index if not exists users_telegram_id_idx on users (telegram_id) where telegram_id is not null`;
+  await sql`
+    create table if not exists telegram_pending (
+      id text primary key,
+      chat_id text not null,
+      user_id uuid,
+      payload jsonb not null default '{}'::jsonb,
+      created_at timestamptz not null default now()
+    )
+  `;
+  await sql`create index if not exists telegram_pending_created_idx on telegram_pending (created_at desc)`;
+
+  console.log("✓ Tabele + responsabili multipli: users, cars, inventory, tasks, car_photos, work_orders, imports, leads, notifications, audit_logs");
   await sql.end({ timeout: 5 });
 }
 

@@ -9,6 +9,9 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 
 interface MonthlyDatum {
@@ -149,6 +152,53 @@ export function RevenueLineChart({ data }: { data: MonthlyDatum[] }) {
           />
         </BarChart>
       </ResponsiveContainer>
+    </div>
+  );
+}
+
+const PAYMENT_LABELS_RO: Record<string, string> = { cash: "Cash", transfer: "Transfer", rate: "Rate" };
+const PIE_COLORS = ["#2563eb", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444"];
+
+export function PaymentDonut({ data }: { data: { method: string; count: number; revenue: number }[] }) {
+  const rows = data.map((d) => ({ name: PAYMENT_LABELS_RO[d.method] ?? d.method, value: d.count, revenue: d.revenue }));
+  const total = rows.reduce((s, r) => s + r.value, 0);
+  return (
+    <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-card">
+      <h3 className="mb-4 text-sm font-semibold text-slate-700">Metode de plată</h3>
+      {total === 0 ? (
+        <p className="py-16 text-center text-sm text-slate-400">Nicio vânzare.</p>
+      ) : (
+        <ResponsiveContainer width="100%" height={260}>
+          <PieChart>
+            <Pie data={rows} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={64} outerRadius={96} paddingAngle={2}>
+              {rows.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+            </Pie>
+            <Tooltip contentStyle={tooltipStyle} formatter={(v: number, n) => [`${v} (${total ? Math.round((v / total) * 100) : 0}%)`, n]} />
+            <Legend verticalAlign="bottom" height={28} iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+          </PieChart>
+        </ResponsiveContainer>
+      )}
+    </div>
+  );
+}
+
+export function BrandBar({ data }: { data: { brand: string; count: number; revenue: number }[] }) {
+  return (
+    <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-card">
+      <h3 className="mb-4 text-sm font-semibold text-slate-700">Vânzări pe marcă</h3>
+      {data.length === 0 ? (
+        <p className="py-16 text-center text-sm text-slate-400">Nicio vânzare.</p>
+      ) : (
+        <ResponsiveContainer width="100%" height={Math.max(200, data.length * 34)}>
+          <BarChart data={data} layout="vertical" margin={{ left: 12 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" horizontal={false} />
+            <XAxis type="number" allowDecimals={false} {...axisProps} />
+            <YAxis type="category" dataKey="brand" width={90} {...axisProps} />
+            <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "rgba(37,99,235,0.06)" }} formatter={(v: number, n) => [n === "count" ? `${v} mașini` : fullEuro(v), n === "count" ? "Vândute" : "Venit"]} />
+            <Bar dataKey="count" name="count" fill="#2563eb" radius={[0, 6, 6, 0]} maxBarSize={26} />
+          </BarChart>
+        </ResponsiveContainer>
+      )}
     </div>
   );
 }

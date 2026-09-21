@@ -51,6 +51,12 @@ export async function PUT(
     changes[field] = value;
   }
 
+  // Vândută → o scoatem automat de la publicare (site + 999.md).
+  if (updates.status === "sold") {
+    updates.publishedSite = false;
+    updates.published999 = false;
+  }
+
   const [saved] = Object.keys(updates).length
     ? await db.update(inventory).set(updates).where(eq(inventory.id, params.id)).returning()
     : [item];

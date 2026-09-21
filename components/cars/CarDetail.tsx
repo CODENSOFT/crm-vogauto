@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Table";
 import { IconEye } from "@/components/ui/Icons";
 import { PhotoManager } from "@/components/photos/PhotoManager";
+import { CarEditModal } from "@/components/cars/CarEditModal";
 import { formatMoney, formatDateShort } from "@/lib/utils";
 import { STATUS_LABELS, PAYMENT_LABELS, type CarDTO, type PhotoDTO } from "@/types";
 import type { CarPnl } from "@/lib/pnl";
@@ -28,6 +29,7 @@ export function CarDetail({ id }: { id: string }) {
   const [sel, setSel] = useState(0);
   const [zoom, setZoom] = useState(false);
   const [photoOpen, setPhotoOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [phone, setPhone] = useState<string | null>(null);
   const [pnl, setPnl] = useState<CarPnl | null>(null);
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
@@ -81,7 +83,10 @@ export function CarDetail({ id }: { id: string }) {
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">{car.brand} {car.model} <span className="text-slate-400">{car.year}</span></h1>
           <Badge color={car.status === "sold" ? "gray" : car.status === "available" ? "green" : "yellow"}>{STATUS_LABELS[car.status]}</Badge>
         </div>
-        <Button variant="secondary" onClick={() => setPhotoOpen(true)}>Gestionează poze</Button>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={() => setPhotoOpen(true)}>Gestionează poze</Button>
+          <Button onClick={() => setEditOpen(true)}>Editează</Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.4fr_1fr]">
@@ -183,6 +188,8 @@ export function CarDetail({ id }: { id: string }) {
       )}
 
       <PhotoManager open={photoOpen} onClose={() => { setPhotoOpen(false); load(); }} carId={id} label={`${car.brand} ${car.model}`} />
+
+      <CarEditModal open={editOpen} car={car} onClose={() => setEditOpen(false)} onSaved={load} />
     </div>
   );
 }

@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { leads, users } from "@/lib/schema";
+import { leads } from "@/lib/schema";
 import { requireSession, requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
 import { isUuid } from "@/lib/utils";
 import { leadToDTO } from "@/lib/serialize";
+import { resolveResponsibles } from "@/lib/resolveUsers";
 
 const SOURCES = ["call", "site", "999", "instagram", "walk_in", "referral", "other"];
 const STATUSES = ["new", "contacted", "viewing", "negotiating", "won", "lost"];
@@ -15,9 +16,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   const { user, error } = await requireSession();
   if (error) return error;
 
-  if (!isUuid(params.id)) return NextResponse.json({ error: "Lead-ul nu a fost găsit." }, { status: 404 });
+  if (!isUuid(params.id)) return NextResponse.json({ error: "Clientul potențial nu a fost găsit." }, { status: 404 });
   const [lead] = await db.select().from(leads).where(eq(leads.id, params.id)).limit(1);
-  if (!lead || lead.isDeleted) return NextResponse.json({ error: "Lead-ul nu a fost găsit." }, { status: 404 });
+  if (!lead || lead.isDeleted) return NextResponse.json({ error: "Clientul potențial nu a fost găsit." }, { status: 404 });
 
   const body = await request.json();
   const updates: Record<string, unknown> = {};
@@ -34,11 +35,12 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     if (["contacted", "viewing", "negotiating"].includes(body.status)) updates.lastContactAt = new Date();
   }
   if (body.lastContactAt !== undefined) updates.lastContactAt = body.lastContactAt ? new Date(body.lastContactAt) : null;
-  if (body.assignedTo !== undefined) {
-    if (body.assignedTo && isUuid(body.assignedTo)) {
-      const [u] = await db.select({ id: users.id, fullName: users.fullName }).from(users).where(eq(users.id, body.assignedTo)).limit(1);
-      if (u) { updates.assignedTo = u.id; updates.assignedToName = u.fullName; }
-    } else { updates.assignedTo = null; updates.assignedToName = null; }
+  if (body.assignedToIds !== undefined || body.assignedTo !== undefined) {
+    const r = await resolveResponsibles(body.assignedToIds ?? body.assignedTo);
+    updates.assignedTo = r.ids[0] ?? null;
+    updates.assignedToName = r.names[0] ?? null;
+    updates.assignedToIds = r.ids;
+    updates.assignedToNames = r.names;
   }
 
   if (Object.keys(updates).length === 0) return NextResponse.json({ error: "Nimic de modificat." }, { status: 400 });
@@ -55,9 +57,9 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   const { user, error } = await requireAdmin();
   if (error) return error;
-  if (!isUuid(params.id)) return NextResponse.json({ error: "Lead-ul nu a fost găsit." }, { status: 404 });
+  if (!isUuid(params.id)) return NextResponse.json({ error: "Clientul potențial nu a fost găsit." }, { status: 404 });
   const [lead] = await db.select().from(leads).where(eq(leads.id, params.id)).limit(1);
-  if (!lead || lead.isDeleted) return NextResponse.json({ error: "Lead-ul nu a fost găsit." }, { status: 404 });
+  if (!lead || lead.isDeleted) return NextResponse.json({ error: "Clientul potențial nu a fost găsit." }, { status: 404 });
   await db.update(leads).set({ isDeleted: true }).where(eq(leads.id, params.id));
   await logAction({
     userId: user.id, userName: user.fullName, action: "DELETE_LEAD",

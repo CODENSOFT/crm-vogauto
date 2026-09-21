@@ -158,13 +158,15 @@ export async function POST(request: Request) {
       coords: coordsOf(user),
     });
 
-    // Dacă vânzarea provine dintr-o mașină din stoc, o marcăm „vândută"
-    // (rămâne în listă pentru istoric).
+    // Dacă vânzarea provine dintr-o mașină din stoc: o marcăm „vândută",
+    // o scoatem de la publicare (site/999) și legăm pozele de vânzare.
     if (inventoryId && isUuid(inventoryId)) {
       await db
         .update(inventory)
-        .set({ status: "sold", soldBy: user.id, soldByName: user.fullName, saleId: car.id, saleDate: car.saleDate })
-        .where(and(eq(inventory.id, inventoryId), eq(inventory.isDeleted, false), eq(inventory.status, "available")));
+        .set({ status: "sold", publishedSite: false, published999: false, soldBy: user.id, soldByName: user.fullName, saleId: car.id, saleDate: car.saleDate })
+        .where(and(eq(inventory.id, inventoryId), eq(inventory.isDeleted, false)));
+      // Pozele urcate pe mașina din stoc devin și pozele vânzării.
+      await db.update(carPhotos).set({ carId: car.id }).where(eq(carPhotos.inventoryId, inventoryId));
     }
 
     if (!isAdmin) return NextResponse.json({ ok: true }, { status: 201 });
