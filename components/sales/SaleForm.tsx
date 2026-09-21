@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { Input, Select } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { formatMoney } from "@/lib/utils";
+import { CarStockPicker } from "@/components/shared/CarStockPicker";
 import { type InventoryDTO } from "@/types";
 
 const EMPTY = {
@@ -27,6 +27,7 @@ export function SaleForm() {
   const [form, setForm] = useState({ ...EMPTY });
   const [loading, setLoading] = useState(false);
   const [stock, setStock] = useState<InventoryDTO[]>([]);
+  const [stockQuery, setStockQuery] = useState(""); // textul din selectorul de stoc
 
   useEffect(() => {
     fetch("/api/inventory?status=available")
@@ -73,6 +74,7 @@ export function SaleForm() {
     }
     toast.success("Vânzare înregistrată cu succes");
     setForm({ ...EMPTY });
+    setStockQuery("");
   }
 
   return (
@@ -87,25 +89,18 @@ export function SaleForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="rounded-xl border border-slate-200/80 bg-white p-6 shadow-card">
-        {stock.length > 0 && (
-          <div className="mb-4 rounded-lg border border-brand/20 bg-brand-tint/60 p-3">
-            <Select
-              label="Alege din stoc (opțional)"
-              value={form.inventoryId}
-              onChange={(e) => pickFromStock(e.target.value)}
-            >
-              <option value="">— Introdu manual —</option>
-              {stock.map((s) => (
-                <option key={s._id} value={s._id}>
-                  {s.brand} {s.model} ({s.year}) · {formatMoney(s.sellPrice)}
-                </option>
-              ))}
-            </Select>
-            <p className="mt-1.5 text-xs text-slate-500">
-              Alegerea unei mașini completează automat datele și profitul (adaosul parcării).
-            </p>
-          </div>
-        )}
+        <div className="mb-4 rounded-lg border border-brand/20 bg-brand-tint/60 p-3">
+          <CarStockPicker
+            value={stockQuery}
+            inventoryId={form.inventoryId}
+            onChange={(label, invId) => { setStockQuery(label); pickFromStock(invId); }}
+            label="Alege din stoc (opțional)"
+            placeholder="Scrie marca/modelul sau alege din stocul disponibil..."
+          />
+          <p className="mt-1.5 text-xs text-slate-500">
+            Alegerea unei mașini completează automat datele și profitul (adaosul parcării).
+          </p>
+        </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Input label="Nume client *" value={form.clientName} onChange={(e) => set("clientName", e.target.value)} required />
           <Input label="Telefon client *" value={form.clientPhone} onChange={(e) => set("clientPhone", e.target.value)} required />
