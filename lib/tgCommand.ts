@@ -105,7 +105,8 @@ function todayParts(): { y: number; mo: number; d: number; dow: number } {
 }
 
 const WEEKDAYS: Record<string, number> = {
-  duminica: 0, luni: 1, marti: 2, miercuri: 3, joi: 4, vineri: 5, sambata: 6,
+  duminica: 0, luni: 1, marti: 2, miercuri: 3, joi: 4, vineri: 5,
+  sambata: 6, simbata: 6,
 };
 
 function detectDue(tokens: string[], text: string): { date: Date | null; used: Set<string> } {
@@ -114,14 +115,21 @@ function detectDue(tokens: string[], text: string): { date: Date | null; used: S
   let dayOffset: number | null = null;
   let explicit: { y: number; mo: number; d: number } | null = null;
 
-  if (tokens.includes("azi") || tokens.includes("astazi")) { dayOffset = 0; used.add("azi"); used.add("astazi"); }
-  else if (tokens.includes("maine")) { dayOffset = 1; used.add("maine"); }
-  else if (tokens.includes("poimaine")) { dayOffset = 2; used.add("poimaine"); }
+  // Cuvântul poate fi lipit de altul („ALBvineri"), deci îl căutăm în tot
+  // textul — dar refuzăm potrivirile urmate de altă literă, ca „martie" să nu
+  // fie citit drept „marți" și „magazin" drept „azi".
+  const has = (w: string) => new RegExp(`${w}(?![a-z])`).test(text);
+  let weekday = false;
+
+  if (has("poimaine")) { dayOffset = 2; used.add("poimaine"); }
+  else if (has("maine")) { dayOffset = 1; used.add("maine"); }
+  else if (has("astazi") || has("azi")) { dayOffset = 0; used.add("azi"); used.add("astazi"); }
   else {
     for (const [name, dow] of Object.entries(WEEKDAYS)) {
-      if (tokens.includes(name)) {
-        // Ziua din săptămână: azi dacă se potrivește, altfel următoarea apariție.
+      if (has(name)) {
+        // Cea mai apropiată apariție din calendar a acelei zile.
         dayOffset = (dow - t.dow + 7) % 7;
+        weekday = true;
         used.add(name);
         break;
       }
@@ -152,7 +160,17 @@ function detectDue(tokens: string[], text: string): { date: Date | null; used: S
   if (explicit) { y = explicit.y; mo = explicit.mo; d = explicit.d; }
   else if (dayOffset !== null) d = t.d + dayOffset;
 
-  return { date: zonedDate(y, mo, d, hh ?? 10, mi), used };
+  let date = zonedDate(y, mo, d, hh ?? 10, mi);
+
+  // Dacă momentul a trecut deja, trecem la următoarea apariție firească:
+  // „vineri" spus vinerea seara → vinerea viitoare; „la 9" seara → mâine la 9.
+  // „azi" rămâne azi, fiindcă e o alegere explicită.
+  if (date.getTime() < Date.now() && !explicit) {
+    if (weekday) date = zonedDate(y, mo, d + 7, hh ?? 10, mi);
+    else if (dayOffset === null) date = zonedDate(y, mo, d + 1, hh ?? 10, mi);
+  }
+
+  return { date, used };
 }
 
 // ——— Mașina din stoc ——————————————————————————————————————————————
