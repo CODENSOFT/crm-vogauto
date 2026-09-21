@@ -1,14 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,7 +23,7 @@ export default function LoginPage() {
       redirect: false,
     });
 
-    if (res?.error) {
+    if (!res?.ok || res.error) {
       setError("Utilizator sau parolă incorecte.");
       toast.error("Autentificare eșuată");
       setLoading(false);
@@ -33,8 +31,15 @@ export default function LoginPage() {
     }
 
     toast.success("Autentificare reușită");
-    router.push("/dashboard");
-    router.refresh();
+
+    // Navigare completă (nu router.push): altfel middleware-ul poate rula
+    // înainte ca browserul să trimită cookie-ul de sesiune abia primit, iar
+    // utilizatorul e aruncat înapoi la /login până dă refresh manual.
+    const params = new URLSearchParams(window.location.search);
+    const target = params.get("callbackUrl") ?? "/dashboard";
+    // Doar adrese din aplicație (fără redirecturi către alte site-uri).
+    const safe = target.startsWith("/") && !target.startsWith("//") ? target : "/dashboard";
+    window.location.assign(safe);
   }
 
   return (
