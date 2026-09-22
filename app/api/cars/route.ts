@@ -102,7 +102,7 @@ export async function POST(request: Request) {
 
   const body = await request.json();
   const {
-    clientName, clientPhone, brand, model, year, vin, color,
+    clientName, clientPhone, brand, model, year, vin, color, engine,
     priceBuy, priceSell, profit, paymentMethod, saleDate, status, notes, soldBy, inventoryId,
   } = body;
 
@@ -142,7 +142,7 @@ export async function POST(request: Request) {
       .insert(cars)
       .values({
         clientName, clientPhone, brand, model, year: Number(year),
-        vin: String(vin).trim(), color: color || null,
+        vin: String(vin).trim(), color: color || null, engine: engine || null,
         priceBuy: buy, priceSell: sell,
         paymentMethod: paymentMethod || "cash",
         status: isAdmin ? status || "sold" : "sold",

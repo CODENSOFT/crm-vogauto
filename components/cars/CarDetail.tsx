@@ -118,6 +118,7 @@ export function CarDetail({ id }: { id: string }) {
             <div className="grid grid-cols-2 gap-x-5">
               <Spec label="An" value={car.year} />
               <Spec label="Culoare" value={car.color || "—"} />
+              <Spec label="Motor" value={car.engine || "—"} />
               <Spec label="VIN" value={<span className="font-mono text-xs">{car.vin}</span>} />
               <Spec label="Preț cumpărare" value={formatMoney(car.priceBuy)} />
               <Spec label="Profit" value={<span className={profit >= 0 ? "font-semibold text-emerald-700" : "font-semibold text-red-600"}>{formatMoney(profit)}</span>} />

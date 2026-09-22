@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   if (error) return error;
 
   const body = await request.json();
-  const { brand, model, year, vin, source, supplierName, stage, purchasePrice, customsCost, otherCosts, responsibleId, responsibleIds, expectedDate, arrivedDate, notes } = body;
+  const { brand, model, year, vin, color, engine, source, supplierName, stage, purchasePrice, customsCost, otherCosts, responsibleId, responsibleIds, expectedDate, arrivedDate, notes } = body;
 
   if (!brand || !model) return NextResponse.json({ error: "Marca și modelul sunt obligatorii." }, { status: 400 });
 
@@ -42,6 +42,8 @@ export async function POST(request: Request) {
       brand, model,
       year: year ? Number(year) : null,
       vin: vin ? String(vin).trim() : null,
+      color: color ? String(color).trim() : null,
+      engine: engine ? String(engine).trim() : null,
       source: source ? String(source) : null,
       supplierName: supplierName ? String(supplierName) : null,
       stage: STAGES.includes(stage) ? stage : "in_transit",

@@ -14,7 +14,7 @@ const EMPTY = {
   model: "",
   year: new Date().getFullYear().toString(),
   vin: "",
-  color: "",
+  color: "", engine: "",
   priceSell: "",
   profit: "",
   paymentMethod: "cash",
@@ -53,6 +53,7 @@ export function SaleForm() {
       year: String(it.year),
       vin: it.vin ?? "",
       color: it.color ?? "",
+      engine: it.engine ?? "",
       priceSell: String(it.sellPrice),
       profit: String(it.markup),
     }));

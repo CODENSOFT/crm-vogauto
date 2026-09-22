@@ -11,7 +11,7 @@ import { formatMoney } from "@/lib/utils";
 import { IMPORT_STAGE_LABELS, type ImportDTO, type ImportStage, type UserDTO } from "@/types";
 
 const EMPTY = {
-  brand: "", model: "", year: String(new Date().getFullYear()), vin: "", source: "", supplierName: "",
+  brand: "", model: "", year: String(new Date().getFullYear()), vin: "", color: "", engine: "", source: "", supplierName: "",
   stage: "in_transit", purchasePrice: "", customsCost: "", otherCosts: "",
   responsibleIds: [] as string[], expectedDate: "", arrivedDate: "", notes: "",
 };
@@ -63,6 +63,7 @@ export function ImportsView() {
     setEditing(im);
     setForm({
       brand: im.brand, model: im.model, year: String(im.year ?? ""), vin: im.vin ?? "",
+      color: im.color ?? "", engine: im.engine ?? "",
       source: im.source ?? "", supplierName: im.supplierName ?? "", stage: im.stage,
       purchasePrice: String(im.purchasePrice ?? ""), customsCost: String(im.customsCost ?? ""), otherCosts: String(im.otherCosts ?? ""),
       responsibleIds: im.responsibleIds ?? (im.responsibleId ? [im.responsibleId] : []), expectedDate: dateInput(im.expectedDate), arrivedDate: dateInput(im.arrivedDate),
@@ -175,6 +176,8 @@ export function ImportsView() {
           <Input label="Model *" value={form.model} onChange={(e) => setF("model", e.target.value)} />
           <Input label="An" type="number" value={form.year} onChange={(e) => setF("year", e.target.value)} />
           <Input label="VIN" value={form.vin} onChange={(e) => setF("vin", e.target.value)} />
+          <Input label="Culoare" value={form.color} onChange={(e) => setF("color", e.target.value)} placeholder="ex: Alb" />
+          <Input label="Motor (capacitate)" value={form.engine} onChange={(e) => setF("engine", e.target.value)} placeholder="ex: 2.0 TDI" />
           <Input label="Proveniență (țară)" value={form.source} onChange={(e) => setF("source", e.target.value)} placeholder="ex: Germania" />
           <Input label="Furnizor" value={form.supplierName} onChange={(e) => setF("supplierName", e.target.value)} />
           <Select label="Etapă" value={form.stage} onChange={(e) => setF("stage", e.target.value)}>

@@ -9,7 +9,7 @@ import { formatMoney } from "@/lib/utils";
 import type { InventoryDTO } from "@/types";
 
 const EMPTY = {
-  brand: "", model: "", year: String(new Date().getFullYear()), vin: "", color: "",
+  brand: "", model: "", year: String(new Date().getFullYear()), vin: "", color: "", engine: "",
   ownerName: "", ownerPhone: "", clientWantPrice: "", sellPrice: "", status: "available", notes: "",
 };
 
@@ -33,7 +33,7 @@ export function InventoryFormModal({
     setStagedFiles([]);
     if (editing) {
       setForm({
-        brand: editing.brand, model: editing.model, year: String(editing.year), vin: editing.vin ?? "", color: editing.color ?? "",
+        brand: editing.brand, model: editing.model, year: String(editing.year), vin: editing.vin ?? "", color: editing.color ?? "", engine: editing.engine ?? "",
         ownerName: editing.ownerName, ownerPhone: editing.ownerPhone,
         clientWantPrice: String(editing.clientWantPrice ?? ""), sellPrice: String(editing.sellPrice ?? ""),
         status: editing.status, notes: editing.notes ?? "",
@@ -96,7 +96,8 @@ export function InventoryFormModal({
         <Input label="Model *" value={form.model} onChange={(e) => setF("model", e.target.value)} />
         <Input label="An *" type="number" value={form.year} onChange={(e) => setF("year", e.target.value)} />
         <Input label="VIN" value={form.vin} onChange={(e) => setF("vin", e.target.value)} />
-        <Input label="Culoare" value={form.color} onChange={(e) => setF("color", e.target.value)} />
+        <Input label="Culoare" value={form.color} onChange={(e) => setF("color", e.target.value)} placeholder="ex: Alb" />
+        <Input label="Motor (capacitate)" value={form.engine} onChange={(e) => setF("engine", e.target.value)} placeholder="ex: 2.0 TDI" />
         <Input label="Proprietar *" value={form.ownerName} onChange={(e) => setF("ownerName", e.target.value)} list="inventory-owners" placeholder="Scrie sau alege „Parcarea”" />
         <datalist id="inventory-owners">
           <option value="Parcarea" />

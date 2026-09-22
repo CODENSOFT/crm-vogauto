@@ -49,6 +49,7 @@ export interface CarDTO {
   year: number;
   vin: string;
   color?: string;
+  engine?: string | null;
   priceBuy: number;
   priceSell: number;
   paymentMethod: PaymentMethod;
@@ -90,6 +91,7 @@ export interface InventoryDTO {
   year: number;
   vin?: string;
   color?: string;
+  engine?: string | null;
   ownerName: string;
   ownerPhone: string;
   clientWantPrice: number; // prețul cerut de proprietar
@@ -238,6 +240,8 @@ export interface ImportDTO {
   model: string;
   year?: number | null;
   vin?: string | null;
+  color?: string | null;
+  engine?: string | null;
   source?: string | null;
   supplierName?: string | null;
   stage: ImportStage;

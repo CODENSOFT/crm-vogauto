@@ -15,7 +15,7 @@ import { type CarDTO, type InventoryDTO } from "@/types";
 const EMPTY_FILTERS = { search: "", brand: "", worker: "", payment: "", status: "", dateFrom: "", dateTo: "" };
 const NEW_SALE = {
   clientName: "", clientPhone: "", brand: "", model: "", year: String(new Date().getFullYear()),
-  vin: "", color: "", priceBuy: "", priceSell: "", profit: "", paymentMethod: "cash", status: "sold",
+  vin: "", color: "", engine: "", priceBuy: "", priceSell: "", profit: "", paymentMethod: "cash", status: "sold",
   saleDate: new Date().toISOString().slice(0, 10), notes: "", soldBy: "", inventoryId: "",
 };
 
@@ -66,7 +66,7 @@ export function CarsTable() {
     if (!it) return;
     setNewSale((s) => ({
       ...s, inventoryId: id, brand: it.brand, model: it.model, year: String(it.year),
-      vin: it.vin ?? "", color: it.color ?? "",
+      vin: it.vin ?? "", color: it.color ?? "", engine: it.engine ?? "",
       priceBuy: String(it.clientWantPrice), priceSell: String(it.sellPrice), profit: "",
     }));
   }

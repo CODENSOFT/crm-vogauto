@@ -22,7 +22,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
 
   const body = await request.json();
   const updates: Record<string, unknown> = {};
-  const strFields = ["brand", "model", "vin", "source", "supplierName", "notes"];
+  const strFields = ["brand", "model", "vin", "color", "engine", "source", "supplierName", "notes"];
   for (const f of strFields) if (body[f] !== undefined) updates[f] = body[f] ? String(body[f]) : null;
   if (body.year !== undefined) updates.year = body.year ? Number(body.year) : null;
   if (body.stage !== undefined && STAGES.includes(body.stage)) updates.stage = body.stage;
@@ -47,6 +47,8 @@ export async function PUT(request: Request, { params }: { params: { id: string }
     const model = (updates.model as string) ?? imp.model;
     const year = (updates.year as number) ?? imp.year ?? new Date().getFullYear();
     const vin = (updates.vin as string | null) ?? imp.vin;
+    const color = (updates.color as string | null) ?? imp.color;
+    const engine = (updates.engine as string | null) ?? imp.engine;
     const purchase = (updates.purchasePrice as number) ?? Number(imp.purchasePrice);
     const customs = (updates.customsCost as number) ?? Number(imp.customsCost);
     const other = (updates.otherCosts as number) ?? Number(imp.otherCosts);
@@ -54,6 +56,7 @@ export async function PUT(request: Request, { params }: { params: { id: string }
       .insert(inventory)
       .values({
         brand, model, year: Number(year), vin: vin || null,
+        color: color || null, engine: engine || null,
         ownerName: imp.supplierName || "Import propriu",
         ownerPhone: "—",
         clientWantPrice: purchase + customs + other, // baza de cost

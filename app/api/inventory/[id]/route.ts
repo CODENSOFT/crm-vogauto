@@ -37,7 +37,7 @@ export async function PUT(
     return NextResponse.json({ error: "Mașina nu a fost găsită." }, { status: 404 });
   }
 
-  const editable = ["brand", "model", "year", "vin", "color", "ownerName", "ownerPhone", "clientWantPrice", "sellPrice", "status", "notes", "published", "publishedSite", "published999", "listingTitle", "listingDescription"];
+  const editable = ["brand", "model", "year", "vin", "color", "engine", "ownerName", "ownerPhone", "clientWantPrice", "sellPrice", "status", "notes", "published", "publishedSite", "published999", "listingTitle", "listingDescription"];
   const boolFields = ["published", "publishedSite", "published999"];
   const changes: Record<string, unknown> = {};
   const updates: Record<string, unknown> = {};

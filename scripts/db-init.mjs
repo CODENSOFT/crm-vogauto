@@ -237,6 +237,12 @@ async function main() {
   await sql`update imports set responsible_ids = array[responsible_id], responsible_names = array[coalesce(responsible_name,'')] where responsible_id is not null and responsible_ids is null`;
   await sql`update leads set assigned_to_ids = array[assigned_to], assigned_to_names = array[coalesce(assigned_to_name,'')] where assigned_to is not null and assigned_to_ids is null`;
 
+  // Culoare + capacitate motor (adăugate ulterior).
+  await sql`alter table cars add column if not exists engine text`;
+  await sql`alter table inventory add column if not exists engine text`;
+  await sql`alter table imports add column if not exists color text`;
+  await sql`alter table imports add column if not exists engine text`;
+
   // Telegram: legătura cont + starea comenzilor în așteptare.
   await sql`alter table users add column if not exists telegram_id text`;
   await sql`alter table users add column if not exists telegram_link_code text`;

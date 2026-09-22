@@ -47,6 +47,7 @@ export const cars = pgTable("cars", {
   year: integer("year").notNull(),
   vin: text("vin").notNull().unique(),
   color: text("color"),
+  engine: text("engine"), // capacitatea/tipul motorului, ex. „2.0 TDI"
   priceBuy: doublePrecision("price_buy").notNull().default(0),
   priceSell: doublePrecision("price_sell").notNull(),
   paymentMethod: text("payment_method").notNull().default("cash"),
@@ -70,6 +71,7 @@ export const inventory = pgTable("inventory", {
   year: integer("year").notNull(),
   vin: text("vin"),
   color: text("color"),
+  engine: text("engine"), // capacitatea/tipul motorului, ex. „2.0 TDI"
   ownerName: text("owner_name").notNull(),
   ownerPhone: text("owner_phone").notNull(),
   clientWantPrice: doublePrecision("client_want_price").notNull().default(0),
@@ -146,6 +148,8 @@ export const imports = pgTable("imports", {
   model: text("model").notNull(),
   year: integer("year"),
   vin: text("vin"),
+  color: text("color"),
+  engine: text("engine"), // capacitatea/tipul motorului, ex. „2.0 TDI"
   source: text("source"), // țara/piața de proveniență
   supplierName: text("supplier_name"),
   // in_transit | ready

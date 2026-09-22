@@ -112,6 +112,7 @@ export function InventoryDetail({ id }: { id: string }) {
             <div className="grid grid-cols-2 gap-x-5">
               <Spec label="An" value={item.year} />
               <Spec label="Culoare" value={item.color || "—"} />
+              <Spec label="Motor" value={item.engine || "—"} />
               <Spec label="VIN" value={<span className="font-mono text-xs">{item.vin || "—"}</span>} />
               <Spec label="Status" value={STOCK_STATUS_LABELS[item.status]} />
               <Spec label="Preț cerut client" value={item.clientWantPrice ? formatMoney(item.clientWantPrice) : "—"} />
