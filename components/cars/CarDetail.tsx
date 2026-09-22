@@ -143,7 +143,10 @@ export function CarDetail({ id }: { id: string }) {
               <div className="space-y-1.5 text-sm">
                 <div className="flex justify-between"><span className="text-slate-500">Preț vânzare</span><span className="font-medium text-slate-800">{formatMoney(pnl.priceSell)}</span></div>
                 <div className="flex justify-between"><span className="text-slate-500">− Preț cumpărare</span><span className="text-slate-700">{formatMoney(pnl.priceBuy)}</span></div>
-                {pnl.commission > 0 && <div className="flex justify-between"><span className="text-slate-500">− Comision vânzător</span><span className="text-slate-700">{formatMoney(pnl.commission)}</span></div>}
+                {pnl.expenses.map((e, i) => (
+                  <div key={i} className="flex justify-between"><span className="text-slate-500">− {e.label}</span><span className="text-slate-700">{formatMoney(e.amount)}</span></div>
+                ))}
+                {pnl.commission > 0 && <div className="flex justify-between"><span className="text-slate-500">− Taxă vânzător</span><span className="text-slate-700">{formatMoney(pnl.commission)}</span></div>}
                 <div className="mt-2 flex justify-between border-t border-slate-200 pt-2 text-base font-bold">
                   <span className="text-slate-700">Profit net</span>
                   <span className={pnl.net >= 0 ? "text-emerald-700" : "text-red-600"}>{formatMoney(pnl.net)}</span>

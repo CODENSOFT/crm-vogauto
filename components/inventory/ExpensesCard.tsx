@@ -57,7 +57,10 @@ export function ExpensesCard({ inventoryId, onChanged }: { inventoryId: string; 
   return (
     <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-700">Cheltuieli pentru această mașină</h3>
+        <div>
+          <h3 className="text-sm font-semibold text-slate-700">Cheltuieli pentru această mașină</h3>
+          <p className="text-xs text-slate-400">Se scad din profit la vânzare.</p>
+        </div>
         <span className="rounded-full bg-amber-50 px-3 py-1 text-sm font-bold text-amber-700">
           {formatMoney(total)}
         </span>

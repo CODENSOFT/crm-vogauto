@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { and, eq, gte, lte, inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { cars, inventory, users } from "@/lib/schema";
+import { cars, inventory, inventoryExpenses, users } from "@/lib/schema";
 import { requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
 
@@ -21,6 +21,7 @@ export async function GET(request: Request) {
 
   const sales = await db
     .select({
+      id: cars.id,
       priceSell: cars.priceSell,
       priceBuy: cars.priceBuy,
       saleDate: cars.saleDate,
@@ -39,6 +40,22 @@ export async function GET(request: Request) {
     : [];
   const feeMap = new Map(feeRows.map((u) => [u.id, Number(u.fixedFee ?? 0)]));
 
+  // Cheltuielile suportate pentru fiecare mașină (reparații, detailing...),
+  // legate de vânzare prin inventory.saleId. Se scad și ele din profit.
+  const saleIds = sales.map((s) => s.id);
+  const expRows = saleIds.length
+    ? await db
+        .select({
+          carId: inventory.saleId,
+          total: sql<number>`coalesce(sum(${inventoryExpenses.amount}),0)::float8`,
+        })
+        .from(inventory)
+        .innerJoin(inventoryExpenses, eq(inventoryExpenses.inventoryId, inventory.id))
+        .where(inArray(inventory.saleId, saleIds))
+        .groupBy(inventory.saleId)
+    : [];
+  const expMap = new Map(expRows.map((e) => [e.carId as string, Number(e.total)]));
+
   const byMonth: Record<string, { count: number; revenue: number; profit: number }> = {};
   const byWorker: Record<string, { count: number; revenue: number; profit: number }> = {};
   const byPayment: Record<string, { count: number; revenue: number }> = {};
@@ -49,7 +66,9 @@ export async function GET(request: Request) {
   for (const s of sales) {
     const rev = Number(s.priceSell);
     const fee = s.soldBy ? (feeMap.get(s.soldBy) ?? 0) : 0;
-    const prof = Number(s.priceSell) - Number(s.priceBuy) - fee; // profit NET (fără comision)
+    const expenses = expMap.get(s.id) ?? 0;
+    // Profit NET = preț vânzare − preț cumpărare − taxa vânzătorului − cheltuieli.
+    const prof = Number(s.priceSell) - Number(s.priceBuy) - fee - expenses;
     const month = new Date(s.saleDate).toISOString().slice(0, 7);
     byMonth[month] ??= { count: 0, revenue: 0, profit: 0 };
     byMonth[month].count += 1; byMonth[month].revenue += rev; byMonth[month].profit += prof;
@@ -85,19 +104,42 @@ export async function GET(request: Request) {
   const mStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const mEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const pStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  // Profit NET pe interval = preț vânzare − preț cumpărare − taxa vânzătorului
+  // − cheltuielile mașinii. Îl calculăm din două interogări simple.
   const monthAgg = async (from: Date, to: Date) => {
-    // Profit NET: scădem taxa fixă a vânzătorului (join la users pe soldBy).
-    const [r] = await db
+    const rows = await db
       .select({
-        count: sql<number>`count(*)::int`,
-        revenue: sql<number>`coalesce(sum(${cars.priceSell}),0)::float8`,
-        profit: sql<number>`coalesce(sum(${cars.priceSell} - ${cars.priceBuy} - coalesce(${users.fixedFee}, 0)),0)::float8`,
+        id: cars.id,
+        priceSell: cars.priceSell,
+        priceBuy: cars.priceBuy,
+        fee: users.fixedFee,
       })
       .from(cars)
       .leftJoin(users, eq(cars.soldBy, users.id))
       .where(and(eq(cars.isDeleted, false), eq(cars.status, "sold"), gte(cars.saleDate, from), lte(cars.saleDate, to)));
-    return r;
+
+    if (rows.length === 0) return { count: 0, revenue: 0, profit: 0 };
+
+    const ids = rows.map((r) => r.id);
+    const exp = await db
+      .select({
+        carId: inventory.saleId,
+        total: sql<number>`coalesce(sum(${inventoryExpenses.amount}),0)::float8`,
+      })
+      .from(inventory)
+      .innerJoin(inventoryExpenses, eq(inventoryExpenses.inventoryId, inventory.id))
+      .where(inArray(inventory.saleId, ids))
+      .groupBy(inventory.saleId);
+    const map = new Map(exp.map((e) => [e.carId as string, Number(e.total)]));
+
+    let revenue = 0, profit = 0;
+    for (const r of rows) {
+      revenue += Number(r.priceSell);
+      profit += Number(r.priceSell) - Number(r.priceBuy) - Number(r.fee ?? 0) - (map.get(r.id) ?? 0);
+    }
+    return { count: rows.length, revenue, profit };
   };
+
   const [thisMonth, lastMonth] = await Promise.all([
     monthAgg(mStart, new Date(mEnd.getTime() - 1)),
     monthAgg(pStart, new Date(mStart.getTime() - 1)),
