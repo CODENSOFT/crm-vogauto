@@ -11,12 +11,11 @@ import { InventoryFormModal } from "@/components/inventory/InventoryFormModal";
 import { formatMoney } from "@/lib/utils";
 import { STOCK_STATUS_LABELS, type InventoryDTO } from "@/types";
 
-type Tab = "preparing" | "available" | "sold";
+type Tab = "preparing" | "available";
 
 const TABS: { key: Tab; label: string; hint: string }[] = [
   { key: "preparing", label: "În pregătire", hint: "Mașini care încă nu sunt gata de vânzare — aici se adună cheltuielile." },
   { key: "available", label: "În stoc", hint: "Mașini gata de vânzare — apar în formularul de vânzare și la publicare." },
-  { key: "sold", label: "Vândute", hint: "Mașini ieșite din stoc." },
 ];
 
 export function InventoryView() {
@@ -97,9 +96,7 @@ export function InventoryView() {
             onClick={() => setTab(t.key)}
             className={`rounded-md px-4 py-1.5 text-sm font-semibold transition-colors ${
               tab === t.key
-                ? t.key === "preparing" ? "bg-amber-500 text-white shadow-sm"
-                  : t.key === "available" ? "bg-brand text-white shadow-sm"
-                  : "bg-slate-600 text-white shadow-sm"
+                ? t.key === "preparing" ? "bg-amber-500 text-white shadow-sm" : "bg-brand text-white shadow-sm"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -127,7 +124,7 @@ export function InventoryView() {
             <tbody className="divide-y divide-slate-100">
               {items.length === 0 ? (
                 <tr><td colSpan={cols.length} className="px-4 py-12 text-center text-slate-400">
-                  {prep ? "Nicio mașină în pregătire." : tab === "sold" ? "Nicio mașină vândută." : "Nicio mașină în stoc."}
+                  {prep ? "Nicio mașină în pregătire." : "Nicio mașină în stoc."}
                 </td></tr>
               ) : items.map((it) => (
                 <tr key={it._id} className="transition-colors hover:bg-brand-tint/50">
