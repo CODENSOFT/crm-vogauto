@@ -4,35 +4,44 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
-import { Input, Select } from "@/components/ui/Input";
+import { Input } from "@/components/ui/Input";
 import { ConfirmDialog } from "@/components/ui/Modal";
 import { Badge } from "@/components/ui/Table";
 import { InventoryFormModal } from "@/components/inventory/InventoryFormModal";
 import { formatMoney } from "@/lib/utils";
 import { STOCK_STATUS_LABELS, type InventoryDTO } from "@/types";
 
+type Tab = "preparing" | "available" | "sold";
+
+const TABS: { key: Tab; label: string; hint: string }[] = [
+  { key: "preparing", label: "În pregătire", hint: "Mașini care încă nu sunt gata de vânzare — aici se adună cheltuielile." },
+  { key: "available", label: "În stoc", hint: "Mașini gata de vânzare — apar în formularul de vânzare și la publicare." },
+  { key: "sold", label: "Vândute", hint: "Mașini ieșite din stoc." },
+];
+
 export function InventoryView() {
   const [items, setItems] = useState<InventoryDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  // Implicit arătăm doar mașinile disponibile; vândutele se văd cu filtrul.
-  const [status, setStatus] = useState("available");
+  const [tab, setTab] = useState<Tab>("available");
 
   const [formOpen, setFormOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<InventoryDTO | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [readyTarget, setReadyTarget] = useState<InventoryDTO | null>(null);
+  const [marking, setMarking] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     const p = new URLSearchParams();
     if (search) p.set("search", search);
-    if (status) p.set("status", status);
+    p.set("status", tab);
     const res = await fetch(`/api/inventory?${p}`);
     const data = await res.json();
     if (res.ok) setItems(data.items);
     else toast.error(data.error || "Eroare.");
     setLoading(false);
-  }, [search, status]);
+  }, [search, tab]);
 
   useEffect(() => { const t = setTimeout(load, 300); return () => clearTimeout(t); }, [load]);
 
@@ -46,23 +55,61 @@ export function InventoryView() {
     toast.success("Mașină ștearsă din stoc"); setDeleteTarget(null); load();
   }
 
+  // Trece mașina din pregătire în stocul de vânzare.
+  async function confirmReady() {
+    if (!readyTarget) return;
+    setMarking(true);
+    const res = await fetch(`/api/inventory/${readyTarget._id}`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "available" }),
+    });
+    const data = await res.json();
+    setMarking(false);
+    if (!res.ok) { toast.error(data.error || "Eroare."); return; }
+    toast.success("Mașina a trecut în stoc — se poate vinde");
+    setReadyTarget(null);
+    load();
+  }
+
+  const prep = tab === "preparing";
+  const cols = prep
+    ? ["Foto", "Mașină", "An", "VIN", "Proprietar", "Preț vânzare", "Cheltuieli", "Status", ""]
+    : ["Foto", "Mașină", "An", "VIN", "Proprietar", "Telefon", "Preț client", "Preț vânzare", "Adaus", "Status", ""];
+
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Stoc mașini</h1>
-          <p className="mt-1 text-sm text-slate-500">Deschide o mașină pentru poze, editare și istoric.</p>
+          <p className="mt-1 text-sm text-slate-500">{TABS.find((t) => t.key === tab)?.hint}</p>
         </div>
-        <Button onClick={() => setFormOpen(true)}>Adaugă mașină</Button>
+        <Button onClick={() => setFormOpen(true)}>
+          {prep ? "Adaugă mașină în pregătire" : "Adaugă mașină"}
+        </Button>
       </div>
 
-      <div className="mb-4 grid grid-cols-1 gap-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-card sm:grid-cols-3">
+      {/* Secțiuni */}
+      <div className="mb-4 flex w-fit rounded-lg border border-slate-300 bg-white p-0.5 shadow-sm">
+        {TABS.map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setTab(t.key)}
+            className={`rounded-md px-4 py-1.5 text-sm font-semibold transition-colors ${
+              tab === t.key
+                ? t.key === "preparing" ? "bg-amber-500 text-white shadow-sm"
+                  : t.key === "available" ? "bg-brand text-white shadow-sm"
+                  : "bg-slate-600 text-white shadow-sm"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="mb-4 rounded-xl border border-slate-200/80 bg-white p-4 shadow-card sm:max-w-sm">
         <Input label="Căutare" placeholder="Marcă, model, VIN, proprietar" value={search} onChange={(e) => setSearch(e.target.value)} />
-        <Select label="Status" value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="">Toate</option>
-          <option value="available">Disponibile</option>
-          <option value="sold">Vândute</option>
-        </Select>
       </div>
 
       {loading ? (
@@ -72,14 +119,16 @@ export function InventoryView() {
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50/80">
               <tr>
-                {["Foto", "Mașină", "An", "VIN", "Proprietar", "Telefon", "Preț client", "Preț vânzare", "Adaus", "Status", ""].map((h, i) => (
+                {cols.map((h, i) => (
                   <th key={i} className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {items.length === 0 ? (
-                <tr><td colSpan={11} className="px-4 py-12 text-center text-slate-400">Nicio mașină în stoc.</td></tr>
+                <tr><td colSpan={cols.length} className="px-4 py-12 text-center text-slate-400">
+                  {prep ? "Nicio mașină în pregătire." : tab === "sold" ? "Nicio mașină vândută." : "Nicio mașină în stoc."}
+                </td></tr>
               ) : items.map((it) => (
                 <tr key={it._id} className="transition-colors hover:bg-brand-tint/50">
                   <td className="px-3 py-2">
@@ -106,12 +155,34 @@ export function InventoryView() {
                   <td className="px-3 py-2.5 text-slate-600">{it.year}</td>
                   <td className="whitespace-nowrap px-3 py-2.5 font-mono text-xs text-slate-500">{it.vin || "—"}</td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-slate-700">{it.ownerName}</td>
-                  <td className="whitespace-nowrap px-3 py-2.5 font-mono text-xs text-slate-600">{it.ownerPhone && it.ownerPhone !== "—" ? it.ownerPhone : "—"}</td>
-                  <td className="whitespace-nowrap px-3 py-2.5 text-slate-700">{it.clientWantPrice ? formatMoney(it.clientWantPrice) : "—"}</td>
-                  <td className="whitespace-nowrap px-3 py-2.5 font-medium text-slate-900">{formatMoney(it.sellPrice)}</td>
-                  <td className={`whitespace-nowrap px-3 py-2.5 font-semibold ${it.markup >= 0 ? "text-emerald-700" : "text-red-600"}`}>{formatMoney(it.markup)}</td>
-                  <td className="px-3 py-2.5"><Badge color={it.status === "available" ? "green" : "gray"}>{STOCK_STATUS_LABELS[it.status]}</Badge></td>
+
+                  {prep ? (
+                    <>
+                      <td className="whitespace-nowrap px-3 py-2.5 font-medium text-slate-900">{formatMoney(it.sellPrice)}</td>
+                      <td className="whitespace-nowrap px-3 py-2.5 font-semibold text-amber-700">
+                        {it.expensesTotal ? formatMoney(it.expensesTotal) : "—"}
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td className="whitespace-nowrap px-3 py-2.5 font-mono text-xs text-slate-600">{it.ownerPhone && it.ownerPhone !== "—" ? it.ownerPhone : "—"}</td>
+                      <td className="whitespace-nowrap px-3 py-2.5 text-slate-700">{it.clientWantPrice ? formatMoney(it.clientWantPrice) : "—"}</td>
+                      <td className="whitespace-nowrap px-3 py-2.5 font-medium text-slate-900">{formatMoney(it.sellPrice)}</td>
+                      <td className={`whitespace-nowrap px-3 py-2.5 font-semibold ${it.markup >= 0 ? "text-emerald-700" : "text-red-600"}`}>{formatMoney(it.markup)}</td>
+                    </>
+                  )}
+
+                  <td className="px-3 py-2.5">
+                    <Badge color={it.status === "available" ? "green" : it.status === "preparing" ? "yellow" : "gray"}>
+                      {STOCK_STATUS_LABELS[it.status]}
+                    </Badge>
+                  </td>
                   <td className="whitespace-nowrap px-3 py-2.5 text-right">
+                    {prep && (
+                      <Button variant="primary" size="sm" className="mr-2" onClick={() => setReadyTarget(it)}>
+                        Gata de vânzare
+                      </Button>
+                    )}
                     <Link href={`/dashboard/inventory/${it._id}`} className="text-xs font-semibold text-brand hover:underline">Deschide</Link>
                     <Button variant="ghost" size="sm" className="ml-2 text-red-600" onClick={() => setDeleteTarget(it)}>Șterge</Button>
                   </td>
@@ -122,11 +193,21 @@ export function InventoryView() {
         </div>
       )}
 
-      <InventoryFormModal open={formOpen} editing={null} onClose={() => setFormOpen(false)} onSaved={load} />
+      <InventoryFormModal
+        open={formOpen}
+        editing={null}
+        defaultStatus={prep ? "preparing" : "available"}
+        onClose={() => setFormOpen(false)}
+        onSaved={load}
+      />
 
       <ConfirmDialog open={!!deleteTarget} title="Ștergere mașină din stoc"
         message={`Sigur ștergeți ${deleteTarget?.brand} ${deleteTarget?.model}?`}
         confirmLabel="Șterge" loading={deleting} onConfirm={confirmDelete} onCancel={() => setDeleteTarget(null)} />
+
+      <ConfirmDialog open={!!readyTarget} title="Mașină gata de vânzare"
+        message={`${readyTarget?.brand} ${readyTarget?.model} trece în stocul de vânzare${readyTarget?.expensesTotal ? ` (cheltuieli înregistrate: ${formatMoney(readyTarget.expensesTotal)})` : ""}. Va putea fi vândută și publicată.`}
+        confirmLabel="Trece în stoc" loading={marking} onConfirm={confirmReady} onCancel={() => setReadyTarget(null)} />
     </div>
   );
 }

@@ -1,7 +1,6 @@
 import { and, eq, or, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { cars, inventory, imports } from "@/lib/schema";
-import { IMPORT_STAGE_LABELS, type ImportStage } from "@/types";
+import { cars, inventory } from "@/lib/schema";
 
 export interface TimelineEvent {
   date: string | null;
@@ -14,15 +13,6 @@ export interface TimelineEvent {
 export async function computeTimeline(opts: { vin?: string | null; carId?: string; inventoryId?: string }): Promise<TimelineEvent[]> {
   const { vin } = opts;
   const events: TimelineEvent[] = [];
-
-  // Import (după VIN).
-  if (vin) {
-    const imps = await db.select().from(imports).where(and(eq(imports.isDeleted, false), eq(imports.vin, vin)));
-    for (const im of imps) {
-      events.push({ date: new Date(im.createdAt).toISOString(), kind: "import", title: "Adăugată la import", detail: `${im.brand} ${im.model}${im.source ? ` · ${im.source}` : ""}` });
-      if (im.arrivedDate) events.push({ date: new Date(im.arrivedDate).toISOString(), kind: "import", title: "Sosită din import", detail: IMPORT_STAGE_LABELS[im.stage as ImportStage] });
-    }
-  }
 
   // Stoc (după id, după vânzarea legată — saleId — sau după VIN).
   const invOr = [];

@@ -5,6 +5,7 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Table";
+import { ExpensesCard } from "@/components/inventory/ExpensesCard";
 import { PhotoManager } from "@/components/photos/PhotoManager";
 import { InventoryFormModal } from "@/components/inventory/InventoryFormModal";
 import { formatMoney, formatDateShort } from "@/lib/utils";
@@ -29,6 +30,7 @@ export function InventoryDetail({ id }: { id: string }) {
   const [zoom, setZoom] = useState(false);
   const [photoOpen, setPhotoOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [marking, setMarking] = useState(false);
 
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
 
@@ -51,6 +53,19 @@ export function InventoryDetail({ id }: { id: string }) {
 
   useEffect(() => { load(); }, [load]);
 
+  // Trece mașina din pregătire în stocul de vânzare.
+  async function markReady() {
+    setMarking(true);
+    const res = await fetch(`/api/inventory/${id}`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "available" }),
+    });
+    setMarking(false);
+    if (!res.ok) { toast.error("Eroare."); return; }
+    toast.success("Mașina a trecut în stoc — se poate vinde");
+    load();
+  }
+
   if (loading) return <div className="py-16 text-center text-slate-400">Se încarcă...</div>;
   if (notFound || !item) {
     return (
@@ -70,12 +85,15 @@ export function InventoryDetail({ id }: { id: string }) {
         <div className="flex items-center gap-3">
           <Link href="/dashboard/inventory" className="text-sm text-slate-500 hover:text-brand">← Stoc</Link>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">{item.brand} {item.model} <span className="text-slate-400">{item.year}</span></h1>
-          <Badge color={item.status === "available" ? "green" : "gray"}>{STOCK_STATUS_LABELS[item.status]}</Badge>
+          <Badge color={item.status === "available" ? "green" : item.status === "preparing" ? "yellow" : "gray"}>{STOCK_STATUS_LABELS[item.status]}</Badge>
           {item.published && <Badge color="blue">Publicat</Badge>}
         </div>
         <div className="flex gap-2">
+          {item.status === "preparing" && (
+            <Button onClick={markReady} loading={marking}>Mașină gata de vânzare</Button>
+          )}
           <Button variant="secondary" onClick={() => setPhotoOpen(true)}>Gestionează poze</Button>
-          <Button onClick={() => setEditOpen(true)}>Editează</Button>
+          <Button variant="secondary" onClick={() => setEditOpen(true)}>Editează</Button>
         </div>
       </div>
 
@@ -123,6 +141,8 @@ export function InventoryDetail({ id }: { id: string }) {
               <Spec label="Data adăugării" value={formatDateShort(item.createdAt)} />
             </div>
           </div>
+
+          <ExpensesCard inventoryId={id} />
 
           {(item.listingDescription || item.notes) && (
             <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card">

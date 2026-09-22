@@ -1,6 +1,6 @@
 import { maskPhone } from "@/lib/utils";
 import type {
-  CarRow, InventoryRow, UserRow, AuditLogRow, TaskRow, CarPhotoRow, ImportRow,
+  CarRow, InventoryRow, UserRow, AuditLogRow, TaskRow, CarPhotoRow,
   LeadRow, NotificationRow,
 } from "@/lib/schema";
 
@@ -23,6 +23,7 @@ export function inventoryToDTO(row: InventoryRow) {
     ...rest,
     _id: id,
     markup: Number(row.sellPrice) - Number(row.clientWantPrice),
+    expensesTotal: 0, // completat de ruta de listare
   };
 }
 
@@ -59,12 +60,3 @@ export function notificationToDTO(row: NotificationRow) {
   return { ...rest, _id: id };
 }
 
-export function importToDTO(row: ImportRow) {
-  const { id, isDeleted: _d, ...rest } = row;
-  void _d;
-  return {
-    ...rest,
-    _id: id,
-    totalCost: Number(row.purchasePrice) + Number(row.customsCost) + Number(row.otherCosts),
-  };
-}

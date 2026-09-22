@@ -243,6 +243,21 @@ async function main() {
   await sql`alter table imports add column if not exists color text`;
   await sql`alter table imports add column if not exists engine text`;
 
+  // Cheltuieli per mașină (cât e în pregătire).
+  await sql`
+    create table if not exists inventory_expenses (
+      id uuid primary key default gen_random_uuid(),
+      inventory_id uuid not null,
+      label text not null,
+      amount double precision not null default 0,
+      note text,
+      created_by uuid,
+      created_by_name text,
+      created_at timestamptz not null default now()
+    )
+  `;
+  await sql`create index if not exists inventory_expenses_car_idx on inventory_expenses (inventory_id)`;
+
   // Telegram: legătura cont + starea comenzilor în așteptare.
   await sql`alter table users add column if not exists telegram_id text`;
   await sql`alter table users add column if not exists telegram_link_code text`;

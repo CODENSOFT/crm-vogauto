@@ -188,6 +188,8 @@ export const ACTION_LABELS: Record<string, string> = {
   REVEAL_PHONE: "Dezvăluire telefon",
   CREATE_STOCK: "Adăugare mașină în stoc",
   EDIT_STOCK: "Editare mașină stoc",
+  ADD_EXPENSE: "Adăugare cheltuială",
+  DELETE_EXPENSE: "Ștergere cheltuială",
   DELETE_STOCK: "Ștergere mașină stoc",
   CREATE_TASK: "Adăugare sarcină",
   EDIT_TASK: "Editare sarcină",

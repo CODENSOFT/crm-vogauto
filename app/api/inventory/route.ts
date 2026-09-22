@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { and, or, eq, ilike, desc, asc, inArray } from "drizzle-orm";
+import { and, or, eq, ilike, desc, asc, inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { inventory, carPhotos } from "@/lib/schema";
+import { inventory, carPhotos, inventoryExpenses } from "@/lib/schema";
 import { requireSession, requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
 import { escapeLike } from "@/lib/utils";
@@ -18,7 +18,7 @@ export async function GET(request: Request) {
   const search = searchParams.get("search")?.trim();
 
   const conds = [eq(inventory.isDeleted, false)];
-  if (status === "available" || status === "sold") conds.push(eq(inventory.status, status));
+  if (status === "preparing" || status === "available" || status === "sold") conds.push(eq(inventory.status, status));
   if (search) {
     const safe = `%${escapeLike(search)}%`;
     conds.push(
@@ -39,9 +39,16 @@ export async function GET(request: Request) {
 
   const items = rows.map(inventoryToDTO);
 
-  // Atașează foto principală + numărul de poze pentru fiecare mașină.
+  // Atașează foto principală + numărul de poze + totalul cheltuielilor.
   if (items.length) {
     const ids = items.map((i) => i._id);
+    const exp = await db
+      .select({ inventoryId: inventoryExpenses.inventoryId, total: sql<number>`coalesce(sum(${inventoryExpenses.amount}),0)::float8` })
+      .from(inventoryExpenses)
+      .where(inArray(inventoryExpenses.inventoryId, ids))
+      .groupBy(inventoryExpenses.inventoryId);
+    const expMap = new Map(exp.map((e) => [e.inventoryId, Number(e.total)]));
+    for (const it of items) it.expensesTotal = expMap.get(it._id) ?? 0;
     const photos = await db
       .select({ inventoryId: carPhotos.inventoryId, url: carPhotos.url })
       .from(carPhotos)
@@ -91,7 +98,7 @@ export async function POST(request: Request) {
       ownerName, ownerPhone: ownerPhone ? String(ownerPhone) : "—",
       clientWantPrice: Number(clientWantPrice) || 0,
       sellPrice: Number(sellPrice),
-      status: status === "sold" ? "sold" : "available",
+      status: status === "sold" ? "sold" : status === "preparing" ? "preparing" : "available",
       notes: notes || null,
       addedBy: user.id, addedByName: user.fullName,
     })

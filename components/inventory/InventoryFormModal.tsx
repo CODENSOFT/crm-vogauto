@@ -16,12 +16,14 @@ const EMPTY = {
 // Formular (modal) pentru adăugarea/editarea unei mașini din stoc + poze.
 // Reutilizat de listă (adăugare) și de pagina de detaliu (editare).
 export function InventoryFormModal({
-  open, editing, onClose, onSaved,
+  open, editing, onClose, onSaved, defaultStatus = "available",
 }: {
   open: boolean;
   editing: InventoryDTO | null;
   onClose: () => void;
   onSaved: () => void;
+  /** Statusul mașinii nou adăugate (secția din care se deschide formularul). */
+  defaultStatus?: string;
 }) {
   const [form, setForm] = useState({ ...EMPTY });
   const [saving, setSaving] = useState(false);
@@ -39,9 +41,9 @@ export function InventoryFormModal({
         status: editing.status, notes: editing.notes ?? "",
       });
     } else {
-      setForm({ ...EMPTY });
+      setForm({ ...EMPTY, status: defaultStatus });
     }
-  }, [open, editing]);
+  }, [open, editing, defaultStatus]);
 
   const setF = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
   const markup = (Number(form.sellPrice) || 0) - (Number(form.clientWantPrice) || 0);
@@ -106,6 +108,7 @@ export function InventoryFormModal({
         <Input label="Preț cerut de client (€)" type="number" value={form.clientWantPrice} onChange={(e) => setF("clientWantPrice", e.target.value)} disabled={isParcare} placeholder={isParcare ? "Nu e necesar" : ""} />
         <Input label="Preț de vânzare (€) *" type="number" value={form.sellPrice} onChange={(e) => setF("sellPrice", e.target.value)} />
         <Select label="Status" value={form.status} onChange={(e) => setF("status", e.target.value)}>
+          <option value="preparing">În pregătire</option>
           <option value="available">Disponibilă</option>
           <option value="sold">Vândută</option>
         </Select>

@@ -142,38 +142,6 @@ export const tasks = pgTable("tasks", {
     .defaultNow(),
 });
 
-export const imports = pgTable("imports", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  brand: text("brand").notNull(),
-  model: text("model").notNull(),
-  year: integer("year"),
-  vin: text("vin"),
-  color: text("color"),
-  engine: text("engine"), // capacitatea/tipul motorului, ex. „2.0 TDI"
-  source: text("source"), // țara/piața de proveniență
-  supplierName: text("supplier_name"),
-  // in_transit | ready
-  stage: text("stage").notNull().default("in_transit"),
-  purchasePrice: doublePrecision("purchase_price").notNull().default(0),
-  customsCost: doublePrecision("customs_cost").notNull().default(0),
-  otherCosts: doublePrecision("other_costs").notNull().default(0),
-  responsibleId: uuid("responsible_id"), // primul responsabil (compatibilitate)
-  responsibleName: text("responsible_name"),
-  responsibleIds: uuid("responsible_ids").array(),
-  responsibleNames: text("responsible_names").array(),
-  // Mașina din stoc creată automat când importul devine „gata de vânzare".
-  inventoryId: uuid("inventory_id"),
-  expectedDate: timestamp("expected_date", { withTimezone: true, mode: "date" }),
-  arrivedDate: timestamp("arrived_date", { withTimezone: true, mode: "date" }),
-  notes: text("notes"),
-  createdBy: uuid("created_by"),
-  createdByName: text("created_by_name"),
-  isDeleted: boolean("is_deleted").notNull().default(false),
-  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
-    .notNull()
-    .defaultNow(),
-});
-
 export const leads = pgTable("leads", {
   id: uuid("id").primaryKey().defaultRandom(),
   clientName: text("client_name").notNull(),
@@ -251,13 +219,28 @@ export const telegramPending = pgTable("telegram_pending", {
     .defaultNow(),
 });
 
+// Cheltuielile suportate pentru o mașină cât timp e în pregătire
+// (reparație, detailing, piese, transport...).
+export const inventoryExpenses = pgTable("inventory_expenses", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  inventoryId: uuid("inventory_id").notNull(),
+  label: text("label").notNull(),
+  amount: doublePrecision("amount").notNull().default(0),
+  note: text("note"),
+  createdBy: uuid("created_by"),
+  createdByName: text("created_by_name"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+    .notNull()
+    .defaultNow(),
+});
+
 export type UserRow = typeof users.$inferSelect;
 export type CarRow = typeof cars.$inferSelect;
 export type InventoryRow = typeof inventory.$inferSelect;
 export type AuditLogRow = typeof auditLogs.$inferSelect;
 export type TaskRow = typeof tasks.$inferSelect;
 export type CarPhotoRow = typeof carPhotos.$inferSelect;
-export type ImportRow = typeof imports.$inferSelect;
 export type LeadRow = typeof leads.$inferSelect;
 export type NotificationRow = typeof notifications.$inferSelect;
 export type TelegramPendingRow = typeof telegramPending.$inferSelect;
+export type InventoryExpenseRow = typeof inventoryExpenses.$inferSelect;

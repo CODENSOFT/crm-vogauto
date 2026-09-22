@@ -37,7 +37,6 @@ const ADMIN_NAV: NavItem[] = [
   { href: "/dashboard/leads", label: "Clienți potențiali", Icon: IconTarget },
   { href: "/dashboard/cars", label: "Vânzări", Icon: IconCar },
   { href: "/dashboard/inventory", label: "Stoc mașini", Icon: IconCube },
-  { href: "/dashboard/imports", label: "Import & devamare", Icon: IconTruck },
   { href: "/dashboard/publishing", label: "Publicare", Icon: IconShare },
   { href: "/dashboard/statistics", label: "Statistici", Icon: IconChart },
   { href: "/dashboard/managers", label: "Manageri", Icon: IconTrend },

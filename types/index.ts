@@ -76,12 +76,24 @@ export interface UserDTO {
   createdAt: string;
 }
 
-export type StockStatus = "available" | "sold";
+export type StockStatus = "preparing" | "available" | "sold";
 
 export const STOCK_STATUS_LABELS: Record<StockStatus, string> = {
+  preparing: "În pregătire",
   available: "Disponibilă",
   sold: "Vândută",
 };
+
+// O cheltuială suportată pentru o mașină (reparație, detailing, piese...).
+export interface ExpenseDTO {
+  _id: string;
+  inventoryId: string;
+  label: string;
+  amount: number;
+  note?: string | null;
+  createdByName?: string | null;
+  createdAt: string;
+}
 
 // Mașină în stoc / la realizare.
 export interface InventoryDTO {
@@ -92,6 +104,7 @@ export interface InventoryDTO {
   vin?: string;
   color?: string;
   engine?: string | null;
+  expensesTotal?: number;
   ownerName: string;
   ownerPhone: string;
   clientWantPrice: number; // prețul cerut de proprietar
@@ -125,6 +138,8 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   REVEAL_PHONE: "Dezvăluire telefon",
   CREATE_STOCK: "Adăugare mașină în stoc",
   EDIT_STOCK: "Editare mașină stoc",
+  ADD_EXPENSE: "Adăugare cheltuială",
+  DELETE_EXPENSE: "Ștergere cheltuială",
   DELETE_STOCK: "Ștergere mașină stoc",
   CREATE_TASK: "Adăugare sarcină",
   EDIT_TASK: "Editare sarcină",
@@ -228,39 +243,6 @@ export interface PhotoDTO {
   createdAt: string;
 }
 
-export type ImportStage = "in_transit" | "customs" | "ready";
-export const IMPORT_STAGE_LABELS: Record<ImportStage, string> = {
-  in_transit: "În transport",
-  customs: "Devamat",
-  ready: "Gata de vânzare",
-};
-export interface ImportDTO {
-  _id: string;
-  brand: string;
-  model: string;
-  year?: number | null;
-  vin?: string | null;
-  color?: string | null;
-  engine?: string | null;
-  source?: string | null;
-  supplierName?: string | null;
-  stage: ImportStage;
-  purchasePrice: number;
-  customsCost: number;
-  otherCosts: number;
-  totalCost: number;
-  responsibleId?: string | null;
-  responsibleName?: string | null;
-  responsibleIds?: string[] | null;
-  responsibleNames?: string[] | null;
-  expectedDate?: string | null;
-  arrivedDate?: string | null;
-  notes?: string | null;
-  createdByName?: string | null;
-  createdAt: string;
-}
-
-// ---- Lead-uri (clienți potențiali) ----
 export type LeadSource = "call" | "site" | "999" | "instagram" | "walk_in" | "referral" | "other";
 export const LEAD_SOURCE_LABELS: Record<LeadSource, string> = {
   call: "Telefon",
