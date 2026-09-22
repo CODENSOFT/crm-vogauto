@@ -105,6 +105,8 @@ export interface InventoryDTO {
   color?: string;
   engine?: string | null;
   expensesTotal?: number;
+  /** Adaos după scăderea cheltuielilor (doar pentru afișare). */
+  netMargin?: number;
   ownerName: string;
   ownerPhone: string;
   clientWantPrice: number;

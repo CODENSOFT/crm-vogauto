@@ -135,7 +135,8 @@ export function InventoryDetail({ id }: { id: string }) {
               <Spec label="Status" value={STOCK_STATUS_LABELS[item.status]} />
               <Spec label={item.ownerName?.trim().toLowerCase() === "parcarea" ? "Preț cumpărare" : "Preț cerut client"}
                 value={item.purchaseCost ? formatMoney(item.purchaseCost) : "—"} />
-              <Spec label="Adaus parcare" value={<span className={item.markup >= 0 ? "text-emerald-700" : "text-red-600"}>{formatMoney(item.markup)}</span>} />
+              <Spec label="Cheltuieli" value={item.expensesTotal ? <span className="text-amber-700">{formatMoney(item.expensesTotal)}</span> : "—"} />
+              <Spec label="Adaus net" strong value={<span className={(item.netMargin ?? item.markup) >= 0 ? "text-emerald-700" : "text-red-600"}>{formatMoney(item.netMargin ?? item.markup)}</span>} />
               <Spec label="Proprietar" value={item.ownerName} />
               <Spec label="Telefon" value={<span className="font-mono">{item.ownerPhone && item.ownerPhone !== "—" ? item.ownerPhone : "—"}</span>} />
               <Spec label="Adăugată de" value={item.addedByName || "—"} />
@@ -143,7 +144,7 @@ export function InventoryDetail({ id }: { id: string }) {
             </div>
           </div>
 
-          <ExpensesCard inventoryId={id} />
+          <ExpensesCard inventoryId={id} onChanged={load} />
 
           {(item.listingDescription || item.notes) && (
             <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card">

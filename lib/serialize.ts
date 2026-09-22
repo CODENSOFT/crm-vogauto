@@ -28,7 +28,8 @@ export function inventoryToDTO(row: InventoryRow) {
     _id: id,
     purchaseCost,
     markup: Number(row.sellPrice) - purchaseCost,
-    expensesTotal: 0, // completat de ruta de listare
+    expensesTotal: 0, // completate de rutele de citire
+    netMargin: Number(row.sellPrice) - purchaseCost,
   };
 }
 

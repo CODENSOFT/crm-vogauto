@@ -48,7 +48,12 @@ export async function GET(request: Request) {
       .where(inArray(inventoryExpenses.inventoryId, ids))
       .groupBy(inventoryExpenses.inventoryId);
     const expMap = new Map(exp.map((e) => [e.inventoryId, Number(e.total)]));
-    for (const it of items) it.expensesTotal = expMap.get(it._id) ?? 0;
+    for (const it of items) {
+      it.expensesTotal = expMap.get(it._id) ?? 0;
+      // `markup` rămâne brut (îl folosește formularul de vânzare);
+      // `netMargin` e ce rămâne după cheltuieli.
+      it.netMargin = it.markup - it.expensesTotal;
+    }
     const photos = await db
       .select({ inventoryId: carPhotos.inventoryId, url: carPhotos.url })
       .from(carPhotos)
