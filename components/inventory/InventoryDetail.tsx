@@ -133,7 +133,8 @@ export function InventoryDetail({ id }: { id: string }) {
               <Spec label="Motor" value={item.engine || "—"} />
               <Spec label="VIN" value={<span className="font-mono text-xs">{item.vin || "—"}</span>} />
               <Spec label="Status" value={STOCK_STATUS_LABELS[item.status]} />
-              <Spec label="Preț cerut client" value={item.clientWantPrice ? formatMoney(item.clientWantPrice) : "—"} />
+              <Spec label={item.ownerName?.trim().toLowerCase() === "parcarea" ? "Preț cumpărare" : "Preț cerut client"}
+                value={item.purchaseCost ? formatMoney(item.purchaseCost) : "—"} />
               <Spec label="Adaus parcare" value={<span className={item.markup >= 0 ? "text-emerald-700" : "text-red-600"}>{formatMoney(item.markup)}</span>} />
               <Spec label="Proprietar" value={item.ownerName} />
               <Spec label="Telefon" value={<span className="font-mono">{item.ownerPhone && item.ownerPhone !== "—" ? item.ownerPhone : "—"}</span>} />

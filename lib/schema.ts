@@ -75,6 +75,8 @@ export const inventory = pgTable("inventory", {
   ownerName: text("owner_name").notNull(),
   ownerPhone: text("owner_phone").notNull(),
   clientWantPrice: doublePrecision("client_want_price").notNull().default(0),
+  // Cât a plătit parcarea pe mașină (când proprietarul e „Parcarea").
+  purchasePrice: doublePrecision("purchase_price").notNull().default(0),
   sellPrice: doublePrecision("sell_price").notNull(),
   status: text("status").notNull().default("available"),
   notes: text("notes"),

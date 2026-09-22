@@ -74,7 +74,7 @@ export function InventoryView() {
   const prep = tab === "preparing";
   const cols = prep
     ? ["Foto", "Mașină", "An", "VIN", "Proprietar", "Preț vânzare", "Cheltuieli", "Status", ""]
-    : ["Foto", "Mașină", "An", "VIN", "Proprietar", "Telefon", "Preț client", "Preț vânzare", "Adaus", "Status", ""];
+    : ["Foto", "Mașină", "An", "VIN", "Proprietar", "Telefon", "Cost achiziție", "Preț vânzare", "Adaus", "Status", ""];
 
   return (
     <div>
@@ -166,7 +166,7 @@ export function InventoryView() {
                   ) : (
                     <>
                       <td className="whitespace-nowrap px-3 py-2.5 font-mono text-xs text-slate-600">{it.ownerPhone && it.ownerPhone !== "—" ? it.ownerPhone : "—"}</td>
-                      <td className="whitespace-nowrap px-3 py-2.5 text-slate-700">{it.clientWantPrice ? formatMoney(it.clientWantPrice) : "—"}</td>
+                      <td className="whitespace-nowrap px-3 py-2.5 text-slate-700">{it.purchaseCost ? formatMoney(it.purchaseCost) : "—"}</td>
                       <td className="whitespace-nowrap px-3 py-2.5 font-medium text-slate-900">{formatMoney(it.sellPrice)}</td>
                       <td className={`whitespace-nowrap px-3 py-2.5 font-semibold ${it.markup >= 0 ? "text-emerald-700" : "text-red-600"}`}>{formatMoney(it.markup)}</td>
                     </>

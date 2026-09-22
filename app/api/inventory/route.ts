@@ -79,7 +79,7 @@ export async function POST(request: Request) {
   const body = await request.json();
   const {
     brand, model, year, vin, color, engine,
-    ownerName, ownerPhone, clientWantPrice, sellPrice, status, notes,
+    ownerName, ownerPhone, clientWantPrice, purchasePrice, sellPrice, status, notes,
   } = body;
 
   // Dacă proprietarul e „Parcarea", telefonul și prețul clientului nu sunt cerute.
@@ -97,6 +97,7 @@ export async function POST(request: Request) {
       engine: engine || null,
       ownerName, ownerPhone: ownerPhone ? String(ownerPhone) : "—",
       clientWantPrice: Number(clientWantPrice) || 0,
+      purchasePrice: Number(purchasePrice) || 0,
       sellPrice: Number(sellPrice),
       status: status === "sold" ? "sold" : status === "preparing" ? "preparing" : "available",
       notes: notes || null,

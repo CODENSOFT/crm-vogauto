@@ -10,7 +10,7 @@ import type { InventoryDTO } from "@/types";
 
 const EMPTY = {
   brand: "", model: "", year: String(new Date().getFullYear()), vin: "", color: "", engine: "",
-  ownerName: "", ownerPhone: "", clientWantPrice: "", sellPrice: "", status: "available", notes: "",
+  ownerName: "", ownerPhone: "", clientWantPrice: "", purchasePrice: "", sellPrice: "", status: "available", notes: "",
 };
 
 // Formular (modal) pentru adăugarea/editarea unei mașini din stoc + poze.
@@ -37,7 +37,8 @@ export function InventoryFormModal({
       setForm({
         brand: editing.brand, model: editing.model, year: String(editing.year), vin: editing.vin ?? "", color: editing.color ?? "", engine: editing.engine ?? "",
         ownerName: editing.ownerName, ownerPhone: editing.ownerPhone,
-        clientWantPrice: String(editing.clientWantPrice ?? ""), sellPrice: String(editing.sellPrice ?? ""),
+        clientWantPrice: String(editing.clientWantPrice ?? ""), purchasePrice: String(editing.purchasePrice ?? ""),
+        sellPrice: String(editing.sellPrice ?? ""),
         status: editing.status, notes: editing.notes ?? "",
       });
     } else {
@@ -46,8 +47,10 @@ export function InventoryFormModal({
   }, [open, editing, defaultStatus]);
 
   const setF = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
-  const markup = (Number(form.sellPrice) || 0) - (Number(form.clientWantPrice) || 0);
   const isParcare = form.ownerName.trim().toLowerCase() === "parcarea";
+  // La mașinile parcării costul e prețul de cumpărare, altfel prețul cerut de client.
+  const cost = Number(isParcare ? form.purchasePrice : form.clientWantPrice) || 0;
+  const markup = (Number(form.sellPrice) || 0) - cost;
 
   function addFiles(files: FileList | null) {
     if (!files) return;
@@ -106,6 +109,7 @@ export function InventoryFormModal({
         </datalist>
         <Input label={`Telefon proprietar${isParcare ? "" : " *"}`} value={form.ownerPhone} onChange={(e) => setF("ownerPhone", e.target.value)} disabled={isParcare} placeholder={isParcare ? "Nu e necesar (mașina parcării)" : ""} />
         <Input label="Preț cerut de client (€)" type="number" value={form.clientWantPrice} onChange={(e) => setF("clientWantPrice", e.target.value)} disabled={isParcare} placeholder={isParcare ? "Nu e necesar" : ""} />
+        <Input label={`Preț cumpărare (€)${isParcare ? " *" : ""}`} type="number" value={form.purchasePrice} onChange={(e) => setF("purchasePrice", e.target.value)} disabled={!isParcare} placeholder={isParcare ? "Cât a plătit parcarea" : "Doar pentru mașinile parcării"} />
         <Input label="Preț de vânzare (€) *" type="number" value={form.sellPrice} onChange={(e) => setF("sellPrice", e.target.value)} />
         <Select label="Status" value={form.status} onChange={(e) => setF("status", e.target.value)}>
           <option value="preparing">În pregătire</option>
@@ -141,7 +145,7 @@ export function InventoryFormModal({
         </div>
 
         <div className="sm:col-span-2 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">
-          Adaus parcare: <span className={`font-semibold ${markup >= 0 ? "text-emerald-700" : "text-red-600"}`}>{formatMoney(markup)}</span>
+          {isParcare ? "Profit brut" : "Adaus parcare"}: <span className={`font-semibold ${markup >= 0 ? "text-emerald-700" : "text-red-600"}`}>{formatMoney(markup)}</span>
           <span className="text-slate-400"> (preț vânzare − preț client)</span>
         </div>
       </div>

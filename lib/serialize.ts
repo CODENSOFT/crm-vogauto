@@ -19,10 +19,15 @@ export function carToDTO(row: CarRow, mask = true) {
 
 export function inventoryToDTO(row: InventoryRow) {
   const { id, ...rest } = row;
+  // Pentru mașinile parcării costul e prețul de cumpărare; pentru cele
+  // primite de la clienți, prețul cerut de client.
+  const isParcare = String(row.ownerName ?? "").trim().toLowerCase() === "parcarea";
+  const purchaseCost = isParcare ? Number(row.purchasePrice) : Number(row.clientWantPrice);
   return {
     ...rest,
     _id: id,
-    markup: Number(row.sellPrice) - Number(row.clientWantPrice),
+    purchaseCost,
+    markup: Number(row.sellPrice) - purchaseCost,
     expensesTotal: 0, // completat de ruta de listare
   };
 }

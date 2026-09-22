@@ -67,7 +67,7 @@ export function CarsTable() {
     setNewSale((s) => ({
       ...s, inventoryId: id, brand: it.brand, model: it.model, year: String(it.year),
       vin: it.vin ?? "", color: it.color ?? "", engine: it.engine ?? "",
-      priceBuy: String(it.clientWantPrice), priceSell: String(it.sellPrice), profit: "",
+      priceBuy: String(it.purchaseCost ?? it.clientWantPrice), priceSell: String(it.sellPrice), profit: "",
     }));
   }
 

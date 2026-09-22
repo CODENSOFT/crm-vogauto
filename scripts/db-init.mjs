@@ -243,6 +243,8 @@ async function main() {
   await sql`alter table imports add column if not exists color text`;
   await sql`alter table imports add column if not exists engine text`;
 
+  await sql`alter table inventory add column if not exists purchase_price double precision not null default 0`;
+
   // Cheltuieli per mașină (cât e în pregătire).
   await sql`
     create table if not exists inventory_expenses (

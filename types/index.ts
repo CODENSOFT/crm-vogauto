@@ -107,7 +107,10 @@ export interface InventoryDTO {
   expensesTotal?: number;
   ownerName: string;
   ownerPhone: string;
-  clientWantPrice: number; // prețul cerut de proprietar
+  clientWantPrice: number;
+  purchasePrice?: number;
+  /** Costul real de achiziție (preț cumpărare la parcare, preț client altfel). */
+  purchaseCost?: number; // prețul cerut de proprietar
   sellPrice: number; // prețul de vânzare al parcării
   markup: number; // adaosul parcării = sellPrice - clientWantPrice
   status: StockStatus;
