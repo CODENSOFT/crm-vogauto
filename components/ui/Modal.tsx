@@ -24,16 +24,18 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
   if (!open) return null;
 
   return (
-    <div
-      role="presentation"
-      className="fixed inset-0 z-40 flex items-end justify-center bg-slate-900/40 p-0 backdrop-blur-sm animate-fade-in sm:items-center sm:p-4"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-40 flex items-end justify-center p-0 animate-fade-in sm:items-center sm:p-4">
+      {/* Fundalul e un buton real: se închide și cu tastatura, nu doar cu mausul. */}
+      <button
+        type="button"
+        aria-label="Închide fereastra"
+        onClick={onClose}
+        className="absolute inset-0 cursor-default bg-slate-900/40 backdrop-blur-sm"
+      />
       <div
         role="dialog"
         aria-modal="true"
-        className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-slate-200/60 bg-white shadow-elevated animate-scale-in sm:max-h-[90vh] sm:rounded-2xl"
-        onClick={(e) => e.stopPropagation()}
+        className="relative flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-slate-200/60 bg-white shadow-elevated animate-scale-in sm:max-h-[90vh] sm:rounded-2xl"
       >
         <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-5 py-4 sm:px-6">
           <h2 className="text-base font-semibold tracking-tight text-slate-900">{title}</h2>

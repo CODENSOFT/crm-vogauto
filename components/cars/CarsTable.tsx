@@ -7,6 +7,7 @@ import { Pagination } from "@/components/ui/Table";
 import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
 import { Modal, ConfirmDialog } from "@/components/ui/Modal";
+import { CarThumb } from "@/components/shared/CarThumb";
 import { CarStockPicker } from "@/components/shared/CarStockPicker";
 import { IconDownload, IconEye } from "@/components/ui/Icons";
 import { formatMoney, formatDateShort } from "@/lib/utils";
@@ -121,12 +122,20 @@ export function CarsTable() {
   function Cell({ car, field, type = "text", display }: { car: CarDTO; field: keyof CarDTO; type?: string; display: React.ReactNode }) {
     const id = `${car._id}:${field}`;
     if (editing === id) return (
-      <input autoFocus type={type} value={editValue} onChange={(e) => setEditValue(e.target.value)}
+      <input ref={(el) => el?.focus()} type={type} value={editValue} onChange={(e) => setEditValue(e.target.value)}
         onBlur={() => saveField(car, field)}
         onKeyDown={(e) => { if (e.key === "Enter") saveField(car, field); if (e.key === "Escape") setEditing(null); }}
         className="w-24 rounded border border-brand px-1 py-0.5 text-sm outline-none" />
     );
-    return <span onClick={() => startEdit(car, field)} className="block min-h-[1.25rem] cursor-pointer rounded px-1 hover:bg-blue-50" title="Click pentru editare">{display}</span>;
+    return (
+      <button
+        type="button"
+        aria-label="Editează valoarea"
+        onClick={() => startEdit(car, field)}
+        className="block min-h-[1.25rem] w-full cursor-pointer rounded px-1 text-left hover:bg-blue-50"
+        title="Click pentru editare"
+      >{display}</button>
+    );
   }
 
   const headers: [string, string][] = [
@@ -175,17 +184,7 @@ export function CarsTable() {
             <Link key={car._id} href={`/dashboard/cars/${car._id}`}
               className="block rounded-xl border border-slate-200/80 bg-white p-3 shadow-card active:bg-brand-tint/40">
               <div className="flex gap-3">
-                <div className="relative h-16 w-20 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
-                  {car.primaryPhoto ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={car.primaryPhoto} alt="" className="h-full w-full object-cover" loading="lazy" />
-                  ) : (
-                    <span className="flex h-full w-full items-center justify-center text-[10px] text-slate-400">fără</span>
-                  )}
-                  {(car.photoCount ?? 0) > 1 && (
-                    <span className="absolute bottom-0 right-0 rounded-tl bg-black/60 px-1 text-[9px] text-white">{car.photoCount}</span>
-                  )}
-                </div>
+                <CarThumb url={car.primaryPhoto} count={car.photoCount} className="h-16 w-20 shrink-0 rounded-lg" />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[15px] font-semibold text-slate-900">{car.brand} {car.model} <span className="font-normal text-slate-400">{car.year}</span></p>
                   <p className="mt-0.5 truncate text-xs text-slate-500">{car.clientName}</p>
@@ -205,7 +204,13 @@ export function CarsTable() {
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50/80">
               <tr>{headers.map(([col, lbl], i) => (
-                <th key={i} onClick={() => col && toggleSort(col)} className={`whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 ${col ? "cursor-pointer select-none hover:text-brand" : ""}`}>{lbl}{col ? sortInd(col) : ""}</th>
+                <th key={i} className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  {col ? (
+                    <button type="button" onClick={() => toggleSort(col)} className="select-none uppercase tracking-wider hover:text-brand">
+                      {lbl}{sortInd(col)}
+                    </button>
+                  ) : lbl}
+                </th>
               ))}</tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -217,24 +222,14 @@ export function CarsTable() {
                   <tr key={car._id} className="transition-colors hover:bg-brand-tint/50">
                     <td className="px-3 py-2 text-slate-400">{(page - 1) * 20 + idx + 1}</td>
                     <td className="px-3 py-2">
-                      <Link href={`/dashboard/cars/${car._id}`} className="block" title="Vezi detalii">
-                        <div className="relative h-10 w-14 overflow-hidden rounded-md border border-slate-200 bg-slate-100">
-                          {car.primaryPhoto ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={car.primaryPhoto} alt="" className="h-full w-full object-cover" loading="lazy" />
-                          ) : (
-                            <span className="flex h-full w-full items-center justify-center text-[9px] text-slate-400">fără</span>
-                          )}
-                          {(car.photoCount ?? 0) > 1 && (
-                            <span className="absolute bottom-0 right-0 rounded-tl bg-black/60 px-1 text-[8px] text-white">{car.photoCount}</span>
-                          )}
-                        </div>
+                      <Link href={`/dashboard/cars/${car._id}`} className="block" title="Vezi detalii" aria-label={`${car.brand} ${car.model}`}>
+                        <CarThumb url={car.primaryPhoto} count={car.photoCount} className="h-10 w-14" />
                       </Link>
                     </td>
                     <td className="px-3 py-2"><Cell car={car} field="clientName" display={car.clientName} /></td>
                     <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">
                       {revealed[car._id] ? revealed[car._id] : (
-                        <button onClick={() => revealPhone(car)} className="inline-flex items-center gap-1 text-slate-600 hover:text-brand" title="Click pentru a dezvălui">
+                        <button onClick={() => revealPhone(car)} className="inline-flex items-center gap-1 text-slate-600 hover:text-brand" title="Click pentru a dezvălui" aria-label="Arată telefonul">
                           {car.clientPhone} <IconEye className="h-3.5 w-3.5" />
                         </button>
                       )}
@@ -248,22 +243,28 @@ export function CarsTable() {
                     <td className="px-3 py-2"><Cell car={car} field="priceSell" type="number" display={formatMoney(car.priceSell)} /></td>
                     <td className="whitespace-nowrap px-3 py-2">
                       {editing === `${car._id}:profit` ? (
-                        <input autoFocus type="number" value={editValue} onChange={(e) => setEditValue(e.target.value)}
+                        <input ref={(el) => el?.focus()} type="number" value={editValue} onChange={(e) => setEditValue(e.target.value)}
                           onBlur={() => saveProfit(car)} onKeyDown={(e) => { if (e.key === "Enter") saveProfit(car); if (e.key === "Escape") setEditing(null); }}
                           className="w-24 rounded border border-brand px-1 py-0.5 text-sm outline-none" />
                       ) : (
-                        <span onClick={() => startEditProfit(car)} className={`block cursor-pointer rounded px-1 font-medium hover:bg-blue-50 ${profit >= 0 ? "text-green-600" : "text-red-600"}`} title="Click pentru editarea profitului">{formatMoney(profit)}</span>
+                        <button
+                          type="button"
+                          aria-label="Editează profitul"
+                          onClick={() => startEditProfit(car)}
+                          className={`block w-full cursor-pointer rounded px-1 text-left font-medium hover:bg-blue-50 ${profit >= 0 ? "text-green-600" : "text-red-600"}`}
+                          title="Click pentru editarea profitului"
+                        >{formatMoney(profit)}</button>
                       )}
                     </td>
                     <td className="px-3 py-2">
-                      <select value={car.paymentMethod} onChange={(e) => patch(car, { paymentMethod: e.target.value })} className="rounded border border-transparent bg-transparent px-1 py-0.5 text-sm hover:border-slate-300">
+                      <select aria-label="Metodă de plată" value={car.paymentMethod} onChange={(e) => patch(car, { paymentMethod: e.target.value })} className="rounded border border-transparent bg-transparent px-1 py-0.5 text-sm hover:border-slate-300">
                         <option value="cash">Cash</option><option value="transfer">Transfer</option><option value="rate">Rate</option>
                       </select>
                     </td>
                     <td className="whitespace-nowrap px-3 py-2 text-slate-600">{car.soldByName ?? "—"}</td>
                     <td className="whitespace-nowrap px-3 py-2">{formatDateShort(car.saleDate)}</td>
                     <td className="px-3 py-2">
-                      <select value={car.status} onChange={(e) => patch(car, { status: e.target.value })} className="rounded border border-transparent bg-transparent px-1 py-0.5 text-sm hover:border-slate-300">
+                      <select aria-label="Status vânzare" value={car.status} onChange={(e) => patch(car, { status: e.target.value })} className="rounded border border-transparent bg-transparent px-1 py-0.5 text-sm hover:border-slate-300">
                         <option value="available">Disponibilă</option><option value="reserved">Rezervată</option><option value="sold">Vândută</option>
                       </select>
                     </td>

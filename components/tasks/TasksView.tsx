@@ -219,6 +219,7 @@ export function TasksView() {
               key={t._id}
               role="button"
               tabIndex={0}
+              aria-label={`Deschide sarcina: ${t.title}`}
               onClick={() => setDetailTask(t)}
               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDetailTask(t); } }}
               className={`group relative cursor-pointer overflow-hidden rounded-xl border bg-white shadow-card transition-all hover:border-slate-300 hover:shadow-card-hover ${t.status === "done" ? "border-slate-200/60" : "border-slate-200"}`}
@@ -247,10 +248,10 @@ export function TasksView() {
                   </span>
                   {isAdmin && (
                     <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                      <button onClick={() => openEdit(t)} title="Editează" className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-brand">
+                      <button onClick={() => openEdit(t)} title="Editează" aria-label="Editează sarcina" className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-brand">
                         <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" /></svg>
                       </button>
-                      <button onClick={() => setDeleteTarget(t)} title="Șterge" className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600">
+                      <button onClick={() => setDeleteTarget(t)} title="Șterge" aria-label="Șterge sarcina" className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600">
                         <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" /></svg>
                       </button>
                     </div>

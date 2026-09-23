@@ -118,9 +118,11 @@ export function TaskDetailModal({
                   {urls.length > 1 && (
                     <div className="mt-2 flex gap-2 overflow-x-auto">
                       {urls.map((u, i) => (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img key={i} src={u} alt="" onClick={() => setSel(i)}
-                          className={`h-12 w-16 flex-shrink-0 cursor-pointer rounded object-cover ring-2 ${i === sel ? "ring-brand" : "ring-transparent"}`} />
+                        <button key={i} type="button" onClick={() => setSel(i)} aria-label={`Fotografia ${i + 1}`}
+                          className={`h-12 w-16 flex-shrink-0 overflow-hidden rounded ring-2 ${i === sel ? "ring-brand" : "ring-transparent"}`}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={u} alt="" className="h-full w-full object-cover" />
+                        </button>
                       ))}
                     </div>
                   )}

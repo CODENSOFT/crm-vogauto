@@ -27,7 +27,7 @@ export function InlineEdit({
   if (editing) {
     return (
       <input
-        autoFocus
+        ref={(el) => el?.focus()}
         type={type}
         value={val}
         onChange={(e) => setVal(e.target.value)}
@@ -38,16 +38,15 @@ export function InlineEdit({
     );
   }
   return (
-    <span
-      role="button"
-      tabIndex={0}
+    <button
+      type="button"
+      aria-label="Editează valoarea"
       onClick={start}
-      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); start(); } }}
       title="Click pentru editare"
       className={`block min-h-[1.5rem] cursor-pointer rounded-md px-1.5 py-0.5 transition-colors hover:bg-brand-tint/60 ${align === "right" ? "text-right" : ""}`}
     >
       {display}
-    </span>
+    </button>
   );
 }
 

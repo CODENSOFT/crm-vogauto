@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { ConfirmDialog } from "@/components/ui/Modal";
 import { Badge } from "@/components/ui/Table";
+import { CarThumb } from "@/components/shared/CarThumb";
 import { InventoryFormModal } from "@/components/inventory/InventoryFormModal";
 import { formatMoney } from "@/lib/utils";
 import { STOCK_STATUS_LABELS, type InventoryDTO } from "@/types";
@@ -123,17 +124,7 @@ export function InventoryView() {
             <div key={it._id} className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-card">
               <div className="flex gap-3">
                 <Link href={`/dashboard/inventory/${it._id}`} className="shrink-0">
-                  <div className="relative h-16 w-20 overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
-                    {it.primaryPhoto ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={it.primaryPhoto} alt="" className="h-full w-full object-cover" loading="lazy" />
-                    ) : (
-                      <span className="flex h-full w-full items-center justify-center text-[10px] text-slate-400">fără</span>
-                    )}
-                    {(it.photoCount ?? 0) > 1 && (
-                      <span className="absolute bottom-0 right-0 rounded-tl bg-black/60 px-1 text-[9px] text-white">{it.photoCount}</span>
-                    )}
-                  </div>
+                  <CarThumb url={it.primaryPhoto} count={it.photoCount} className="h-16 w-20 rounded-lg" />
                 </Link>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-2">
@@ -183,17 +174,7 @@ export function InventoryView() {
                 <tr key={it._id} className="transition-colors hover:bg-brand-tint/50">
                   <td className="px-3 py-2">
                     <Link href={`/dashboard/inventory/${it._id}`} className="block" aria-label={`${it.brand} ${it.model}`}>
-                      <div className="relative h-12 w-16 overflow-hidden rounded-md border border-slate-200 bg-slate-100">
-                        {it.primaryPhoto ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={it.primaryPhoto} alt="" className="h-full w-full object-cover" loading="lazy" />
-                        ) : (
-                          <span className="flex h-full w-full items-center justify-center text-[10px] text-slate-400">fără</span>
-                        )}
-                        {(it.photoCount ?? 0) > 1 && (
-                          <span className="absolute bottom-0 right-0 rounded-tl bg-black/60 px-1 text-[9px] text-white">{it.photoCount}</span>
-                        )}
-                      </div>
+                      <CarThumb url={it.primaryPhoto} count={it.photoCount} />
                     </Link>
                   </td>
                   <td className="whitespace-nowrap px-3 py-2.5 font-medium text-slate-800">
