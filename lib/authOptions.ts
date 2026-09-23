@@ -1,6 +1,6 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import bcrypt from "bcryptjs";
+import { verifyPassword } from "@/lib/password";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { users } from "@/lib/schema";
@@ -85,7 +85,7 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const ok = await bcrypt.compare(password, user.password);
+        const ok = await verifyPassword(password, user.password);
         if (!ok) {
           registerFailure(rlKey);
           await logAction({

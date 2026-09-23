@@ -123,15 +123,15 @@ export function UsersView() {
                 <tr><td colSpan={7} className="px-4 py-12 text-center text-slate-400">Niciun utilizator.</td></tr>
               ) : users.map((u) => (
                 <tr key={u._id} className="transition-colors hover:bg-brand-tint/40">
-                  <td className="whitespace-nowrap px-3 py-2.5">
+                  <th scope="row" aria-label={u.fullName} className="whitespace-nowrap px-3 py-2.5 text-left font-normal">
                     <div className="flex items-center gap-3">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-gradient text-xs font-bold text-white ring-1 ring-white/20">{initials(u.fullName)}</span>
+                      <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-gradient text-xs font-bold text-white ring-1 ring-white/20">{initials(u.fullName)}</span>
                       <div className="leading-tight">
                         <div className="font-medium text-slate-800">{u.fullName}{u._id === meId && <span className="ml-1.5 text-[10px] font-semibold text-brand">(tu)</span>}</div>
                         <div className="font-mono text-[11px] text-slate-400">{u.username}</div>
                       </div>
                     </div>
-                  </td>
+                  </th>
                   <td className="px-3 py-2.5"><Badge color={u.role === "admin" ? "blue" : "gray"}>{u.role === "admin" ? "Administrator" : "Angajat"}</Badge></td>
                   <td className="px-3 py-2.5"><Badge color={u.isActive ? "green" : "red"}>{u.isActive ? "Activ" : "Inactiv"}</Badge></td>
                   <td className="px-3 py-2.5"><NumCell user={u} field="fixedFee" onSaved={load} /></td>

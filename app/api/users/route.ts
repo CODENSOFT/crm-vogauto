@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
+import { hashPassword, MIN_PASSWORD_LENGTH } from "@/lib/password";
 import { desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { users } from "@/lib/schema";
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
   if (!username || !password || !fullName) {
     return NextResponse.json({ error: "Nume, utilizator și parolă sunt obligatorii." }, { status: 400 });
   }
-  if (String(password).length < 8) {
+  if (String(password).length < MIN_PASSWORD_LENGTH) {
     return NextResponse.json({ error: "Parola trebuie să aibă minim 8 caractere." }, { status: 400 });
   }
   const login = String(username).toLowerCase().trim();
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     .values({
       username: login,
       email: `${login}@vogauto.local`,
-      password: await bcrypt.hash(password, 10),
+      password: await hashPassword(password),
       fullName,
       role: role === "admin" ? "admin" : "worker",
       permissions: permissions || {},

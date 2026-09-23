@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
+import { hashPassword, MIN_PASSWORD_LENGTH } from "@/lib/password";
 import { and, eq, ne } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { users } from "@/lib/schema";
@@ -88,11 +88,11 @@ export async function PUT(
     changed.bonus = bonus;
   }
   if (body.password) {
-    if (String(body.password).length < 8) {
+    if (String(body.password).length < MIN_PASSWORD_LENGTH) {
       return NextResponse.json({ error: "Parola trebuie să aibă minim 8 caractere." }, { status: 400 });
     }
-    updates.password = await bcrypt.hash(body.password, 10);
-    changed.password = "(schimbată)";
+    updates.password = await hashPassword(body.password);
+    changed.passwordChanged = true;
   }
 
   const hadTelegram = target.telegramId;

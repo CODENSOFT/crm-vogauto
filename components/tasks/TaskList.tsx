@@ -23,13 +23,15 @@ export function TaskList({
       {tasks.map((t) => (
         <div
           key={t._id}
-          role="button"
-          tabIndex={0}
-          aria-label={`Deschide sarcina: ${t.title}`}
-          onClick={() => onOpen(t)}
-          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(t); } }}
-          className={`group relative cursor-pointer overflow-hidden rounded-xl border bg-white shadow-card transition-all hover:border-slate-300 hover:shadow-card-hover ${t.status === "done" ? "border-slate-200/60" : "border-slate-200"}`}
+          className={`group relative overflow-hidden rounded-xl border bg-white shadow-card transition-all hover:border-slate-300 hover:shadow-card-hover ${t.status === "done" ? "border-slate-200/60" : "border-slate-200"}`}
         >
+          {/* Buton real care acoperă cardul; butoanele de acțiune stau peste el. */}
+          <button
+            type="button"
+            aria-label={`Deschide sarcina: ${t.title}`}
+            onClick={() => onOpen(t)}
+            className="absolute inset-0 z-0 cursor-pointer"
+          />
           <span className={`absolute inset-y-0 left-0 w-1 ${t.status === "done" ? "bg-emerald-400" : t.priority === "high" ? "bg-red-500" : t.status === "in_progress" ? "bg-amber-400" : "bg-slate-300"}`} />
           <div className="flex items-start justify-between gap-3 p-4 pl-5">
             <div className="min-w-0">
@@ -48,7 +50,7 @@ export function TaskList({
                 {t.carLabel && <span className="inline-flex items-center gap-1.5"><IconCar className="h-3.5 w-3.5 text-slate-400" />{t.carLabel}</span>}
               </div>
             </div>
-            <div role="presentation" className="flex shrink-0 flex-col items-end gap-2.5" onClick={(e) => e.stopPropagation()}>
+            <div className="relative z-10 flex shrink-0 flex-col items-end gap-2.5">
               <span className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold ${t.status === "done" ? "bg-emerald-100 text-emerald-700" : t.status === "in_progress" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"}`}>
                 {TASK_STATUS_LABELS[t.status]}
               </span>

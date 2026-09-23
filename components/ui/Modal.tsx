@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Button } from "./Button";
 import { IconClose } from "./Icons";
 
@@ -13,30 +13,31 @@ interface ModalProps {
 }
 
 export function Modal({ open, onClose, title, children, footer }: ModalProps) {
-  // Escape închide fereastra — obișnuință firească pe desktop.
+  const ref = useRef<HTMLDialogElement>(null);
+
+  // <dialog> nativ: blochează focusul în fereastră și tratează Escape singur.
+  // Ascultătorii stau pe element, nu în JSX, fiindcă sunt evenimente proprii
+  // ale elementului (`cancel` nici nu există ca prop React tipizat corect).
   useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    const el = ref.current;
+    if (!el) return;
+    if (!el.open) el.showModal();
+
+    const onBackdrop = (e: MouseEvent) => { if (e.target === el) onClose(); };
+    const onCancel = (e: Event) => { e.preventDefault(); onClose(); };
+    el.addEventListener("click", onBackdrop);
+    el.addEventListener("cancel", onCancel);
+    return () => {
+      el.removeEventListener("click", onBackdrop);
+      el.removeEventListener("cancel", onCancel);
+    };
   }, [open, onClose]);
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center p-0 animate-fade-in sm:items-center sm:p-4">
-      {/* Fundalul e un buton real: se închide și cu tastatura, nu doar cu mausul. */}
-      <button
-        type="button"
-        aria-label="Închide fereastra"
-        onClick={onClose}
-        className="absolute inset-0 cursor-default bg-slate-900/40 backdrop-blur-sm"
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        className="relative flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-slate-200/60 bg-white shadow-elevated animate-scale-in sm:max-h-[90vh] sm:rounded-2xl"
-      >
+    <dialog ref={ref} className="vg-modal" aria-label={title}>
+      <div className="mx-auto flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-slate-200/60 bg-white shadow-elevated animate-scale-in sm:max-h-[90vh] sm:rounded-2xl">
         <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-5 py-4 sm:px-6">
           <h2 className="text-base font-semibold tracking-tight text-slate-900">{title}</h2>
           <button
@@ -54,7 +55,7 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
           </div>
         )}
       </div>
-    </div>
+    </dialog>
   );
 }
 

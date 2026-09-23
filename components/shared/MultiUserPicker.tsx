@@ -35,30 +35,27 @@ export function MultiUserPicker({
   return (
     <div className="relative flex flex-col gap-1.5" ref={ref}>
       <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">{label}</label>
-      {/* Nu poate fi <button>: conține butoanele „×" de eliminare, iar
-          butoanele imbricate sunt HTML invalid. */}
-      <div
-        role="button"
-        tabIndex={0}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen((o) => !o); }
-        }}
-        className="flex min-h-[38px] w-full cursor-pointer flex-wrap items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-left text-sm shadow-sm focus-within:border-brand"
-      >
+      <div className="relative flex min-h-[38px] w-full flex-wrap items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-left text-sm shadow-sm focus-within:border-brand">
+        {/* Buton real care acoperă câmpul; chipsurile cu „×" stau peste el. */}
+        <button
+          type="button"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-label={label}
+          onClick={() => setOpen((o) => !o)}
+          className="absolute inset-0 z-0 cursor-pointer rounded-lg"
+        />
         {selected.length === 0 ? (
-          <span className="px-1 text-slate-400">{placeholder}</span>
+          <span className="relative z-10 px-1 text-slate-400">{placeholder}</span>
         ) : (
           selected.map((w) => (
-            <span key={w._id} className="inline-flex items-center gap-1 rounded-md bg-brand-tint px-2 py-0.5 text-xs font-medium text-brand-dark">
+            <span key={w._id} className="relative z-10 inline-flex items-center gap-1 rounded-md bg-brand-tint px-2 py-0.5 text-xs font-medium text-brand-dark">
               {w.fullName}
               <button type="button" onClick={(e) => { e.stopPropagation(); toggle(w._id); }} className="text-brand/70 hover:text-red-600" aria-label="Elimină">×</button>
             </span>
           ))
         )}
-        <svg className="ml-auto h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
+        <svg className="relative z-10 ml-auto h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
       </div>
       {open && (
         <div className="absolute top-full z-20 mt-1 max-h-56 w-full overflow-auto rounded-lg border border-slate-200 bg-white shadow-elevated">

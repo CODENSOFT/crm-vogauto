@@ -125,3 +125,27 @@ body {
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
+
+/* ——— Ferestre modale (<dialog> nativ) ————————————————————————— */
+
+dialog.vg-modal {
+  /* Anulăm stilurile implicite ale browserului; forma o dă panoul dinăuntru. */
+  width: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  padding: 0 0 env(safe-area-inset-bottom);
+  border: 0;
+  background: transparent;
+  /* Pe telefon fereastra urcă de jos, ca o foaie. */
+  margin: auto auto 0;
+}
+@media (min-width: 640px) {
+  dialog.vg-modal {
+    margin: auto;
+    padding: 1rem;
+  }
+}
+dialog.vg-modal::backdrop {
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+}
