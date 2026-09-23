@@ -100,3 +100,28 @@ body {
     transform: translateX(100%);
   }
 }
+
+/* ——— Telefon ———————————————————————————————————————————————————— */
+
+/* iOS mărește automat pagina când focalizezi un câmp cu text sub 16px.
+   Pe ecrane mici forțăm 16px, ca formularele să nu „sară". */
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* Zonele care se derulează lateral (tabelele rămase) să meargă fluid,
+   fără bară vizibilă. */
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Spațiu pentru bara de jos la telefoanele cu ecran „edge-to-edge". */
+@supports (padding: max(0px)) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

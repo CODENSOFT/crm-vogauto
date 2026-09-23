@@ -111,8 +111,61 @@ export function InventoryView() {
 
       {loading ? (
         <div className="py-12 text-center text-slate-400">Se încarcă...</div>
+      ) : items.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-slate-300 bg-white py-14 text-center text-slate-400">
+          {prep ? "Nicio mașină în pregătire." : "Nicio mașină în stoc."}
+        </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-200/80 bg-white shadow-card">
+        <>
+        {/* Telefon / tabletă: listă de carduri */}
+        <div className="space-y-3 lg:hidden">
+          {items.map((it) => (
+            <div key={it._id} className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-card">
+              <div className="flex gap-3">
+                <Link href={`/dashboard/inventory/${it._id}`} className="shrink-0">
+                  <div className="relative h-16 w-20 overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+                    {it.primaryPhoto ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={it.primaryPhoto} alt="" className="h-full w-full object-cover" loading="lazy" />
+                    ) : (
+                      <span className="flex h-full w-full items-center justify-center text-[10px] text-slate-400">fără</span>
+                    )}
+                    {(it.photoCount ?? 0) > 1 && (
+                      <span className="absolute bottom-0 right-0 rounded-tl bg-black/60 px-1 text-[9px] text-white">{it.photoCount}</span>
+                    )}
+                  </div>
+                </Link>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <Link href={`/dashboard/inventory/${it._id}`} className="truncate text-[15px] font-semibold text-slate-900">
+                      {it.brand} {it.model} <span className="font-normal text-slate-400">{it.year}</span>
+                    </Link>
+                    <Badge color={it.status === "available" ? "green" : "yellow"}>{STOCK_STATUS_LABELS[it.status]}</Badge>
+                  </div>
+                  <p className="mt-0.5 truncate text-xs text-slate-500">
+                    {it.ownerName}{it.color ? ` · ${it.color}` : ""}{it.engine ? ` · ${it.engine}` : ""}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                    <span className="text-slate-500">Preț: <b className="text-slate-900">{formatMoney(it.sellPrice)}</b></span>
+                    {prep ? (
+                      it.expensesTotal ? <span className="text-slate-500">Cheltuieli: <b className="text-amber-700">{formatMoney(it.expensesTotal)}</b></span> : null
+                    ) : (
+                      <span className="text-slate-500">Adaus: <b className={(it.netMargin ?? it.markup) >= 0 ? "text-emerald-700" : "text-red-600"}>{formatMoney(it.netMargin ?? it.markup)}</b></span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-3 flex items-center gap-2 border-t border-slate-100 pt-2.5">
+                {prep && <Button size="sm" onClick={() => setReadyTarget(it)}>Gata de vânzare</Button>}
+                <Link href={`/dashboard/inventory/${it._id}`} className="text-xs font-semibold text-brand">Deschide</Link>
+                <Button variant="ghost" size="sm" className="ml-auto text-red-600" onClick={() => setDeleteTarget(it)}>Șterge</Button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop: tabel */}
+        <div className="hidden overflow-x-auto rounded-xl border border-slate-200/80 bg-white shadow-card lg:block">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50/80">
               <tr>
@@ -188,6 +241,7 @@ export function InventoryView() {
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       <InventoryFormModal
