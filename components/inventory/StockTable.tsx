@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import { IconTrash } from "@/components/ui/Icons";
 import { Badge } from "@/components/ui/Table";
 import { CarThumb } from "@/components/shared/CarThumb";
 import { formatMoney } from "@/lib/utils";
@@ -87,8 +88,15 @@ export function StockTable({
                   Gata de vânzare
                 </Button>
               )}
-              <Link href={`/dashboard/inventory/${it._id}`} className="text-xs font-semibold text-brand hover:underline">Deschide</Link>
-              <Button variant="ghost" size="sm" className="ml-2 text-red-600" onClick={() => onDelete(it)}>Șterge</Button>
+              <button
+                type="button"
+                onClick={() => onDelete(it)}
+                title="Șterge"
+                aria-label={`Șterge ${it.brand} ${it.model}`}
+                className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+              >
+                <IconTrash className="h-4 w-4" />
+              </button>
             </td>
           </tr>
         ))}

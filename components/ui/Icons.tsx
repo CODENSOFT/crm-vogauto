@@ -147,6 +147,12 @@ export const IconTrend = ({ className }: IconProps) => (
   </Svg>
 );
 
+export const IconTrash = ({ className }: IconProps) => (
+  <Svg className={className}>
+    <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" />
+  </Svg>
+);
+
 export const IconClose = ({ className }: IconProps) => (
   <Svg className={className}>
     <path d="M6 6l12 12M18 6L6 18" />

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import { IconTrash } from "@/components/ui/Icons";
 import { Badge } from "@/components/ui/Table";
 import { CarThumb } from "@/components/shared/CarThumb";
 import { formatMoney } from "@/lib/utils";
@@ -60,8 +61,15 @@ export function StockCards({
           </div>
           <div className="relative z-10 mt-3 flex items-center gap-2 border-t border-slate-100 pt-2.5">
             {prep && <Button size="sm" onClick={() => onReady(it)}>Gata de vânzare</Button>}
-            <Link href={`/dashboard/inventory/${it._id}`} className="text-xs font-semibold text-brand">Deschide</Link>
-            <Button variant="ghost" size="sm" className="ml-auto text-red-600" onClick={() => onDelete(it)}>Șterge</Button>
+            <button
+              type="button"
+              onClick={() => onDelete(it)}
+              title="Șterge"
+              aria-label={`Șterge ${it.brand} ${it.model}`}
+              className="ml-auto rounded-md p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+            >
+              <IconTrash className="h-4 w-4" />
+            </button>
           </div>
         </div>
       ))}
