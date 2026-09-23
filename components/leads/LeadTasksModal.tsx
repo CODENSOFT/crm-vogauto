@@ -1,5 +1,7 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
@@ -7,21 +9,49 @@ import { formatDate } from "@/lib/utils";
 import { TASK_TYPE_LABELS, TASK_STATUS_LABELS, type LeadDTO, type TaskDTO } from "@/types";
 
 /** Sarcinile legate de un client potențial + programarea uneia noi. */
-export function LeadTasksModal({
-  lead, tasks, title, setTitle, type, setType, date, setDate, saving, onAdd, onClose,
-}: {
-  lead: LeadDTO | null;
-  tasks: TaskDTO[];
-  title: string;
-  setTitle: (v: string) => void;
-  type: string;
-  setType: (v: string) => void;
-  date: string;
-  setDate: (v: string) => void;
-  saving: boolean;
-  onAdd: () => void;
-  onClose: () => void;
-}) {
+export function LeadTasksModal({ lead, onClose }: { lead: LeadDTO | null; onClose: () => void }) {
+  const [tasks, setTasks] = useState<TaskDTO[]>([]);
+  const [title, setTitle] = useState("");
+  const [type, setType] = useState("test_drive");
+  const [date, setDate] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  // La deschidere: titlu sugerat din interesul clientului + sarcinile existente.
+  useEffect(() => {
+    if (!lead) return;
+    setTasks([]);
+    setTitle(lead.interestBrand || lead.interestModel
+      ? `Vizionare ${[lead.interestBrand, lead.interestModel].filter(Boolean).join(" ")}`
+      : `Vizionare client ${lead.clientName}`);
+    setType("test_drive");
+    setDate("");
+    fetch(`/api/tasks?leadId=${lead._id}`)
+      .then((r) => (r.ok ? r.json() : { tasks: [] }))
+      .then((d) => setTasks(d.tasks || []))
+      .catch(() => {});
+  }, [lead]);
+
+  async function onAdd() {
+    if (!lead || !title.trim()) { toast.error("Introduceți titlul."); return; }
+    setSaving(true);
+    const res = await fetch("/api/tasks", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: title.trim(), type, dueDate: date || undefined,
+        leadId: lead._id, inventoryId: lead.inventoryId || undefined,
+        carLabel: [lead.interestBrand, lead.interestModel].filter(Boolean).join(" ") || undefined,
+        assignedToIds: lead.assignedToIds ?? (lead.assignedTo ? [lead.assignedTo] : []),
+        description: `Client: ${lead.clientName}${lead.clientPhone ? ` · ${lead.clientPhone}` : ""}`,
+      }),
+    });
+    const d = await res.json();
+    setSaving(false);
+    if (!res.ok) { toast.error(d.error || "Eroare."); return; }
+    toast.success("Sarcină programată");
+    setTasks((list) => [d.task, ...list]);
+    setTitle(""); setDate("");
+  }
+
   return (
   <Modal open={!!lead} onClose={onClose} title={`Sarcini · ${lead?.clientName ?? ""}`}
     footer={<Button variant="secondary" onClick={onClose}>Închide</Button>}>

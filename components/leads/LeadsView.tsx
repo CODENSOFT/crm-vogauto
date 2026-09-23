@@ -3,13 +3,12 @@
 import { useState, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
-import { Input, Select } from "@/components/ui/Input";
-import { Modal, ConfirmDialog } from "@/components/ui/Modal";
-import { LeadCards, statusPill } from "@/components/leads/LeadCards";
+import { Select } from "@/components/ui/Input";
+import { ConfirmDialog } from "@/components/ui/Modal";
+import { LeadCards } from "@/components/leads/LeadCards";
+import { LeadFormModal } from "@/components/leads/LeadFormModal";
+import { LeadsTable } from "@/components/leads/LeadsTable";
 import { LeadTasksModal } from "@/components/leads/LeadTasksModal";
-import { CarStockPicker } from "@/components/shared/CarStockPicker";
-import { MultiUserPicker } from "@/components/shared/MultiUserPicker";
-import { formatMoney, formatDateShort } from "@/lib/utils";
 import {
   LEAD_SOURCE_LABELS, LEAD_STATUS_LABELS,
   type LeadDTO, type LeadSource, type LeadStatus, type UserDTO, type TaskDTO,
@@ -36,11 +35,6 @@ export function LeadsView() {
 
   // Sarcinile clientului (modal legat de lead).
   const [tasksLead, setTasksLead] = useState<LeadDTO | null>(null);
-  const [leadTasks, setLeadTasks] = useState<TaskDTO[]>([]);
-  const [ntTitle, setNtTitle] = useState("");
-  const [ntType, setNtType] = useState("test_drive");
-  const [ntDate, setNtDate] = useState("");
-  const [ntSaving, setNtSaving] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -98,37 +92,6 @@ export function LeadsView() {
     setItems((list) => list.map((x) => (x._id === l._id ? data.lead : x)));
   }
 
-  async function openTasks(l: LeadDTO) {
-    setTasksLead(l);
-    setLeadTasks([]);
-    setNtTitle(l.interestBrand || l.interestModel ? `Vizionare ${[l.interestBrand, l.interestModel].filter(Boolean).join(" ")}` : `Vizionare client ${l.clientName}`);
-    setNtType("test_drive");
-    setNtDate("");
-    const res = await fetch(`/api/tasks?leadId=${l._id}`);
-    if (res.ok) { const d = await res.json(); setLeadTasks(d.tasks || []); }
-  }
-
-  async function addLeadTask() {
-    if (!tasksLead || !ntTitle.trim()) { toast.error("Introduceți titlul."); return; }
-    setNtSaving(true);
-    const res = await fetch("/api/tasks", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: ntTitle.trim(), type: ntType, dueDate: ntDate || undefined,
-        leadId: tasksLead._id, inventoryId: tasksLead.inventoryId || undefined,
-        carLabel: [tasksLead.interestBrand, tasksLead.interestModel].filter(Boolean).join(" ") || undefined,
-        assignedToIds: tasksLead.assignedToIds ?? (tasksLead.assignedTo ? [tasksLead.assignedTo] : []),
-        description: `Client: ${tasksLead.clientName}${tasksLead.clientPhone ? ` · ${tasksLead.clientPhone}` : ""}`,
-      }),
-    });
-    const d = await res.json();
-    setNtSaving(false);
-    if (!res.ok) { toast.error(d.error || "Eroare."); return; }
-    toast.success("Sarcină programată");
-    setLeadTasks((t) => [d.task, ...t]);
-    setNtTitle(""); setNtDate("");
-  }
-
   async function confirmDelete() {
     if (!deleteTarget) return;
     setDeleting(true);
@@ -163,96 +126,32 @@ export function LeadsView() {
         <LeadCards
           items={items}
           onStatus={changeStatus}
-          onTasks={openTasks}
+          onTasks={setTasksLead}
           onEdit={openEdit}
           onDelete={setDeleteTarget}
         />
 
-        {/* Desktop: tabel */}
-        <div className="hidden overflow-x-auto rounded-xl border border-slate-200/80 bg-white shadow-card lg:block">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50/80">
-              <tr>
-                {["Client", "Telefon", "Sursă", "Interes", "Buget", "Status", "Responsabil", ""].map((h, i) => (
-                  <th key={i} className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {items.length === 0 ? (
-                <tr><td colSpan={8} className="px-4 py-12 text-center text-slate-400">Niciun client potențial.</td></tr>
-              ) : items.map((l) => (
-                <tr key={l._id} className="transition-colors hover:bg-brand-tint/50">
-                  <td className="whitespace-nowrap px-3 py-2.5 font-medium text-slate-800">{l.clientName}</td>
-                  <td className="whitespace-nowrap px-3 py-2.5 font-mono text-xs text-slate-600">{l.clientPhone || "—"}</td>
-                  <td className="whitespace-nowrap px-3 py-2.5 text-slate-600">{LEAD_SOURCE_LABELS[l.source]}</td>
-                  <td className="whitespace-nowrap px-3 py-2.5 text-slate-700">{[l.interestBrand, l.interestModel].filter(Boolean).join(" ") || "—"}</td>
-                  <td className="whitespace-nowrap px-3 py-2.5 text-slate-700">{l.budget ? formatMoney(l.budget) : "—"}</td>
-                  <td className="px-3 py-2.5">
-                    <select value={l.status} onChange={(e) => changeStatus(l, e.target.value as LeadStatus)}
-                      className={`rounded-full border-0 px-2.5 py-1 text-xs font-semibold outline-none ${statusPill[l.status]}`}>
-                      {Object.entries(LEAD_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                    </select>
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2.5 text-slate-600">{l.assignedToNames?.length ? l.assignedToNames.join(", ") : (l.assignedToName || "—")}</td>
-                  <td className="whitespace-nowrap px-3 py-2.5 text-right">
-                    <span className="mr-2 text-xs text-slate-400">{formatDateShort(l.createdAt)}</span>
-                    <Button variant="ghost" size="sm" className="text-slate-600" onClick={() => openTasks(l)}>Sarcini</Button>
-                    <Button variant="ghost" size="sm" className="text-brand" onClick={() => openEdit(l)}>Editează</Button>
-                    <Button variant="ghost" size="sm" className="text-red-600" onClick={() => setDeleteTarget(l)}>Șterge</Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <LeadsTable items={items} onStatus={changeStatus} onTasks={setTasksLead} onEdit={openEdit} onDelete={setDeleteTarget} />
         </>
       )}
 
-      <Modal open={formOpen} onClose={() => setFormOpen(false)} title={editing ? "Editează client potențial" : "Client potențial nou"}
-        footer={<><Button variant="secondary" onClick={() => setFormOpen(false)} disabled={saving}>Anulează</Button><Button onClick={save} loading={saving}>Salvează</Button></>}>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input label="Nume client *" value={form.clientName} onChange={(e) => setF("clientName", e.target.value)} />
-          <Input label="Telefon" value={form.clientPhone} onChange={(e) => setF("clientPhone", e.target.value)} />
-          <Select label="Sursă" value={form.source} onChange={(e) => setF("source", e.target.value)}>
-            {Object.entries(LEAD_SOURCE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-          </Select>
-          <Select label="Status" value={form.status} onChange={(e) => setF("status", e.target.value)}>
-            {Object.entries(LEAD_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-          </Select>
-          <Input label="Marcă dorită" value={form.interestBrand} onChange={(e) => setF("interestBrand", e.target.value)} />
-          <Input label="Model dorit" value={form.interestModel} onChange={(e) => setF("interestModel", e.target.value)} />
-          <Input label="Buget (€)" type="number" value={form.budget} onChange={(e) => setF("budget", e.target.value)} />
-          <MultiUserPicker label="Responsabili" workers={workers}
-            value={form.assignedToIds} onChange={(ids) => setForm((f) => ({ ...f, assignedToIds: ids }))} />
-          <div className="sm:col-span-2">
-            <CarStockPicker value={form.carLabel} inventoryId={form.inventoryId}
-              onChange={(label, invId) => setForm((f) => ({ ...f, carLabel: label, inventoryId: invId }))} label="Mașina de interes (din stoc, opțional)" />
-          </div>
-          <div className="sm:col-span-2">
-            <Input label="Note" value={form.notes} onChange={(e) => setF("notes", e.target.value)} placeholder="Detalii discuție, preferințe..." />
-          </div>
-        </div>
-      </Modal>
+      <LeadFormModal
+        open={formOpen}
+        editing={!!editing}
+        form={form}
+        setForm={setForm}
+        saving={saving}
+        workers={workers}
+        onClose={() => setFormOpen(false)}
+        onSave={save}
+      />
 
       <ConfirmDialog open={!!deleteTarget} title="Ștergere client potențial"
         message={`Sigur ștergeți clientul potențial „${deleteTarget?.clientName}"?`}
         confirmLabel="Șterge" loading={deleting} onConfirm={confirmDelete} onCancel={() => setDeleteTarget(null)} />
 
       {/* Sarcinile clientului (vizionări, follow-up) */}
-      <LeadTasksModal
-        lead={tasksLead}
-        tasks={leadTasks}
-        title={ntTitle}
-        setTitle={setNtTitle}
-        type={ntType}
-        setType={setNtType}
-        date={ntDate}
-        setDate={setNtDate}
-        saving={ntSaving}
-        onAdd={addLeadTask}
-        onClose={() => setTasksLead(null)}
-      />
+      <LeadTasksModal lead={tasksLead} onClose={() => setTasksLead(null)} />
     </div>
   );
 }
