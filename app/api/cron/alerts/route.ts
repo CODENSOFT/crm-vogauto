@@ -10,12 +10,14 @@ export const dynamic = "force-dynamic";
 // GET /api/cron/alerts — rulat zilnic de Vercel Cron. Trimite un rezumat al
 // alertelor pe Telegram. Protejat cu CRON_SECRET (setat automat de Vercel Cron).
 export async function GET(request: Request) {
+  // Fail closed: în producție, fără secret configurat ruta rămâne închisă.
   const secret = process.env.CRON_SECRET;
-  if (secret) {
-    const auth = request.headers.get("authorization");
-    if (auth !== `Bearer ${secret}`) {
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
       return NextResponse.json({ error: "Neautorizat" }, { status: 401 });
     }
+  } else if (request.headers.get("authorization") !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: "Neautorizat" }, { status: 401 });
   }
 
   const alerts = await computeAlerts();

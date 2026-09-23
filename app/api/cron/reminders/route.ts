@@ -10,10 +10,14 @@ export const dynamic = "force-dynamic";
 // GET /api/cron/reminders — rulat des (ex. la 15 min) de Vercel Cron.
 // Trimite reminder cu ~30 min înainte pentru sarcinile programate.
 export async function GET(request: Request) {
+  // Fail closed: în producție, fără secret configurat ruta rămâne închisă.
   const secret = process.env.CRON_SECRET;
-  if (secret) {
-    const auth = request.headers.get("authorization");
-    if (auth !== `Bearer ${secret}`) return NextResponse.json({ error: "Neautorizat" }, { status: 401 });
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json({ error: "Neautorizat" }, { status: 401 });
+    }
+  } else if (request.headers.get("authorization") !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: "Neautorizat" }, { status: 401 });
   }
 
   const now = new Date();

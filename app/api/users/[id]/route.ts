@@ -88,8 +88,8 @@ export async function PUT(
     changed.bonus = bonus;
   }
   if (body.password) {
-    if (String(body.password).length < 6) {
-      return NextResponse.json({ error: "Parola trebuie să aibă minim 6 caractere." }, { status: 400 });
+    if (String(body.password).length < 8) {
+      return NextResponse.json({ error: "Parola trebuie să aibă minim 8 caractere." }, { status: 400 });
     }
     updates.password = await bcrypt.hash(body.password, 10);
     changed.password = "(schimbată)";

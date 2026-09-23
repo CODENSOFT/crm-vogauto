@@ -25,8 +25,8 @@ export async function POST(request: Request) {
   if (!username || !password || !fullName) {
     return NextResponse.json({ error: "Nume, utilizator și parolă sunt obligatorii." }, { status: 400 });
   }
-  if (String(password).length < 6) {
-    return NextResponse.json({ error: "Parola trebuie să aibă minim 6 caractere." }, { status: 400 });
+  if (String(password).length < 8) {
+    return NextResponse.json({ error: "Parola trebuie să aibă minim 8 caractere." }, { status: 400 });
   }
   const login = String(username).toLowerCase().trim();
   if (!/^[a-z0-9._-]{3,}$/.test(login)) {
