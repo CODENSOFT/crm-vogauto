@@ -9,9 +9,8 @@ import { LeadCards } from "@/components/leads/LeadCards";
 import { LeadFormModal } from "@/components/leads/LeadFormModal";
 import { LeadsTable } from "@/components/leads/LeadsTable";
 import { LeadTasksModal } from "@/components/leads/LeadTasksModal";
-import {
-  LEAD_SOURCE_LABELS, LEAD_STATUS_LABELS,
-  type LeadDTO, type LeadSource, type LeadStatus, type UserDTO, type TaskDTO,
+import { LEAD_STATUS_LABELS,
+  type LeadDTO, type LeadSource, type LeadStatus, type UserDTO,
 } from "@/types";
 
 const EMPTY = {
@@ -54,7 +53,6 @@ export function LeadsView() {
     }).catch(() => {});
   }, []);
 
-  const setF = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   function openAdd() { setEditing(null); setForm({ ...EMPTY }); setFormOpen(true); }
   function openEdit(l: LeadDTO) {

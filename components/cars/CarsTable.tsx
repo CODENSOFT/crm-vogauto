@@ -6,10 +6,10 @@ import toast from "react-hot-toast";
 import { Pagination } from "@/components/ui/Table";
 import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
-import { Modal, ConfirmDialog } from "@/components/ui/Modal";
+import { ConfirmDialog } from "@/components/ui/Modal";
+import { AddSaleModal } from "@/components/cars/AddSaleModal";
 import { SalesCards } from "@/components/cars/SalesCards";
 import { CarThumb } from "@/components/shared/CarThumb";
-import { CarStockPicker } from "@/components/shared/CarStockPicker";
 import { IconDownload, IconEye } from "@/components/ui/Icons";
 import { formatMoney, formatDateShort } from "@/lib/utils";
 import { type CarDTO, type InventoryDTO } from "@/types";
@@ -264,43 +264,17 @@ export function CarsTable() {
       <Pagination page={page} pageSize={20} total={total} onPageChange={setPage} />
       <p className="mt-2 text-xs text-slate-400">Click pe o celulă (inclusiv Profit) pentru editare. Click pe telefon pentru a-l dezvălui (se înregistrează în jurnal).</p>
 
-      <Modal open={addOpen} onClose={() => setAddOpen(false)} title="Adaugă vânzare"
-        footer={<><Button variant="secondary" onClick={() => setAddOpen(false)} disabled={savingNew}>Anulează</Button><Button onClick={saveNew} loading={savingNew}>Salvează</Button></>}>
-        <div className="mb-3 rounded-lg border border-brand/20 bg-brand-tint/60 p-3">
-          <CarStockPicker
-            value={stockQuery}
-            inventoryId={newSale.inventoryId}
-            onChange={(label, invId) => { setStockQuery(label); pickFromStock(invId); }}
-            label="Alege din stoc (opțional)"
-            placeholder="Scrie marca (ex: Audi) și alege mașina disponibilă..."
-          />
-          <p className="mt-1.5 text-xs text-slate-500">Completează automat datele mașinii și prețurile din stoc. Sau lasă gol și introdu manual.</p>
-        </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input label="Nume client *" value={newSale.clientName} onChange={(e) => setNewSale((s) => ({ ...s, clientName: e.target.value }))} />
-          <Input label="Telefon *" value={newSale.clientPhone} onChange={(e) => setNewSale((s) => ({ ...s, clientPhone: e.target.value }))} />
-          <Input label="Marcă *" value={newSale.brand} onChange={(e) => setNewSale((s) => ({ ...s, brand: e.target.value }))} />
-          <Input label="Model *" value={newSale.model} onChange={(e) => setNewSale((s) => ({ ...s, model: e.target.value }))} />
-          <Input label="An *" type="number" value={newSale.year} onChange={(e) => setNewSale((s) => ({ ...s, year: e.target.value }))} />
-          <Input label="VIN *" value={newSale.vin} onChange={(e) => setNewSale((s) => ({ ...s, vin: e.target.value }))} />
-          <Input label="Culoare" value={newSale.color} onChange={(e) => setNewSale((s) => ({ ...s, color: e.target.value }))} />
-          <Input label="Preț cumpărare (€)" type="number" value={newSale.priceBuy} onChange={(e) => setNewSale((s) => ({ ...s, priceBuy: e.target.value }))} />
-          <Input label="Preț vânzare (€) *" type="number" value={newSale.priceSell} onChange={(e) => setNewSale((s) => ({ ...s, priceSell: e.target.value }))} />
-          <Input label="Profit (€)" type="number" value={newSale.profit} onChange={(e) => setNewSale((s) => ({ ...s, profit: e.target.value }))} placeholder="alternativ la preț cump." />
-          <Select label="Plată" value={newSale.paymentMethod} onChange={(e) => setNewSale((s) => ({ ...s, paymentMethod: e.target.value }))}>
-            <option value="cash">Cash</option><option value="transfer">Transfer</option><option value="rate">Rate</option>
-          </Select>
-          <Select label="Status" value={newSale.status} onChange={(e) => setNewSale((s) => ({ ...s, status: e.target.value }))}>
-            <option value="sold">Vândută</option><option value="available">Disponibilă</option><option value="reserved">Rezervată</option>
-          </Select>
-          <Select label="Vândut de" value={newSale.soldBy} onChange={(e) => setNewSale((s) => ({ ...s, soldBy: e.target.value }))}>
-            <option value="">Eu (admin)</option>
-            {workers.map((w) => <option key={w._id} value={w._id}>{w.fullName}</option>)}
-          </Select>
-          <Input label="Data *" type="date" value={newSale.saleDate} onChange={(e) => setNewSale((s) => ({ ...s, saleDate: e.target.value }))} />
-          <Input label="Note" value={newSale.notes} onChange={(e) => setNewSale((s) => ({ ...s, notes: e.target.value }))} />
-        </div>
-      </Modal>
+      <AddSaleModal
+        open={addOpen}
+        sale={newSale}
+        setSale={setNewSale}
+        saving={savingNew}
+        stockQuery={stockQuery}
+        onPickStock={(label, invId) => { setStockQuery(label); pickFromStock(invId); }}
+        workers={workers}
+        onClose={() => setAddOpen(false)}
+        onSave={saveNew}
+      />
 
       <ConfirmDialog open={!!deleteTarget} title="Ștergere vânzare"
         message={`Sigur ștergeți ${deleteTarget?.brand} ${deleteTarget?.model} (${deleteTarget?.clientName})?`}
