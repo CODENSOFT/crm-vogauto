@@ -5,16 +5,73 @@ import { cars, inventory, inventoryExpenses, users } from "@/lib/schema";
 import { requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
 
-// GET /api/stats — ADMIN ONLY. Agregări pentru panoul de statistici.
-export async function GET(request: Request) {
-  const { user, error } = await requireAdmin();
-  if (error) return error;
+// Profit NET pe interval = preț vânzare − preț cumpărare − taxa vânzătorului
+// − cheltuielile mașinii. Îl calculăm din două interogări simple.
+async function monthAgg(from: Date, to: Date) {
+  const rows = await db
+    .select({
+      id: cars.id,
+      priceSell: cars.priceSell,
+      priceBuy: cars.priceBuy,
+      fee: users.fixedFee,
+    })
+    .from(cars)
+    .leftJoin(users, eq(cars.soldBy, users.id))
+    .where(and(eq(cars.isDeleted, false), eq(cars.status, "sold"), gte(cars.saleDate, from), lte(cars.saleDate, to)));
 
-  const { searchParams } = new URL(request.url);
-  const dateFrom = searchParams.get("dateFrom");
-  const dateTo = searchParams.get("dateTo");
-  const log = searchParams.get("log") === "1";
+  if (rows.length === 0) return { count: 0, revenue: 0, profit: 0 };
 
+  const ids = rows.map((r) => r.id);
+  const exp = await db
+    .select({
+      carId: inventory.saleId,
+      total: sql<number>`coalesce(sum(${inventoryExpenses.amount}),0)::float8`,
+    })
+    .from(inventory)
+    .innerJoin(inventoryExpenses, eq(inventoryExpenses.inventoryId, inventory.id))
+    .where(inArray(inventory.saleId, ids))
+    .groupBy(inventory.saleId);
+  const map = new Map(exp.map((e) => [e.carId as string, Number(e.total)]));
+
+  let revenue = 0, profit = 0;
+  for (const r of rows) {
+    revenue += Number(r.priceSell);
+    profit += Number(r.priceSell) - Number(r.priceBuy) - Number(r.fee ?? 0) - (map.get(r.id) ?? 0);
+  }
+  return { count: rows.length, revenue, profit };
+}
+
+
+async function countsAndStock() {
+  const countWhere = (extra?: ReturnType<typeof eq>) =>
+    db.select({ count: sql<number>`count(*)::int` }).from(cars)
+      .where(extra ? and(eq(cars.isDeleted, false), extra) : eq(cars.isDeleted, false)).then((r) => r[0].count);
+  const [allCount, soldCount, availableCount, reservedCount] = await Promise.all([
+    countWhere(), countWhere(eq(cars.status, "sold")), countWhere(eq(cars.status, "available")), countWhere(eq(cars.status, "reserved")),
+  ]);
+
+  const invCount = (extra?: ReturnType<typeof eq>) =>
+    db.select({ count: sql<number>`count(*)::int` }).from(inventory)
+      .where(extra ? and(eq(inventory.isDeleted, false), extra) : eq(inventory.isDeleted, false)).then((r) => r[0].count);
+  const [stockTotal, stockAvailable, stockSold] = await Promise.all([
+    invCount(), invCount(eq(inventory.status, "available")), invCount(eq(inventory.status, "sold")),
+  ]);
+  const [{ stockValue, avgAgeDays }] = await db
+    .select({
+      stockValue: sql<number>`coalesce(sum(${inventory.sellPrice}),0)::float8`,
+      avgAgeDays: sql<number>`coalesce(avg(extract(epoch from (now() - ${inventory.createdAt})) / 86400), 0)::float8`,
+    })
+    .from(inventory)
+    .where(and(eq(inventory.isDeleted, false), eq(inventory.status, "available")));
+
+  return {
+    counts: { total: allCount, sold: soldCount, available: availableCount, reserved: reservedCount },
+    stock: { total: stockTotal, available: stockAvailable, sold: stockSold, value: stockValue, avgAgeDays },
+  };
+}
+
+/** Agregă vânzările din interval: pe luni, pe vânzători, pe plată și pe mărci. */
+async function salesReport(dateFrom: string | null, dateTo: string | null) {
   const conds = [eq(cars.isDeleted, false), eq(cars.status, "sold")];
   if (dateFrom) conds.push(gte(cars.saleDate, new Date(dateFrom)));
   if (dateTo) conds.push(lte(cars.saleDate, new Date(dateTo + "T23:59:59")));
@@ -99,73 +156,38 @@ export async function GET(request: Request) {
   const profitMargin = totalRevenue ? (totalProfit / totalRevenue) * 100 : 0;
   const bestMonth = monthly.length ? monthly.reduce((a, b) => (b.profit > a.profit ? b : a)) : null;
 
+  return {
+    monthly, topWorkers, payment, brands,
+    totalSales, totalRevenue, totalProfit, avgSellPrice, avgProfit, profitMargin, bestMonth,
+  };
+}
+
+// GET /api/stats — ADMIN ONLY. Agregări pentru panoul de statistici.
+export async function GET(request: Request) {
+  const { user, error } = await requireAdmin();
+  if (error) return error;
+
+  const { searchParams } = new URL(request.url);
+  const dateFrom = searchParams.get("dateFrom");
+  const dateTo = searchParams.get("dateTo");
+  const log = searchParams.get("log") === "1";
+
+  const {
+    monthly, topWorkers, payment, brands,
+    totalSales, totalRevenue, totalProfit, avgSellPrice, avgProfit, profitMargin, bestMonth,
+  } = await salesReport(dateFrom, dateTo);
+
   // Luna curentă vs luna precedentă (independent de filtru).
   const now = new Date();
   const mStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const mEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const pStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  // Profit NET pe interval = preț vânzare − preț cumpărare − taxa vânzătorului
-  // − cheltuielile mașinii. Îl calculăm din două interogări simple.
-  const monthAgg = async (from: Date, to: Date) => {
-    const rows = await db
-      .select({
-        id: cars.id,
-        priceSell: cars.priceSell,
-        priceBuy: cars.priceBuy,
-        fee: users.fixedFee,
-      })
-      .from(cars)
-      .leftJoin(users, eq(cars.soldBy, users.id))
-      .where(and(eq(cars.isDeleted, false), eq(cars.status, "sold"), gte(cars.saleDate, from), lte(cars.saleDate, to)));
-
-    if (rows.length === 0) return { count: 0, revenue: 0, profit: 0 };
-
-    const ids = rows.map((r) => r.id);
-    const exp = await db
-      .select({
-        carId: inventory.saleId,
-        total: sql<number>`coalesce(sum(${inventoryExpenses.amount}),0)::float8`,
-      })
-      .from(inventory)
-      .innerJoin(inventoryExpenses, eq(inventoryExpenses.inventoryId, inventory.id))
-      .where(inArray(inventory.saleId, ids))
-      .groupBy(inventory.saleId);
-    const map = new Map(exp.map((e) => [e.carId as string, Number(e.total)]));
-
-    let revenue = 0, profit = 0;
-    for (const r of rows) {
-      revenue += Number(r.priceSell);
-      profit += Number(r.priceSell) - Number(r.priceBuy) - Number(r.fee ?? 0) - (map.get(r.id) ?? 0);
-    }
-    return { count: rows.length, revenue, profit };
-  };
-
   const [thisMonth, lastMonth] = await Promise.all([
     monthAgg(mStart, new Date(mEnd.getTime() - 1)),
     monthAgg(pStart, new Date(mStart.getTime() - 1)),
   ]);
 
-  // Numărători + stoc.
-  const countWhere = (extra?: ReturnType<typeof eq>) =>
-    db.select({ count: sql<number>`count(*)::int` }).from(cars)
-      .where(extra ? and(eq(cars.isDeleted, false), extra) : eq(cars.isDeleted, false)).then((r) => r[0].count);
-  const [allCount, soldCount, availableCount, reservedCount] = await Promise.all([
-    countWhere(), countWhere(eq(cars.status, "sold")), countWhere(eq(cars.status, "available")), countWhere(eq(cars.status, "reserved")),
-  ]);
-
-  const invCount = (extra?: ReturnType<typeof eq>) =>
-    db.select({ count: sql<number>`count(*)::int` }).from(inventory)
-      .where(extra ? and(eq(inventory.isDeleted, false), extra) : eq(inventory.isDeleted, false)).then((r) => r[0].count);
-  const [stockTotal, stockAvailable, stockSold] = await Promise.all([
-    invCount(), invCount(eq(inventory.status, "available")), invCount(eq(inventory.status, "sold")),
-  ]);
-  const [{ stockValue, avgAgeDays }] = await db
-    .select({
-      stockValue: sql<number>`coalesce(sum(${inventory.sellPrice}),0)::float8`,
-      avgAgeDays: sql<number>`coalesce(avg(extract(epoch from (now() - ${inventory.createdAt})) / 86400), 0)::float8`,
-    })
-    .from(inventory)
-    .where(and(eq(inventory.isDeleted, false), eq(inventory.status, "available")));
+  const { counts, stock } = await countsAndStock();
 
   if (log) {
     await logAction({ userId: user.id, userName: user.fullName, action: "VIEW_STATISTICS", details: { dateFrom, dateTo }, request, coords: coordsOf(user) });
@@ -176,7 +198,6 @@ export async function GET(request: Request) {
     totalSales, totalRevenue, totalProfit, avgSellPrice, avgProfit, profitMargin,
     bestMonth,
     thisMonth, lastMonth,
-    counts: { total: allCount, sold: soldCount, available: availableCount, reserved: reservedCount },
-    stock: { total: stockTotal, available: stockAvailable, sold: stockSold, value: stockValue, avgAgeDays },
+    counts, stock,
   });
 }

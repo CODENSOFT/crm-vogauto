@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { PhotoGallery } from "@/components/shared/PhotoGallery";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
@@ -26,8 +27,6 @@ export function InventoryDetail({ id }: { id: string }) {
   const [photos, setPhotos] = useState<PhotoDTO[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [sel, setSel] = useState(0);
-  const [zoom, setZoom] = useState(false);
   const [photoOpen, setPhotoOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [marking, setMarking] = useState(false);
@@ -47,7 +46,6 @@ export function InventoryDetail({ id }: { id: string }) {
     const dp = await rp.json();
     if (rp.ok) setPhotos(dp.photos);
     if (rt.ok) { const d = await rt.json(); setTimeline(d.events || []); }
-    setSel(0);
     setLoading(false);
   }, [id]);
 
@@ -77,7 +75,6 @@ export function InventoryDetail({ id }: { id: string }) {
   }
 
   const urls = photos.map((p) => p.url);
-  const main = urls[sel];
 
   return (
     <div>
@@ -99,31 +96,8 @@ export function InventoryDetail({ id }: { id: string }) {
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.4fr_1fr]">
         {/* Galerie */}
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-3 shadow-card">
-          <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
-            {main ? (
-              <button type="button" onClick={() => setZoom(true)} aria-label="Mărește fotografia" className="h-full w-full cursor-zoom-in">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={main} alt={`${item.brand} ${item.model}`} className="h-full w-full object-cover" />
-              </button>
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-slate-400">Fără fotografii</div>
-            )}
-          </div>
-          {urls.length > 1 && (
-            <div className="mt-3 flex gap-2 overflow-x-auto">
-              {urls.map((u, i) => (
-                <button key={i} type="button" onClick={() => setSel(i)} aria-label={`Fotografia ${i + 1}`}
-                  className={`h-16 w-20 flex-shrink-0 overflow-hidden rounded-lg ring-2 ${i === sel ? "ring-brand" : "ring-transparent"}`}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={u} alt="" className="h-full w-full object-cover" />
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <PhotoGallery urls={urls} alt={`${item.brand} ${item.model}`} />
 
-        {/* Date + descriere */}
         <div className="flex flex-col gap-5">
           <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card">
             <div className="mb-2 flex items-baseline justify-between">
@@ -186,12 +160,6 @@ export function InventoryDetail({ id }: { id: string }) {
       )}
 
       {/* Zoom fullscreen */}
-      {zoom && main && (
-        <div role="presentation" className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4" onClick={() => setZoom(false)}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={main} alt="" className="max-h-[92vh] max-w-full rounded-lg object-contain" />
-        </div>
-      )}
 
       <PhotoManager open={photoOpen} onClose={() => { setPhotoOpen(false); load(); }} inventoryId={id} label={`${item.brand} ${item.model}`} />
 

@@ -5,15 +5,8 @@ import { cars, users } from "@/lib/schema";
 import { requireAdmin } from "@/lib/guard";
 import { isUuid } from "@/lib/utils";
 
-// GET /api/managers — defalcare profit & vânzări pe manager × lună (admin only).
-export async function GET(request: Request) {
-  const { error } = await requireAdmin();
-  if (error) return error;
-
-  const { searchParams } = new URL(request.url);
-  const dateFrom = searchParams.get("dateFrom");
-  const dateTo = searchParams.get("dateTo");
-
+/** Adună vânzările pe manager și calculează plata cuvenită fiecăruia. */
+async function buildManagers(dateFrom: string | null, dateTo: string | null) {
   const conds = [eq(cars.isDeleted, false), eq(cars.status, "sold")];
   if (dateFrom) conds.push(gte(cars.saleDate, new Date(dateFrom)));
   if (dateTo) conds.push(lte(cars.saleDate, new Date(dateTo + "T23:59:59")));
@@ -88,13 +81,27 @@ export async function GET(request: Request) {
     })
     .sort((a, b) => b.payout - a.payout);
 
+  return { months, managers, grandTotalProfit, grandTotalRevenue, grandTotalCount: sales.length };
+}
+
+// GET /api/managers — defalcare profit & vânzări pe manager × lună (admin only).
+export async function GET(request: Request) {
+  const { error } = await requireAdmin();
+  if (error) return error;
+
+  const { searchParams } = new URL(request.url);
+  const dateFrom = searchParams.get("dateFrom");
+  const dateTo = searchParams.get("dateTo");
+
+  const { months, managers, grandTotalProfit, grandTotalRevenue, grandTotalCount } = await buildManagers(dateFrom, dateTo);
+
   const grandTotalPayout = managers.reduce((s, m) => s + m.payout, 0);
 
   return NextResponse.json({
     months,
     grandTotalProfit,
     grandTotalRevenue,
-    grandTotalCount: sales.length,
+    grandTotalCount,
     grandTotalPayout,
     managers,
   });
