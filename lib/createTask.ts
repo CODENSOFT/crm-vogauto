@@ -62,6 +62,7 @@ export async function createTaskCore(input: CreateTaskInput): Promise<TaskRow> {
       title: "Sarcină nouă",
       body: `${task.title}${task.dueDate ? ` — termen ${new Date(task.dueDate).toLocaleString("ro-RO")}` : ""}`,
       link: "/dashboard/tasks",
+      telegramButtons: [{ text: "✅ Am făcut-o", data: `done:${task.id}` }],
     });
   }
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { and, eq, lt } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { users, inventory, telegramPending } from "@/lib/schema";
+import { users, inventory, tasks, telegramPending } from "@/lib/schema";
 import { logAction } from "@/lib/audit";
 import { tgSend, tgEdit, tgAnswerCallback, esc, type InlineButton } from "@/lib/telegram";
 import { parseCommand, buildTitle } from "@/lib/tgCommand";
@@ -279,6 +279,51 @@ async function savePending(chatId: number, userId: string, payload: Payload): Pr
   return id;
 }
 
+/** Marchează sarcina drept finalizată, la apăsarea butonului din notificare. */
+async function markTaskDone(
+  cb: Record<string, any>,
+  chatId: number,
+  messageId: number | undefined,
+  taskId: string,
+  request: Request,
+) {
+  const fromId = String(cb.from?.id ?? "");
+  const [account] = fromId
+    ? await db.select().from(users).where(eq(users.telegramId, fromId)).limit(1)
+    : [];
+  if (!account || !account.isActive) {
+    return void (await tgSend(chatId, "Contul tău nu mai este activ în CRM."));
+  }
+
+  const [task] = await db.select().from(tasks).where(eq(tasks.id, taskId)).limit(1);
+  if (!task || task.isDeleted) {
+    return void (await tgSend(chatId, "Sarcina nu mai există."));
+  }
+
+  // Doar responsabilii sarcinii (sau adminul) o pot finaliza.
+  const mine = (task.assignedToIds ?? []).includes(account.id) || task.assignedTo === account.id;
+  if (!mine && account.role !== "admin") {
+    return void (await tgSend(chatId, "Această sarcină nu îți este atribuită."));
+  }
+
+  if (task.status === "done") {
+    if (messageId) await tgEdit(chatId, messageId, `✅ <b>Deja finalizată</b>\n${esc(task.title)}`);
+    return;
+  }
+
+  await db.update(tasks).set({ status: "done", completedAt: new Date() }).where(eq(tasks.id, taskId));
+
+  await logAction({
+    userId: account.id, userName: account.fullName, action: "EDIT_TASK",
+    details: { taskId, title: task.title, changes: ["status"], status: "done", via: "telegram" },
+    request,
+  });
+
+  const text = `✅ <b>Finalizată</b>\n${esc(task.title)}\n<i>de ${esc(account.fullName)}</i>`;
+  if (messageId) await tgEdit(chatId, messageId, text);
+  else await tgSend(chatId, text);
+}
+
 async function handleCallback(cb: Record<string, any>, request: Request) {
   const data = String(cb.data ?? "");
   const chatId = cb.message?.chat?.id;
@@ -286,7 +331,12 @@ async function handleCallback(cb: Record<string, any>, request: Request) {
   await tgAnswerCallback(cb.id);
 
   const [kind, pendingId, idxRaw] = data.split(":");
-  if (!chatId || (kind !== "c" && kind !== "u")) return;
+  if (!chatId) return;
+
+  // „Am făcut-o" pe o sarcină primită prin notificare.
+  if (kind === "done") return void (await markTaskDone(cb, chatId, messageId, pendingId, request));
+
+  if (kind !== "c" && kind !== "u") return;
 
   const [pending] = await db.select().from(telegramPending).where(eq(telegramPending.id, pendingId)).limit(1);
   if (!pending || pending.chatId !== String(chatId)) {
