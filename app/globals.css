@@ -132,17 +132,27 @@ dialog.vg-modal {
   /* Anulăm stilurile implicite ale browserului; forma o dă panoul dinăuntru. */
   width: 100%;
   max-width: 100%;
+  height: 100%;
   max-height: 100%;
+  margin: 0;
   padding: 0 0 env(safe-area-inset-bottom);
   border: 0;
   background: transparent;
-  /* Pe telefon fereastra urcă de jos, ca o foaie. */
-  margin: auto auto 0;
+  overflow: hidden;
+}
+/* `[open]` e obligatoriu: fără el, `display` ar anula ascunderea implicită. */
+dialog.vg-modal[open] {
+  display: flex;
+  justify-content: center;
+  /* Pe telefon fereastra urcă de jos, ca o foaie; pe ecran mare e centrată. */
+  align-items: flex-end;
 }
 @media (min-width: 640px) {
   dialog.vg-modal {
-    margin: auto;
     padding: 1rem;
+  }
+  dialog.vg-modal[open] {
+    align-items: center;
   }
 }
 dialog.vg-modal::backdrop {

@@ -24,7 +24,9 @@ const securityHeaders = [
       "base-uri 'self'",
       "form-action 'self'",
       "object-src 'none'",
-      "upgrade-insecure-requests",
+      // Doar în producție: pe http://localhost ar forța browserul să ceară
+      // resursele pe https, iar stilurile nu s-ar mai încărca deloc.
+      ...(process.env.NODE_ENV === "production" ? ["upgrade-insecure-requests"] : []),
     ].join("; "),
   },
   {
