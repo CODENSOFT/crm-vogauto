@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     .values({
       username: login,
       email: `${login}@vogauto.local`,
-      password: await hashPassword(password),
+      password: await hashPassword(String(password)),
       fullName,
       role: role === "admin" ? "admin" : "worker",
       permissions: permissions || {},

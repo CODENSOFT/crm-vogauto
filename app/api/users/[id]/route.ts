@@ -91,7 +91,7 @@ export async function PUT(
     if (String(body.password).length < MIN_PASSWORD_LENGTH) {
       return NextResponse.json({ error: "Parola trebuie să aibă minim 8 caractere." }, { status: 400 });
     }
-    updates.password = await hashPassword(body.password);
+    updates.password = await hashPassword(String(body.password));
     changed.passwordChanged = true;
   }
 

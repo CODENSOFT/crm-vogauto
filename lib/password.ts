@@ -8,10 +8,10 @@ export const MIN_PASSWORD_LENGTH = 8;
 
 /** Transformă parola în hash. Nicio parolă nu se salvează în clar. */
 export async function hashPassword(raw: string): Promise<string> {
-  return bcrypt.hash(String(raw), ROUNDS);
+  return bcrypt.hash(raw, ROUNDS);
 }
 
 /** Verifică o parolă introdusă față de hash-ul salvat. */
 export async function verifyPassword(raw: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(String(raw), hash);
+  return bcrypt.compare(raw, hash);
 }
