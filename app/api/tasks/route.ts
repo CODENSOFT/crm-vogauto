@@ -60,7 +60,13 @@ export async function GET(request: Request) {
     .orderBy(
       ...(status === "done"
         ? [sql`${tasks.completedAt} desc nulls last`, desc(tasks.createdAt)]
-        : [sql`${tasks.dueDate} asc nulls last`, asc(tasks.status), desc(tasks.createdAt)]),
+        : [
+            // Urgentele mereu primele, apoi normale, apoi cele scăzute.
+            sql`case ${tasks.priority} when 'high' then 0 when 'normal' then 1 else 2 end`,
+            sql`${tasks.dueDate} asc nulls last`,
+            asc(tasks.status),
+            desc(tasks.createdAt),
+          ]),
     );
 
   return NextResponse.json({ tasks: rows.map(taskToDTO) });
