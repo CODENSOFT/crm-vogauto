@@ -70,8 +70,8 @@ async function countsAndStock() {
   };
 }
 
-/** Agregă vânzările din interval: pe luni, pe vânzători, pe plată și pe mărci. */
-async function salesReport(dateFrom: string | null, dateTo: string | null) {
+/** Vânzările din interval, împreună cu taxa vânzătorului și cheltuielile mașinii. */
+async function loadSales(dateFrom: string | null, dateTo: string | null) {
   const conds = [eq(cars.isDeleted, false), eq(cars.status, "sold")];
   if (dateFrom) conds.push(gte(cars.saleDate, new Date(dateFrom)));
   if (dateTo) conds.push(lte(cars.saleDate, new Date(dateTo + "T23:59:59")));
@@ -112,6 +112,13 @@ async function salesReport(dateFrom: string | null, dateTo: string | null) {
         .groupBy(inventory.saleId)
     : [];
   const expMap = new Map(expRows.map((e) => [e.carId as string, Number(e.total)]));
+
+  return { sales, feeMap, expMap };
+}
+
+/** Agregă vânzările din interval: pe luni, pe vânzători, pe plată și pe mărci. */
+async function salesReport(dateFrom: string | null, dateTo: string | null) {
+  const { sales, feeMap, expMap } = await loadSales(dateFrom, dateTo);
 
   const byMonth: Record<string, { count: number; revenue: number; profit: number }> = {};
   const byWorker: Record<string, { count: number; revenue: number; profit: number }> = {};
