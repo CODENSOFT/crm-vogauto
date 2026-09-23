@@ -3,7 +3,7 @@ import { and, eq, lt } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { users, inventory, tasks, telegramPending } from "@/lib/schema";
 import { logAction } from "@/lib/audit";
-import { tgSend, tgEdit, tgAnswerCallback, esc, type InlineButton } from "@/lib/telegram";
+import { tgSend, tgEdit, tgDelete, tgAnswerCallback, esc, type InlineButton } from "@/lib/telegram";
 import { parseCommand, buildTitle } from "@/lib/tgCommand";
 import { createTaskCore } from "@/lib/createTask";
 import { TASK_TYPE_LABELS, type TaskType } from "@/types";
@@ -307,7 +307,8 @@ async function markTaskDone(
   }
 
   if (task.status === "done") {
-    if (messageId) await tgEdit(chatId, messageId, `✅ <b>Deja finalizată</b>\n${esc(task.title)}`);
+    // Deja închisă din CRM — curățăm mesajul din chat.
+    if (messageId) await tgDelete(chatId, messageId);
     return;
   }
 
@@ -319,9 +320,12 @@ async function markTaskDone(
     request,
   });
 
-  const text = `✅ <b>Finalizată</b>\n${esc(task.title)}\n<i>de ${esc(account.fullName)}</i>`;
-  if (messageId) await tgEdit(chatId, messageId, text);
-  else await tgSend(chatId, text);
+  // Sarcina rămâne în CRM la „Finalizate", dar dispare din chat.
+  if (messageId) {
+    const removed = await tgDelete(chatId, messageId);
+    // Mesajele mai vechi de 48h nu pot fi șterse de bot — le marcăm în schimb.
+    if (!removed) await tgEdit(chatId, messageId, `✅ <b>Finalizată</b> · ${esc(task.title)}`);
+  }
 }
 
 async function handleCallback(cb: Record<string, any>, request: Request) {

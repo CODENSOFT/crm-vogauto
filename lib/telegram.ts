@@ -72,6 +72,13 @@ export async function tgEdit(chatId: string | number, messageId: number, text: s
   });
 }
 
+// Șterge un mesaj trimis de bot (Telegram permite doar mesajele proprii din
+// ultimele 48 de ore). Întoarce true dacă a reușit.
+export async function tgDelete(chatId: string | number, messageId: number): Promise<boolean> {
+  const res = (await call("deleteMessage", { chat_id: chatId, message_id: messageId })) as { ok?: boolean } | null;
+  return Boolean(res?.ok);
+}
+
 // Oprește „ceasul" de pe buton în interfața Telegram.
 export async function tgAnswerCallback(callbackId: string, text?: string) {
   return call("answerCallbackQuery", { callback_query_id: callbackId, text: text ?? "" });

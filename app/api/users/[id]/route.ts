@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/schema";
 import { requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
+import { sendTelegram } from "@/lib/notify";
 import { isUuid } from "@/lib/utils";
 import { userToDTO } from "@/lib/serialize";
 
@@ -56,7 +57,16 @@ export async function PUT(
     updates.role = body.role === "admin" ? "admin" : "worker";
     changed.role = updates.role;
   }
-  if (body.isActive !== undefined) { updates.isActive = Boolean(body.isActive); changed.isActive = updates.isActive; }
+  if (body.isActive !== undefined) {
+    updates.isActive = Boolean(body.isActive);
+    changed.isActive = updates.isActive;
+    // Un cont dezactivat nu mai primește notificări: rupem legătura cu botul.
+    if (updates.isActive === false) {
+      updates.telegramId = null;
+      updates.telegramLinkCode = null;
+      updates.telegramLinkExpires = null;
+    }
+  }
   if (body.permissions !== undefined) {
     updates.permissions = { ...target.permissions, ...body.permissions };
     changed.permissions = updates.permissions;
@@ -85,9 +95,15 @@ export async function PUT(
     changed.password = "(schimbată)";
   }
 
+  const hadTelegram = target.telegramId;
   const [saved] = Object.keys(updates).length
     ? await db.update(users).set(updates).where(eq(users.id, params.id)).returning()
     : [target];
+
+  // Îl anunțăm pe Telegram că nu mai primește notificări.
+  if (updates.isActive === false && hadTelegram) {
+    await sendTelegram("⛔ Contul tău a fost dezactivat în CRM. Nu mai primești notificări aici.", hadTelegram);
+  }
 
   await logAction({
     userId: user.id, userName: user.fullName, action: "EDIT_USER_PERMISSIONS",
@@ -118,6 +134,11 @@ export async function DELETE(
   if (!target) {
     return NextResponse.json({ error: "Utilizator inexistent." }, { status: 404 });
   }
+  // Legătura cu botul dispare odată cu contul; îl anunțăm înainte.
+  if (target.telegramId) {
+    await sendTelegram("⛔ Contul tău a fost șters din CRM. Nu mai primești notificări aici.", target.telegramId);
+  }
+
   await db.delete(users).where(eq(users.id, params.id));
 
   await logAction({
