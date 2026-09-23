@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Table";
 import { CarThumb } from "@/components/shared/CarThumb";
@@ -21,6 +22,8 @@ export function StockTable({
   onReady: (item: InventoryDTO) => void;
   onDelete: (item: InventoryDTO) => void;
 }) {
+  const router = useRouter();
+
   return (
   <div className="hidden overflow-x-auto rounded-xl border border-slate-200/80 bg-white shadow-card lg:block">
     <table className="min-w-full divide-y divide-slate-200 text-sm">
@@ -37,7 +40,11 @@ export function StockTable({
             {prep ? "Nicio mașină în pregătire." : "Nicio mașină în stoc."}
           </td></tr>
         ) : items.map((it) => (
-          <tr key={it._id} className="transition-colors hover:bg-brand-tint/50">
+          <tr
+            key={it._id}
+            onClick={() => router.push(`/dashboard/inventory/${it._id}`)}
+            className="cursor-pointer transition-colors hover:bg-brand-tint/50"
+          >
             <td className="px-3 py-2">
               <Link href={`/dashboard/inventory/${it._id}`} className="block" aria-label={`${it.brand} ${it.model}`}>
                 <CarThumb url={it.primaryPhoto} count={it.photoCount} />
@@ -74,7 +81,7 @@ export function StockTable({
                 {STOCK_STATUS_LABELS[it.status]}
               </Badge>
             </td>
-            <td className="whitespace-nowrap px-3 py-2.5 text-right">
+            <td onClick={(e) => e.stopPropagation()} className="whitespace-nowrap px-3 py-2.5 text-right">
               {prep && (
                 <Button variant="primary" size="sm" className="mr-2" onClick={() => onReady(it)}>
                   Gata de vânzare

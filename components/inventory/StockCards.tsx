@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Table";
 import { CarThumb } from "@/components/shared/CarThumb";
@@ -20,10 +21,19 @@ export function StockCards({
   onReady: (item: InventoryDTO) => void;
   onDelete: (item: InventoryDTO) => void;
 }) {
+  const router = useRouter();
+
   return (
     <div className="space-y-3 lg:hidden">
       {items.map((it) => (
-        <div key={it._id} className="rounded-xl border border-slate-200/80 bg-white p-3 shadow-card">
+        <div key={it._id} className="relative rounded-xl border border-slate-200/80 bg-white p-3 shadow-card">
+          {/* Buton real care acoperă cardul; acțiunile stau deasupra lui. */}
+          <button
+            type="button"
+            aria-label={`Deschide ${it.brand} ${it.model}`}
+            onClick={() => router.push(`/dashboard/inventory/${it._id}`)}
+            className="absolute inset-0 z-0 cursor-pointer rounded-xl"
+          />
           <div className="flex gap-3">
             <Link href={`/dashboard/inventory/${it._id}`} className="shrink-0" aria-label={`${it.brand} ${it.model}`}>
               <CarThumb url={it.primaryPhoto} count={it.photoCount} className="h-16 w-20 rounded-lg" />
@@ -48,7 +58,7 @@ export function StockCards({
               </div>
             </div>
           </div>
-          <div className="mt-3 flex items-center gap-2 border-t border-slate-100 pt-2.5">
+          <div className="relative z-10 mt-3 flex items-center gap-2 border-t border-slate-100 pt-2.5">
             {prep && <Button size="sm" onClick={() => onReady(it)}>Gata de vânzare</Button>}
             <Link href={`/dashboard/inventory/${it._id}`} className="text-xs font-semibold text-brand">Deschide</Link>
             <Button variant="ghost" size="sm" className="ml-auto text-red-600" onClick={() => onDelete(it)}>Șterge</Button>
