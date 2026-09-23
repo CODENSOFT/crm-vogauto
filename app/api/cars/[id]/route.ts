@@ -51,7 +51,7 @@ export async function PUT(
     if (field === "priceBuy" || field === "priceSell") value = Number(value);
     if (field === "saleDate") value = new Date(value);
 
-    const oldVal = (old as unknown as Record<string, unknown>)[field];
+    const oldVal = (old as Record<string, unknown>)[field];
     const same =
       field === "saleDate"
         ? new Date(oldVal as Date).getTime() === (value as Date).getTime()

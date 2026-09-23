@@ -127,33 +127,23 @@ export const authOptions: NextAuthOptions = {
           permissions: user.permissions,
           lat: coords?.lat,
           lon: coords?.lon,
-        } as unknown as import("next-auth").User;
+        };
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        const u = user as unknown as {
-          id: string;
-          username: string;
-          role: string;
-          fullName: string;
-          fixedFee: number;
-          bonus: number;
-          permissions: Record<string, boolean>;
-          lat?: number;
-          lon?: number;
-        };
-        token.id = u.id;
-        token.username = u.username;
-        token.role = u.role;
-        token.fullName = u.fullName;
-        token.fixedFee = u.fixedFee;
-        token.bonus = u.bonus;
-        token.permissions = u.permissions;
-        token.lat = u.lat;
-        token.lon = u.lon;
+        // `user` e tipat prin augmentarea din types/next-auth.d.ts.
+        token.id = user.id;
+        token.username = user.username;
+        token.role = user.role;
+        token.fullName = user.fullName;
+        token.fixedFee = user.fixedFee;
+        token.bonus = user.bonus;
+        token.permissions = user.permissions;
+        token.lat = user.lat;
+        token.lon = user.lon;
         token.checkedAt = Date.now();
         return token;
       }
@@ -186,7 +176,7 @@ export const authOptions: NextAuthOptions = {
           token.username = dbUser.username;
           token.fixedFee = dbUser.fixedFee ?? 50;
           token.bonus = dbUser.bonus ?? 0;
-          token.permissions = dbUser.permissions as unknown as Record<string, boolean>;
+          token.permissions = dbUser.permissions;
           token.checkedAt = Date.now();
         } catch {
           // Eroare DB — nu invalidăm sesiunea pe baza unei erori tranzitorii.
@@ -208,7 +198,7 @@ export const authOptions: NextAuthOptions = {
         session.user.lon = token.lon as number | undefined;
       } else if (session.user) {
         // Fără id valid → consumatorii (guard/layout) vor respinge accesul.
-        session.user = undefined as unknown as typeof session.user;
+        Reflect.deleteProperty(session, "user");
       }
       return session;
     },
