@@ -6,13 +6,11 @@ import { requireSession, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
 import { isUuid } from "@/lib/utils";
 import { taskToDTO } from "@/lib/serialize";
-import { notify } from "@/lib/notify";
 import { resolveResponsibles } from "@/lib/resolveUsers";
 import { createTaskCore } from "@/lib/createTask";
 
 const TYPES = ["general", "test_drive", "bring_car", "to_asp", "service", "wash", "detailing", "customs", "delivery"];
 const STATUSES = ["todo", "in_progress", "done"];
-const PRIORITIES = ["low", "normal", "high"];
 
 // GET /api/tasks — listă sarcini. Workerii văd doar sarcinile lor.
 export async function GET(request: Request) {

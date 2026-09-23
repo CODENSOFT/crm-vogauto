@@ -105,7 +105,7 @@ export function InventoryFormModal({
         <Input label="Motor (capacitate)" value={form.engine} onChange={(e) => setF("engine", e.target.value)} placeholder="ex: 2.0 TDI" />
         <Input label="Proprietar *" value={form.ownerName} onChange={(e) => setF("ownerName", e.target.value)} list="inventory-owners" placeholder="Scrie sau alege „Parcarea”" />
         <datalist id="inventory-owners">
-          <option value="Parcarea" />
+          <option value="Parcarea">Parcarea</option>
         </datalist>
         <Input label={`Telefon proprietar${isParcare ? "" : " *"}`} value={form.ownerPhone} onChange={(e) => setF("ownerPhone", e.target.value)} disabled={isParcare} placeholder={isParcare ? "Nu e necesar (mașina parcării)" : ""} />
         <Input label="Preț cerut de client (€)" type="number" value={form.clientWantPrice} onChange={(e) => setF("clientWantPrice", e.target.value)} disabled={isParcare} placeholder={isParcare ? "Nu e necesar" : ""} />
@@ -122,12 +122,12 @@ export function InventoryFormModal({
 
         {/* Fotografii — se încarcă la salvarea mașinii. */}
         <div className="sm:col-span-2">
-          <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">Fotografii</label>
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-600">Fotografii</span>
           <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(e) => addFiles(e.target.files)} />
-          <div onClick={() => fileRef.current?.click()}
-            className="mt-1.5 cursor-pointer rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 py-4 text-center text-sm text-slate-500 transition-colors hover:border-brand hover:text-brand">
+          <button type="button" onClick={() => fileRef.current?.click()}
+            className="mt-1.5 w-full cursor-pointer rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 py-4 text-center text-sm text-slate-500 transition-colors hover:border-brand hover:text-brand">
             + Adaugă poze (poți selecta mai multe)
-          </div>
+          </button>
           {stagedFiles.length > 0 && (
             <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
               {stagedFiles.map((f, i) => (

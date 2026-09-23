@@ -35,9 +35,18 @@ export function MultiUserPicker({
   return (
     <div className="relative flex flex-col gap-1.5" ref={ref}>
       <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">{label}</label>
+      {/* Nu poate fi <button>: conține butoanele „×" de eliminare, iar
+          butoanele imbricate sunt HTML invalid. */}
       <div
+        role="button"
+        tabIndex={0}
+        aria-haspopup="listbox"
+        aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className="flex min-h-[38px] cursor-pointer flex-wrap items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm shadow-sm focus-within:border-brand"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen((o) => !o); }
+        }}
+        className="flex min-h-[38px] w-full cursor-pointer flex-wrap items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-left text-sm shadow-sm focus-within:border-brand"
       >
         {selected.length === 0 ? (
           <span className="px-1 text-slate-400">{placeholder}</span>

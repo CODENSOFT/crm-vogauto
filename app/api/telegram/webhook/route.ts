@@ -37,6 +37,7 @@ const HELP = [
 
 // Datele comenzii păstrate între apăsările de butoane.
 interface Payload {
+  [key: string]: unknown;
   raw: string;
   type: TaskType;
   dueDate: string | null;
@@ -274,7 +275,7 @@ async function finalize(chatId: number, account: Account, payload: Payload, requ
 async function savePending(chatId: number, userId: string, payload: Payload): Promise<string> {
   const id = randomBytes(4).toString("hex");
   await db.insert(telegramPending).values({
-    id, chatId: String(chatId), userId, payload: payload as unknown as Record<string, unknown>,
+    id, chatId: String(chatId), userId, payload,
   });
   return id;
 }
@@ -350,7 +351,7 @@ async function handleCallback(cb: Record<string, any>, request: Request) {
   const [account] = await db.select().from(users).where(eq(users.id, pending.userId!)).limit(1);
   if (!account || account.role !== "admin") return;
 
-  const payload = pending.payload as unknown as Payload;
+  const payload = pending.payload as Payload;
   const idx = Number(idxRaw);
 
   await db.delete(telegramPending).where(eq(telegramPending.id, pendingId));

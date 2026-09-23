@@ -86,7 +86,7 @@ export function AdminDashboard({ name }: { name: string }) {
   useEffect(() => {
     fetch("/api/stats")
       .then((r) => (r.ok ? r.json() : null))
-      .then((s) => setStats(s && s.counts ? { ...ZERO, ...s, stock: { ...ZERO.stock, ...(s.stock || {}) }, thisMonth: { ...ZERO.thisMonth, ...(s.thisMonth || {}) }, lastMonth: { ...ZERO.lastMonth, ...(s.lastMonth || {}) } } : ZERO))
+      .then((s) => setStats(s && s.counts ? { ...ZERO, ...s, stock: { ...ZERO.stock, ...s.stock }, thisMonth: { ...ZERO.thisMonth, ...s.thisMonth }, lastMonth: { ...ZERO.lastMonth, ...s.lastMonth } } : ZERO))
       .catch(() => setStats(ZERO))
       .finally(() => setLoading(false));
     fetch("/api/alerts").then((r) => (r.ok ? r.json() : { alerts: [] })).then((d) => setAlerts(d.alerts || [])).catch(() => {});

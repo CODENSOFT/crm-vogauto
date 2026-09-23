@@ -182,7 +182,7 @@ export function InventoryView() {
               ) : items.map((it) => (
                 <tr key={it._id} className="transition-colors hover:bg-brand-tint/50">
                   <td className="px-3 py-2">
-                    <Link href={`/dashboard/inventory/${it._id}`} className="block">
+                    <Link href={`/dashboard/inventory/${it._id}`} className="block" aria-label={`${it.brand} ${it.model}`}>
                       <div className="relative h-12 w-16 overflow-hidden rounded-md border border-slate-200 bg-slate-100">
                         {it.primaryPhoto ? (
                           // eslint-disable-next-line @next/next/no-img-element

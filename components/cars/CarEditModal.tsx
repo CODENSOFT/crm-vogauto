@@ -82,8 +82,8 @@ export function CarEditModal({
           <option value="sold">Vândută</option><option value="available">Disponibilă</option><option value="reserved">Rezervată</option>
         </Select>
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">Data vânzării</label>
-          <input type="date" value={form.saleDate} onChange={(e) => setF("saleDate", e.target.value)}
+          <label htmlFor="sale-date" className="text-xs font-semibold uppercase tracking-wide text-slate-600">Data vânzării</label>
+          <input id="sale-date" type="date" value={form.saleDate} onChange={(e) => setF("saleDate", e.target.value)}
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" />
         </div>
         <div className="sm:col-span-2">

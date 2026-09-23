@@ -182,8 +182,6 @@ export interface AuditDTO {
   createdAt: string;
 }
 
-// ---- Sarcini (task management) ----
-
 export type TaskType =
   | "general" | "test_drive" | "bring_car" | "to_asp"
   | "service" | "wash" | "detailing" | "customs" | "delivery";
@@ -237,7 +235,6 @@ export interface TaskDTO {
   createdAt: string;
 }
 
-// ---- Fotografii mașini ----
 export interface PhotoDTO {
   _id: string;
   carId?: string | null;

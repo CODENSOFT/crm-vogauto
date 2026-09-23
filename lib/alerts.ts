@@ -1,4 +1,4 @@
-import { and, eq, lt, isNotNull, ne, sql, inArray } from "drizzle-orm";
+import { and, eq, lt, sql, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { inventory, carPhotos, leads } from "@/lib/schema";
 

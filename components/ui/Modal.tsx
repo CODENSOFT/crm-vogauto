@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { Button } from "./Button";
 import { IconClose } from "./Icons";
 
@@ -12,14 +13,25 @@ interface ModalProps {
 }
 
 export function Modal({ open, onClose, title, children, footer }: ModalProps) {
+  // Escape închide fereastra — obișnuință firească pe desktop.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
   if (!open) return null;
 
   return (
     <div
+      role="presentation"
       className="fixed inset-0 z-40 flex items-end justify-center bg-slate-900/40 p-0 backdrop-blur-sm animate-fade-in sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
         className="flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-slate-200/60 bg-white shadow-elevated animate-scale-in sm:max-h-[90vh] sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >

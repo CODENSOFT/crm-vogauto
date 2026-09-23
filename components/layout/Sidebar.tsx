@@ -13,7 +13,6 @@ import {
   IconTrend,
   IconCube,
   IconTasks,
-  IconTruck,
   IconShare,
   IconTarget,
 } from "@/components/ui/Icons";
@@ -62,6 +61,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
     <>
       {open && (
         <div
+          role="presentation"
           className="fixed inset-0 z-20 bg-slate-900/60 backdrop-blur-sm lg:hidden"
           onClick={onClose}
         />

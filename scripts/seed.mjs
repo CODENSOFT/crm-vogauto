@@ -57,6 +57,6 @@ async function main() {
 
 main().catch(async (err) => {
   console.error(err);
-  try { await sql.end({ timeout: 2 }); } catch {}
+  try { await sql.end({ timeout: 2 }); } catch { /* conexiunea e deja închisă */ }
   process.exit(1);
 });

@@ -174,10 +174,10 @@ export function TasksView() {
       <div className="mb-4 grid grid-cols-1 gap-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-card sm:grid-cols-2 lg:grid-cols-4">
         {view === "active" && (
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">Ziua</label>
+          <label htmlFor="task-day" className="text-xs font-semibold uppercase tracking-wide text-slate-600">Ziua</label>
           <div className="flex gap-2">
             <input
-              type="date" value={date} disabled={allDays}
+              id="task-day" type="date" value={date} disabled={allDays}
               onChange={(e) => setDate(e.target.value)}
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:bg-slate-100"
             />
@@ -217,7 +217,10 @@ export function TasksView() {
           {tasks.map((t) => (
             <div
               key={t._id}
+              role="button"
+              tabIndex={0}
               onClick={() => setDetailTask(t)}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setDetailTask(t); } }}
               className={`group relative cursor-pointer overflow-hidden rounded-xl border bg-white shadow-card transition-all hover:border-slate-300 hover:shadow-card-hover ${t.status === "done" ? "border-slate-200/60" : "border-slate-200"}`}
             >
               <span className={`absolute inset-y-0 left-0 w-1 ${t.status === "done" ? "bg-emerald-400" : t.priority === "high" ? "bg-red-500" : t.status === "in_progress" ? "bg-amber-400" : "bg-slate-300"}`} />
@@ -238,7 +241,7 @@ export function TasksView() {
                     {t.carLabel && <span className="inline-flex items-center gap-1.5"><IconCar className="h-3.5 w-3.5 text-slate-400" />{t.carLabel}</span>}
                   </div>
                 </div>
-                <div className="flex shrink-0 flex-col items-end gap-2.5" onClick={(e) => e.stopPropagation()}>
+                <div role="presentation" className="flex shrink-0 flex-col items-end gap-2.5" onClick={(e) => e.stopPropagation()}>
                   <span className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold ${t.status === "done" ? "bg-emerald-100 text-emerald-700" : t.status === "in_progress" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-600"}`}>
                     {TASK_STATUS_LABELS[t.status]}
                   </span>
@@ -272,8 +275,8 @@ export function TasksView() {
             {Object.entries(TASK_PRIORITY_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </Select>
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">Data și ora</label>
-            <input type="datetime-local" value={form.dueDate} onChange={(e) => setF("dueDate", e.target.value)}
+            <label htmlFor="task-due" className="text-xs font-semibold uppercase tracking-wide text-slate-600">Data și ora</label>
+            <input id="task-due" type="datetime-local" value={form.dueDate} onChange={(e) => setF("dueDate", e.target.value)}
               className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" />
           </div>
           {isAdmin && (

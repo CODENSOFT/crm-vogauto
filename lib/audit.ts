@@ -103,9 +103,8 @@ export async function logAction({
       try {
         // Fallback IP: pentru IP local interogăm fără IP → locația IP-ului public.
         const fields = "status,country,regionName,city,zip,lat,lon,isp,query";
-        const url = isLocal
-          ? `http://ip-api.com/json/?fields=${fields}`
-          : `http://ip-api.com/json/${ip}?fields=${fields}`;
+        const base = process.env.GEOIP_API_URL || "http://ip-api.com/json";
+        const url = isLocal ? `${base}/?fields=${fields}` : `${base}/${ip}?fields=${fields}`;
         const geo = await fetch(url, { signal: AbortSignal.timeout(3500) }).then((r) => r.json());
         if (geo && geo.status === "success") {
           city = geo.city || "unknown";

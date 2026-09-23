@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { and, or, eq, asc, sql } from "drizzle-orm";
+import { or, eq, asc, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { carPhotos } from "@/lib/schema";
 import { requireSession } from "@/lib/guard";

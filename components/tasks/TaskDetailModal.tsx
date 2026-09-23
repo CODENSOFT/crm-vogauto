@@ -110,8 +110,10 @@ export function TaskDetailModal({
               {urls.length > 0 ? (
                 <>
                   <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-slate-100">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={main} alt="" onClick={() => setZoom(true)} className="h-full w-full cursor-zoom-in object-cover" />
+                    <button type="button" onClick={() => setZoom(true)} aria-label="Mărește fotografia" className="h-full w-full cursor-zoom-in">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={main} alt="" className="h-full w-full object-cover" />
+                    </button>
                   </div>
                   {urls.length > 1 && (
                     <div className="mt-2 flex gap-2 overflow-x-auto">
@@ -132,7 +134,7 @@ export function TaskDetailModal({
       </Modal>
 
       {zoom && main && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4" onClick={() => setZoom(false)}>
+        <div role="presentation" className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4" onClick={() => setZoom(false)}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={main} alt="" className="max-h-[92vh] max-w-full rounded-lg object-contain" />
         </div>

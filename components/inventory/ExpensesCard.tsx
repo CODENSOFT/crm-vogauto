@@ -73,7 +73,7 @@ export function ExpensesCard({ inventoryId, onChanged }: { inventoryId: string; 
             placeholder="ex: Reparație" list="expense-presets"
             onKeyDown={(e) => e.key === "Enter" && add()} />
           <datalist id="expense-presets">
-            {PRESETS.map((p) => <option key={p} value={p} />)}
+            {PRESETS.map((p) => <option key={p} value={p}>{p}</option>)}
           </datalist>
         </div>
         <div className="w-32">

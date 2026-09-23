@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import toast from "react-hot-toast";
-import { Modal } from "@/components/ui/Modal";
+import { Modal, ConfirmDialog } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import { ConfirmDialog } from "@/components/ui/Modal";
 import type { PhotoDTO } from "@/types";
 
 interface Props {
@@ -83,12 +82,13 @@ export function PhotoManager({ open, onClose, carId, inventoryId, label, onCount
         {loading ? (
           <div className="py-10 text-center text-slate-400">Se încarcă...</div>
         ) : photos.length === 0 ? (
-          <div
+          <button
+            type="button"
             onClick={() => inputRef.current?.click()}
-            className="cursor-pointer rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 py-12 text-center text-slate-400 transition-colors hover:border-brand hover:text-brand"
+            className="w-full cursor-pointer rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 py-12 text-center text-slate-400 transition-colors hover:border-brand hover:text-brand"
           >
             Nicio poză. Apasă „Adaugă poze” sau click aici.
-          </div>
+          </button>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {photos.map((ph) => (

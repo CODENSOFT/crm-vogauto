@@ -54,7 +54,6 @@ export async function POST(request: Request) {
   });
 }
 
-// DELETE /api/telegram/link — deconectează contul de Telegram.
 export async function DELETE(request: Request) {
   const { user, error } = await requireSession();
   if (error) return error;

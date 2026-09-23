@@ -218,8 +218,8 @@ export function PublishingView() {
         <div className="flex flex-col gap-3">
           <Input label="Titlu anunț" value={lTitle} onChange={(e) => setLTitle(e.target.value)} />
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">Descriere</label>
-            <textarea value={lDesc} onChange={(e) => setLDesc(e.target.value)} rows={5}
+            <label htmlFor="listing-desc" className="text-xs font-semibold uppercase tracking-wide text-slate-600">Descriere</label>
+            <textarea id="listing-desc" value={lDesc} onChange={(e) => setLDesc(e.target.value)} rows={5}
               className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
               placeholder="Dotări, stare, detalii..." />
           </div>
@@ -264,8 +264,8 @@ export function PublishingView() {
               </div>
             )}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">Text anunț (îl poți edita)</label>
-              <textarea value={igCaption} onChange={(e) => setIgCaption(e.target.value)} rows={8}
+              <label htmlFor="ig-caption" className="text-xs font-semibold uppercase tracking-wide text-slate-600">Text anunț (îl poți edita)</label>
+              <textarea id="ig-caption" value={igCaption} onChange={(e) => setIgCaption(e.target.value)} rows={8}
                 className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" />
             </div>
             {igConfigured === false && (

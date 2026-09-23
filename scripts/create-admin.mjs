@@ -6,9 +6,11 @@
  */
 import postgres from "postgres";
 import bcrypt from "bcryptjs";
+import { randomBytes } from "crypto";
 
-const USERNAME = "admin2";
-const PASSWORD = "Admin1234!";
+// Parola vine din mediu; dacă lipsește, generăm una și o afișăm o singură dată.
+const USERNAME = process.env.ADMIN_USERNAME || "admin2";
+const PASSWORD = process.env.ADMIN_PASSWORD || randomBytes(9).toString("base64url");
 
 const url = process.env.DATABASE_URL;
 if (!url) {
@@ -45,6 +47,6 @@ async function main() {
 
 main().catch(async (err) => {
   console.error(err);
-  try { await sql.end({ timeout: 2 }); } catch {}
+  try { await sql.end({ timeout: 2 }); } catch { /* conexiunea e deja închisă */ }
   process.exit(1);
 });

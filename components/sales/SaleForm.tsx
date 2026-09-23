@@ -121,8 +121,9 @@ export function SaleForm() {
         </div>
 
         <div className="mt-4 flex flex-col gap-1.5">
-          <label className="text-xs font-semibold uppercase tracking-wide text-slate-600">Note</label>
+          <label htmlFor="sale-notes" className="text-xs font-semibold uppercase tracking-wide text-slate-600">Note</label>
           <textarea
+            id="sale-notes"
             value={form.notes}
             onChange={(e) => set("notes", e.target.value)}
             rows={3}

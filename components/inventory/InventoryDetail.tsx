@@ -102,9 +102,10 @@ export function InventoryDetail({ id }: { id: string }) {
         <div className="rounded-2xl border border-slate-200/80 bg-white p-3 shadow-card">
           <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
             {main ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={main} alt={`${item.brand} ${item.model}`} onClick={() => setZoom(true)}
-                className="h-full w-full cursor-zoom-in object-cover" />
+              <button type="button" onClick={() => setZoom(true)} aria-label="Mărește fotografia" className="h-full w-full cursor-zoom-in">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={main} alt={`${item.brand} ${item.model}`} className="h-full w-full object-cover" />
+              </button>
             ) : (
               <div className="flex h-full w-full items-center justify-center text-slate-400">Fără fotografii</div>
             )}
@@ -112,9 +113,11 @@ export function InventoryDetail({ id }: { id: string }) {
           {urls.length > 1 && (
             <div className="mt-3 flex gap-2 overflow-x-auto">
               {urls.map((u, i) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img key={i} src={u} alt="" onClick={() => setSel(i)}
-                  className={`h-16 w-20 flex-shrink-0 cursor-pointer rounded-lg object-cover ring-2 ${i === sel ? "ring-brand" : "ring-transparent"}`} />
+                <button key={i} type="button" onClick={() => setSel(i)} aria-label={`Fotografia ${i + 1}`}
+                  className={`h-16 w-20 flex-shrink-0 overflow-hidden rounded-lg ring-2 ${i === sel ? "ring-brand" : "ring-transparent"}`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={u} alt="" className="h-full w-full object-cover" />
+                </button>
               ))}
             </div>
           )}
@@ -184,7 +187,7 @@ export function InventoryDetail({ id }: { id: string }) {
 
       {/* Zoom fullscreen */}
       {zoom && main && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4" onClick={() => setZoom(false)}>
+        <div role="presentation" className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4" onClick={() => setZoom(false)}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={main} alt="" className="max-h-[92vh] max-w-full rounded-lg object-contain" />
         </div>

@@ -1,4 +1,4 @@
-import { and, eq, or, inArray } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { cars, inventory } from "@/lib/schema";
 
@@ -22,7 +22,6 @@ export async function computeTimeline(opts: { vin?: string | null; carId?: strin
   const invs = invOr.length
     ? await db.select().from(inventory).where(and(eq(inventory.isDeleted, false), invOr.length === 1 ? invOr[0] : or(...invOr)!))
     : [];
-  const invIds = invs.map((i) => i.id);
   for (const inv of invs) {
     events.push({ date: new Date(inv.createdAt).toISOString(), kind: "stock", title: "Adăugată în stoc", detail: `${inv.brand} ${inv.model} ${inv.year}` });
     if (inv.publishedSite) events.push({ date: new Date(inv.createdAt).toISOString(), kind: "publish", title: "Publicată pe site" });
