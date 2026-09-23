@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
 import { Modal, ConfirmDialog } from "@/components/ui/Modal";
 import { TaskDetailModal } from "@/components/tasks/TaskDetailModal";
+import { TelegramCard } from "@/components/users/TelegramCard";
 import { CarStockPicker } from "@/components/shared/CarStockPicker";
 import { MultiUserPicker } from "@/components/shared/MultiUserPicker";
 import { IconClock, IconUser, IconCar } from "@/components/ui/Icons";
@@ -167,6 +168,8 @@ export function TasksView() {
           <Button onClick={openAdd}>Sarcină nouă</Button>
         </div>
       </div>
+
+      {!isAdmin && <TelegramCard worker />}
 
       <div className="mb-4 grid grid-cols-1 gap-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-card sm:grid-cols-2 lg:grid-cols-4">
         {view === "active" && (

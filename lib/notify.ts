@@ -7,9 +7,9 @@ export function telegramConfigured(): boolean {
   return Boolean(process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID);
 }
 
-export async function sendTelegram(text: string): Promise<void> {
+export async function sendTelegram(text: string, toChatId?: string | null): Promise<void> {
   const token = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
+  const chatId = toChatId || process.env.TELEGRAM_CHAT_ID;
   if (!token || !chatId) return;
   try {
     await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
@@ -40,7 +40,18 @@ export async function notify(opts: {
   }
   if (telegram) {
     const msg = `<b>${title}</b>${body ? `\n${body}` : ""}`;
-    await sendTelegram(msg);
+    // Dacă destinatarul și-a legat contul de Telegram, îi scriem lui direct;
+    // altfel mesajul merge pe canalul comun (dacă e configurat).
+    let personal: string | null = null;
+    if (userId) {
+      try {
+        const [u] = await db.select({ telegramId: users.telegramId }).from(users).where(eq(users.id, userId)).limit(1);
+        personal = u?.telegramId ?? null;
+      } catch (e) {
+        console.error("[notify:telegram]", e);
+      }
+    }
+    await sendTelegram(msg, personal);
   }
 }
 

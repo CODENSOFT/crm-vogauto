@@ -93,12 +93,16 @@ async function handleMessage(msg: Record<string, any>, request: Request) {
     if (code) return void (await linkAccount(chatId, fromId, code, request));
     return void (await tgSend(chatId,
       ["<b>Cont neconectat.</b>",
-       "Intră în CRM → <b>Utilizatori</b> → <b>Conectează Telegram</b>,",
+       "Intră în CRM, apasă <b>Conectează Telegram</b>",
+       "(administratorii la <b>Utilizatori</b>, angajații la <b>Sarcini</b>),",
        "apoi trimite-mi aici codul de 6 cifre."].join("\n")));
   }
 
   if (!account.isActive) return void (await tgSend(chatId, "Contul tău este dezactivat în CRM."));
-  if (account.role !== "admin") return void (await tgSend(chatId, "Comenzile sunt disponibile doar administratorului."));
+  if (account.role !== "admin") {
+    return void (await tgSend(chatId,
+      "Aici primești notificări despre sarcinile atribuite ție.\nCrearea sarcinilor prin bot e disponibilă doar administratorului."));
+  }
 
   if (msg.voice || msg.audio) {
     return void (await tgSend(chatId, "Mesajele vocale nu sunt acceptate încă — scrie comanda ca text.\n\n" + HELP));
@@ -127,10 +131,6 @@ async function linkAccount(chatId: number, fromId: string, code: string, request
   if (!candidate || !valid) {
     return void (await tgSend(chatId, "Cod greșit sau expirat. Generează unul nou în CRM."));
   }
-  if (candidate.role !== "admin") {
-    return void (await tgSend(chatId, "Comenzile sunt disponibile doar administratorului."));
-  }
-
   await db
     .update(users)
     .set({ telegramId: fromId, telegramLinkCode: null, telegramLinkExpires: null })
@@ -141,7 +141,9 @@ async function linkAccount(chatId: number, fromId: string, code: string, request
     details: { telegramId: fromId }, request,
   });
 
-  await tgSend(chatId, `✅ Cont conectat: <b>${esc(candidate.fullName)}</b>\n\n${HELP}`);
+  await tgSend(chatId, candidate.role === "admin"
+    ? `✅ Cont conectat: <b>${esc(candidate.fullName)}</b>\n\n${HELP}`
+    : `✅ Cont conectat: <b>${esc(candidate.fullName)}</b>\n\nDe acum primești aici notificări când ți se atribuie o sarcină nouă.`);
 }
 
 // ——— Comanda ————————————————————————————————————————————————————————

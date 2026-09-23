@@ -2,13 +2,13 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { users } from "@/lib/schema";
-import { requireAdmin, coordsOf } from "@/lib/guard";
+import { requireSession, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
 import { botConfigured } from "@/lib/telegram";
 
 // GET /api/telegram/link — starea conectării contului curent la bot.
 export async function GET() {
-  const { user, error } = await requireAdmin();
+  const { user, error } = await requireSession();
   if (error) return error;
 
   const [row] = await db
@@ -27,7 +27,7 @@ export async function GET() {
 // POST /api/telegram/link — generează un cod de 6 cifre, valabil 10 minute.
 // Adminul îl trimite botului în chat privat, iar botul leagă cele două conturi.
 export async function POST(request: Request) {
-  const { user, error } = await requireAdmin();
+  const { user, error } = await requireSession();
   if (error) return error;
 
   if (!botConfigured()) {
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
 
 // DELETE /api/telegram/link — deconectează contul de Telegram.
 export async function DELETE(request: Request) {
-  const { user, error } = await requireAdmin();
+  const { user, error } = await requireSession();
   if (error) return error;
 
   await db

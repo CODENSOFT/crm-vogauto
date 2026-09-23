@@ -12,7 +12,7 @@ interface LinkState {
 
 // Conectarea contului de administrator la botul de Telegram: CRM-ul generează
 // un cod de 6 cifre, adminul îl trimite botului, iar botul leagă conturile.
-export function TelegramCard() {
+export function TelegramCard({ worker = false }: { worker?: boolean }) {
   const [state, setState] = useState<LinkState | null>(null);
   const [code, setCode] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -65,10 +65,16 @@ export function TelegramCard() {
             </svg>
           </span>
           <div>
-            <h3 className="text-sm font-semibold text-slate-800">Bot Telegram — creare sarcini din chat</h3>
+            <h3 className="text-sm font-semibold text-slate-800">
+              {worker ? "Notificări pe Telegram" : "Bot Telegram — creare sarcini din chat"}
+            </h3>
             <p className="mt-0.5 text-xs text-slate-500">
-              Scrii botului <code className="rounded bg-slate-100 px-1">spalat Audi A5 2026 alb Ion maine</code> și
-              sarcina apare în CRM, cu mașina și responsabilul potrivite automat.
+              {worker ? (
+                "Conectează-ți contul ca să primești un mesaj pe Telegram de fiecare dată când ți se atribuie o sarcină nouă."
+              ) : (
+                <>Scrii botului <code className="rounded bg-slate-100 px-1">spalat Audi A5 2026 alb Ion maine</code> și
+                sarcina apare în CRM, cu mașina și responsabilul potrivite automat.</>
+              )}
             </p>
             <p className="mt-1.5 text-xs">
               {state.connected
