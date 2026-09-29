@@ -55,12 +55,14 @@ export default function LoginPage() {
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-auth-gradient px-4 py-10">
       {/* Lumini difuze, pentru adâncime. */}
-      <div className="pointer-events-none absolute -left-48 -top-32 h-[34rem] w-[34rem] rounded-full bg-brand/25 blur-[120px]" />
-      <div className="pointer-events-none absolute -bottom-52 -right-40 h-[34rem] w-[34rem] rounded-full bg-indigo-500/25 blur-[120px]" />
-      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[22rem] w-[22rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-400/10 blur-[100px]" />
+      <div className="vg-orb pointer-events-none absolute -left-48 -top-32 h-[34rem] w-[34rem] rounded-full bg-brand/25 blur-[120px]" />
+      <div className="vg-orb vg-orb-2 pointer-events-none absolute -bottom-52 -right-40 h-[34rem] w-[34rem] rounded-full bg-indigo-500/25 blur-[120px]" />
+      <div className="vg-orb vg-orb-3 pointer-events-none absolute left-1/3 top-1/2 h-[22rem] w-[22rem] rounded-full bg-sky-400/15 blur-[100px]" />
 
-      <div className="relative w-full max-w-md animate-scale-in rounded-3xl border border-white/20 bg-white/95 p-9 shadow-2xl backdrop-blur-xl sm:p-10">
-        <div className="flex flex-col items-center text-center">
+      {/* Chenar în degrade: un strat de 1px sub card. */}
+      <div className="vg-rise relative w-full max-w-md rounded-[1.75rem] bg-gradient-to-br from-white/50 via-white/15 to-white/5 p-px shadow-2xl">
+        <div className="vg-grain relative overflow-hidden rounded-[1.7rem] bg-white/95 p-9 backdrop-blur-xl sm:p-10">
+        <div className="relative flex flex-col items-center text-center">
           <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-gradient text-lg font-bold tracking-tight text-white shadow-lg shadow-brand/40 ring-1 ring-white/30">
             VA
           </span>
@@ -72,7 +74,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-5">
+        <form onSubmit={handleSubmit} className="vg-rise relative mt-8 flex flex-col gap-5" style={{ animationDelay: "90ms" }}>
           <div className="flex flex-col gap-2">
             <label htmlFor="username" className="text-xs font-semibold uppercase tracking-wide text-slate-500">
               Utilizator
@@ -136,7 +138,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading || !ready}
-            className="mt-1 flex w-full items-center justify-center gap-2.5 rounded-xl bg-brand-gradient py-3.5 text-[15px] font-semibold text-white shadow-lg shadow-brand/30 transition-all hover:shadow-xl hover:shadow-brand/40 hover:brightness-[1.06] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none disabled:hover:brightness-100"
+            className="vg-shine mt-1 flex w-full items-center justify-center gap-2.5 rounded-xl bg-brand-gradient py-3.5 text-[15px] font-semibold text-white shadow-lg shadow-brand/30 transition-all hover:shadow-xl hover:shadow-brand/40 hover:brightness-[1.06] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-45 disabled:shadow-none disabled:hover:brightness-100"
           >
             {loading && (
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
@@ -144,9 +146,10 @@ export default function LoginPage() {
             {loading ? "Se verifică..." : "Autentificare"}
           </button>
         </form>
+        </div>
       </div>
 
-      <p className="relative mt-7 text-xs text-slate-500">
+      <p className="vg-rise relative mt-7 text-xs text-slate-500" style={{ animationDelay: "180ms" }}>
         © {new Date().getFullYear()} VOGAUTO
       </p>
     </div>
