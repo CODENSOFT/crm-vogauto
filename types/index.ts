@@ -76,6 +76,14 @@ export interface UserDTO {
   createdAt: string;
 }
 
+// Opțiunile pentru specificațiile anunțului — aceleași în formular și la publicare.
+export const BODY_TYPES = ["Crossover", "SUV", "Sedan", "Hatchback", "Break", "Coupe", "Cabriolet", "Minivan", "Pickup", "Van"];
+export const FUEL_TYPES = ["Benzină", "Diesel", "Hibrid (Benzină)", "Plug-In Hybrid (Benzină)", "Plug-In Hybrid (Diesel)", "Electric", "Benzină + GPL", "Benzină + Metan"];
+export const TRANSMISSIONS = ["Automată", "Manuală"];
+export const DRIVE_TYPES = ["Tracțiune față", "Tracțiune spate", "Tracțiune integrală (AWD/4x4)"];
+export const CAR_CONDITIONS = ["Nou", "Cu parcurs"];
+export const DOOR_OPTIONS = ["2 Uși", "3 Uși", "4 Uși", "5 Uși"];
+
 export type StockStatus = "preparing" | "available" | "sold";
 
 export const STOCK_STATUS_LABELS: Record<StockStatus, string> = {
@@ -104,6 +112,13 @@ export interface InventoryDTO {
   vin?: string;
   color?: string;
   engine?: string | null;
+  bodyType?: string | null;
+  mileage?: number | null;
+  fuelType?: string | null;
+  transmission?: string | null;
+  driveType?: string | null;
+  condition?: string | null;
+  doors?: string | null;
   expensesTotal?: number;
   /** Adaos după scăderea cheltuielilor (doar pentru afișare). */
   netMargin?: number;

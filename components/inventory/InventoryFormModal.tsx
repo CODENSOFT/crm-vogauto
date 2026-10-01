@@ -6,10 +6,14 @@ import { Button } from "@/components/ui/Button";
 import { Input, Select } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { formatMoney } from "@/lib/utils";
-import type { InventoryDTO } from "@/types";
+import {
+  BODY_TYPES, FUEL_TYPES, TRANSMISSIONS, DRIVE_TYPES, CAR_CONDITIONS, DOOR_OPTIONS,
+  type InventoryDTO,
+} from "@/types";
 
 const EMPTY = {
   brand: "", model: "", year: String(new Date().getFullYear()), vin: "", color: "", engine: "",
+  bodyType: "", mileage: "", fuelType: "", transmission: "", driveType: "", condition: "", doors: "",
   ownerName: "", ownerPhone: "", clientWantPrice: "", purchasePrice: "", sellPrice: "", status: "available", notes: "",
 };
 
@@ -36,6 +40,9 @@ export function InventoryFormModal({
     if (editing) {
       setForm({
         brand: editing.brand, model: editing.model, year: String(editing.year), vin: editing.vin ?? "", color: editing.color ?? "", engine: editing.engine ?? "",
+        bodyType: editing.bodyType ?? "", mileage: String(editing.mileage ?? ""), fuelType: editing.fuelType ?? "",
+        transmission: editing.transmission ?? "", driveType: editing.driveType ?? "",
+        condition: editing.condition ?? "", doors: editing.doors ?? "",
         ownerName: editing.ownerName, ownerPhone: editing.ownerPhone,
         clientWantPrice: String(editing.clientWantPrice ?? ""), purchasePrice: String(editing.purchasePrice ?? ""),
         sellPrice: String(editing.sellPrice ?? ""),
@@ -102,7 +109,32 @@ export function InventoryFormModal({
         <Input label="An *" type="number" value={form.year} onChange={(e) => setF("year", e.target.value)} />
         <Input label="VIN" value={form.vin} onChange={(e) => setF("vin", e.target.value)} />
         <Input label="Culoare" value={form.color} onChange={(e) => setF("color", e.target.value)} placeholder="ex: Alb" />
-        <Input label="Motor (capacitate)" value={form.engine} onChange={(e) => setF("engine", e.target.value)} placeholder="ex: 2.0 TDI" />
+        <Input label="Capacitate motor (cm³)" type="number" value={form.engine} onChange={(e) => setF("engine", e.target.value)} placeholder="ex: 2000" />
+        <Input label="Parcurs (km)" type="number" value={form.mileage} onChange={(e) => setF("mileage", e.target.value)} placeholder="ex: 90000" />
+        <Select label="Caroserie" value={form.bodyType} onChange={(e) => setF("bodyType", e.target.value)}>
+          <option value="">—</option>
+          {BODY_TYPES.map((v) => <option key={v} value={v}>{v}</option>)}
+        </Select>
+        <Select label="Tip combustibil" value={form.fuelType} onChange={(e) => setF("fuelType", e.target.value)}>
+          <option value="">—</option>
+          {FUEL_TYPES.map((v) => <option key={v} value={v}>{v}</option>)}
+        </Select>
+        <Select label="Transmisie" value={form.transmission} onChange={(e) => setF("transmission", e.target.value)}>
+          <option value="">—</option>
+          {TRANSMISSIONS.map((v) => <option key={v} value={v}>{v}</option>)}
+        </Select>
+        <Select label="Tip tracțiune" value={form.driveType} onChange={(e) => setF("driveType", e.target.value)}>
+          <option value="">—</option>
+          {DRIVE_TYPES.map((v) => <option key={v} value={v}>{v}</option>)}
+        </Select>
+        <Select label="Stare" value={form.condition} onChange={(e) => setF("condition", e.target.value)}>
+          <option value="">—</option>
+          {CAR_CONDITIONS.map((v) => <option key={v} value={v}>{v}</option>)}
+        </Select>
+        <Select label="Uși" value={form.doors} onChange={(e) => setF("doors", e.target.value)}>
+          <option value="">—</option>
+          {DOOR_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
+        </Select>
         <Input label="Proprietar *" value={form.ownerName} onChange={(e) => setF("ownerName", e.target.value)} list="inventory-owners" placeholder="Scrie sau alege „Parcarea”" />
         <datalist id="inventory-owners">
           <option value="Parcarea">Parcarea</option>

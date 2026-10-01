@@ -245,6 +245,20 @@ async function main() {
 
   await sql`alter table inventory add column if not exists purchase_price double precision not null default 0`;
 
+  await addedColumns();
+}
+
+/** Coloane și tabele adăugate după prima versiune a schemei. */
+async function addedColumns() {
+  // Specificații pentru anunțuri.
+  await sql`alter table inventory add column if not exists body_type text`;
+  await sql`alter table inventory add column if not exists mileage integer`;
+  await sql`alter table inventory add column if not exists fuel_type text`;
+  await sql`alter table inventory add column if not exists transmission text`;
+  await sql`alter table inventory add column if not exists drive_type text`;
+  await sql`alter table inventory add column if not exists condition text`;
+  await sql`alter table inventory add column if not exists doors text`;
+
   // Legătura cu articolele din WordPress.
   await sql`alter table inventory add column if not exists wp_post_id text`;
   await sql`alter table inventory add column if not exists wp_url text`;

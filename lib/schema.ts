@@ -71,7 +71,15 @@ export const inventory = pgTable("inventory", {
   year: integer("year").notNull(),
   vin: text("vin"),
   color: text("color"),
-  engine: text("engine"), // capacitatea/tipul motorului, ex. „2.0 TDI"
+  engine: text("engine"), // capacitatea motorului în cm³, ex. „2000"
+  // Specificații pentru anunțul de pe site.
+  bodyType: text("body_type"),        // Crossover, Sedan, ...
+  mileage: integer("mileage"),        // parcurs, în km
+  fuelType: text("fuel_type"),        // Benzină, Diesel, Plug-In Hybrid, ...
+  transmission: text("transmission"), // Automată / Manuală
+  driveType: text("drive_type"),      // Față / Spate / Integrală
+  condition: text("condition"),       // Nou / Cu parcurs
+  doors: text("doors"),               // 3 Uși / 5 Uși
   ownerName: text("owner_name").notNull(),
   ownerPhone: text("owner_phone").notNull(),
   clientWantPrice: doublePrecision("client_want_price").notNull().default(0),

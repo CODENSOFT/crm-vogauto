@@ -56,9 +56,12 @@ export async function POST(request: Request, { params }: { params: { id: string 
         title,
         description: item.listingDescription ?? "",
         brand: item.brand, model: item.model, year: item.year,
-        color: item.color, engine: item.engine, vin: item.vin,
         price: Number(item.sellPrice),
         photos: urls,
+        color: item.color, engine: item.engine, vin: item.vin,
+        bodyType: item.bodyType, mileage: item.mileage, fuelType: item.fuelType,
+        transmission: item.transmission, driveType: item.driveType,
+        condition: item.condition, doors: item.doors,
       }),
       featuredMediaId: mediaId,
     });

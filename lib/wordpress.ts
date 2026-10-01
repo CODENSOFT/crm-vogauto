@@ -62,11 +62,18 @@ export interface ListingContent {
   brand: string;
   model: string;
   year: number;
+  price: number;
+  photos: string[];
   color?: string | null;
   engine?: string | null;
   vin?: string | null;
-  price: number;
-  photos: string[];
+  bodyType?: string | null;
+  mileage?: number | null;
+  fuelType?: string | null;
+  transmission?: string | null;
+  driveType?: string | null;
+  condition?: string | null;
+  doors?: string | null;
 }
 
 /**
@@ -75,16 +82,25 @@ export interface ListingContent {
  * anunțurile arată exact ca restul conținutului lor.
  */
 export function buildPostContent(c: ListingContent): string {
-  const rows: [string, string][] = [
+  // Ordinea e cea din anunțurile lor; rândurile necompletate se omit.
+  const rows: [string, string | null | undefined][] = [
     ["Marcă", c.brand],
     ["Model", c.model],
-    ["An", String(c.year)],
+    ["Caroserie", c.bodyType],
+    ["Parcurs", c.mileage != null ? `${new Intl.NumberFormat("ro-RO").format(c.mileage)} km` : null],
+    ["Tip combustibil", c.fuelType],
+    ["Anul producerii", String(c.year)],
+    ["Transmisie", c.transmission],
+    ["Tip tracțiune", c.driveType],
+    ["Stare", c.condition],
+    ["Capacitate motor", c.engine ? `${c.engine} cm³` : null],
+    ["Uși", c.doors],
+    ["Culoare", c.color],
+    ["VIN", c.vin],
   ];
-  if (c.color) rows.push(["Culoare", c.color]);
-  if (c.engine) rows.push(["Motor", c.engine]);
-  if (c.vin) rows.push(["VIN", c.vin]);
 
   const specs = rows
+    .filter(([, v]) => v != null && String(v).trim() !== "")
     .map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`)
     .join("");
 
