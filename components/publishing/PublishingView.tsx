@@ -5,8 +5,8 @@ import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
-import { Badge } from "@/components/ui/Table";
 import { InstagramModal } from "@/components/publishing/InstagramModal";
+import { PublishingHeader } from "@/components/publishing/PublishingHeader";
 import { PublishingTable } from "@/components/publishing/PublishingTable";
 import { PhotoManager } from "@/components/photos/PhotoManager";
 import type { InventoryDTO } from "@/types";
@@ -39,10 +39,15 @@ export function PublishingView() {
   const [igPosting, setIgPosting] = useState(false);
   const [igDone, setIgDone] = useState<{ posted: boolean; note?: string } | null>(null);
   const [igConfigured, setIgConfigured] = useState<boolean | null>(null);
+  const [wpStatus, setWpStatus] = useState<{ ok: boolean; user?: string; error?: string } | null>(null);
 
   useEffect(() => {
     fetch("/api/publish/instagram/status").then((r) => r.json())
       .then((d) => setIgConfigured(!!d.configured)).catch(() => setIgConfigured(false));
+    fetch("/api/publish/wordpress/status")
+      .then((r) => (r.ok ? r.json() : { ok: false }))
+      .then(setWpStatus)
+      .catch(() => setWpStatus({ ok: false }));
   }, []);
 
   const load = useCallback(async () => {
@@ -58,12 +63,19 @@ export function PublishingView() {
   async function toggleChannel(it: InventoryDTO, field: "publishedSite" | "published999", channelName: string) {
     const next = !it[field];
     if (next && !(it.photoCount ?? 0)) { toast.error("Adaugă cel puțin o poză înainte de publicare."); return; }
-    const res = await fetch(`/api/inventory/${it._id}`, {
-      method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ [field]: next }),
-    });
+
+    // Site-ul înseamnă un articol real în WordPress, deci are ruta lui;
+    // 999.md citește feedul, deci acolo e suficient comutatorul.
+    const isSite = field === "publishedSite";
+    const res = isSite
+      ? await fetch(`/api/publish/wordpress/${it._id}`, { method: next ? "POST" : "DELETE" })
+      : await fetch(`/api/inventory/${it._id}`, {
+          method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ [field]: next }),
+        });
+
     const data = await res.json();
     if (!res.ok) { toast.error(data.error || "Eroare."); return; }
-    // Păstrăm poza/numărul de poze (ruta de editare nu le întoarce).
+    // Păstrăm poza/numărul de poze (rutele de salvare nu le întorc).
     setItems((list) => list.map((x) => (x._id === it._id ? { ...data.item, primaryPhoto: x.primaryPhoto, photoCount: x.photoCount } : x)));
     toast.success(next ? `Publicat pe ${channelName}` : `Retras de pe ${channelName}`);
   }
@@ -120,17 +132,7 @@ export function PublishingView() {
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Publicare</h1>
-          <p className="mt-1 text-sm text-slate-500">Alege pe ce canale apare fiecare mașină. Vândută → dispare automat de peste tot.</p>
-        </div>
-        {igConfigured !== null && (
-          <span title={igConfigured ? "Postarea automată pe Instagram este activă" : "Instagram neconfigurat — postarea pregătește doar textul"}>
-            <Badge color={igConfigured ? "green" : "gray"}>Instagram: {igConfigured ? "conectat" : "neconectat"}</Badge>
-          </span>
-        )}
-      </div>
+      <PublishingHeader wpStatus={wpStatus} igConfigured={igConfigured} />
 
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="Disponibile în stoc" value={items.length} />

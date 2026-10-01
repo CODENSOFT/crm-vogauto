@@ -6,6 +6,7 @@ import { requireAdmin, requireSession, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
 import { isUuid } from "@/lib/utils";
 import { inventoryToDTO } from "@/lib/serialize";
+import { wordpressConfigured, unpublishListing } from "@/lib/wordpress";
 
 // GET /api/inventory/[id] — o singură mașină din stoc (pentru pagina de detaliu).
 export async function GET(_request: Request, { params }: { params: { id: string } }) {
@@ -64,6 +65,14 @@ export async function PUT(
   if (updates.status === "sold") {
     updates.publishedSite = false;
     updates.published999 = false;
+    // Și articolul de pe site trece în ciornă, ca să nu rămână anunț activ.
+    if (item.wpPostId && wordpressConfigured()) {
+      try {
+        await unpublishListing(item.wpPostId);
+      } catch (e) {
+        console.error("[wordpress:sold]", e);
+      }
+    }
   }
 
   const [saved] = Object.keys(updates).length

@@ -245,6 +245,11 @@ async function main() {
 
   await sql`alter table inventory add column if not exists purchase_price double precision not null default 0`;
 
+  // Legătura cu articolele din WordPress.
+  await sql`alter table inventory add column if not exists wp_post_id text`;
+  await sql`alter table inventory add column if not exists wp_url text`;
+  await sql`alter table inventory add column if not exists wp_media_id text`;
+
   // Cheltuieli per mașină (cât e în pregătire).
   await sql`
     create table if not exists inventory_expenses (

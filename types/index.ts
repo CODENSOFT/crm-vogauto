@@ -121,6 +121,8 @@ export interface InventoryDTO {
   publishedSite?: boolean;
   published999?: boolean;
   listingTitle?: string | null;
+  wpPostId?: string | null;
+  wpUrl?: string | null;
   listingDescription?: string | null;
   addedByName?: string;
   createdAt: string;
@@ -143,6 +145,8 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
   REVEAL_PHONE: "Dezvăluire telefon",
   CREATE_STOCK: "Adăugare mașină în stoc",
   EDIT_STOCK: "Editare mașină stoc",
+  PUBLISH_SITE: "Publicare pe site",
+  UNPUBLISH_SITE: "Retragere de pe site",
   ADD_EXPENSE: "Adăugare cheltuială",
   DELETE_EXPENSE: "Ștergere cheltuială",
   DELETE_STOCK: "Ștergere mașină stoc",

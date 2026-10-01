@@ -85,6 +85,10 @@ export const inventory = pgTable("inventory", {
   publishedSite: boolean("published_site").notNull().default(false),
   published999: boolean("published_999").notNull().default(false),
   listingTitle: text("listing_title"),
+  // Articolul creat în WordPress pentru această mașină.
+  wpPostId: text("wp_post_id"),
+  wpUrl: text("wp_url"),
+  wpMediaId: text("wp_media_id"),
   listingDescription: text("listing_description"),
   addedBy: uuid("added_by"),
   addedByName: text("added_by_name"),
