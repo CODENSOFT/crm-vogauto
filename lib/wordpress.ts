@@ -69,7 +69,11 @@ export interface ListingContent {
   photos: string[];
 }
 
-/** Construiește corpul articolului: specificații, descriere și galerie. */
+/**
+ * Corpul articolului, scris cu blocurile standard WordPress și FĂRĂ stiluri
+ * proprii: culorile, fonturile și spațierea vin din tema site-ului, deci
+ * anunțurile arată exact ca restul conținutului lor.
+ */
 export function buildPostContent(c: ListingContent): string {
   const rows: [string, string][] = [
     ["Marcă", c.brand],
@@ -81,17 +85,21 @@ export function buildPostContent(c: ListingContent): string {
   if (c.vin) rows.push(["VIN", c.vin]);
 
   const specs = rows
-    .map(([k, v]) => `<tr><th scope="row" style="text-align:left;padding:6px 14px 6px 0">${esc(k)}</th><td>${esc(v)}</td></tr>`)
+    .map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`)
     .join("");
 
-  const gallery = c.photos
-    .map((u) => `<figure class="wp-block-image"><img src="${esc(u)}" alt="${esc(c.title)}" loading="lazy" /></figure>`)
-    .join("\n");
+  const gallery = c.photos.length
+    ? `<figure class="wp-block-gallery columns-3 is-cropped">\n` +
+      c.photos
+        .map((u) => `<figure class="wp-block-image size-large"><img src="${esc(u)}" alt="${esc(c.title)}" loading="lazy" /></figure>`)
+        .join("\n") +
+      `\n</figure>`
+    : "";
 
   return [
-    `<p style="font-size:1.6em;font-weight:700;margin:0 0 .6em">${formatPrice(c.price)}</p>`,
-    c.description ? `<p>${esc(c.description).replace(/\n/g, "<br />")}</p>` : "",
-    `<table><tbody>${specs}</tbody></table>`,
+    `<p class="has-text-align-left"><strong>Preț: ${formatPrice(c.price)}</strong></p>`,
+    c.description ? esc(c.description).split(/\n{2,}/).map((par) => `<p>${par.replace(/\n/g, "<br />")}</p>`).join("\n") : "",
+    `<figure class="wp-block-table"><table><tbody>${specs}</tbody></table></figure>`,
     gallery,
   ].filter(Boolean).join("\n\n");
 }
