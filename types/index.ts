@@ -79,7 +79,7 @@ export interface UserDTO {
 // Opțiunile pentru specificațiile anunțului — aceleași în formular și la publicare.
 export const BODY_TYPES = [
   "Crossover", "SUV", "Sedan", "Hatchback", "Break (Universal)", "Coupe",
-  "Cabriolet", "Minivan", "Monovolum", "Pickup", "Van / Furgon",
+  "Cabriolet", "Minivan", "Pickup", "Van / Furgon",
 ];
 
 export const FUEL_TYPES = [
