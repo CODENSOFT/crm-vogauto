@@ -79,7 +79,7 @@ export interface UserDTO {
 // Opțiunile pentru specificațiile anunțului — aceleași în formular și la publicare.
 export const BODY_TYPES = [
   "Crossover", "SUV", "Sedan", "Hatchback", "Break (Universal)", "Coupe",
-  "Cabriolet", "Minivan", "Monovolum", "Pickup", "Van / Furgon", "Limuzină",
+  "Cabriolet", "Minivan", "Monovolum", "Pickup", "Van / Furgon",
 ];
 
 export const FUEL_TYPES = [
@@ -94,13 +94,11 @@ export const FUEL_TYPES = [
   "Plug-In Hybrid (Benzină)",
   "Plug-In Hybrid (Diesel)",
   "Electric",
-  "Hidrogen",
 ];
 
 export const TRANSMISSIONS = [
   "Manuală",
   "Automată",
-  "Automată cu dublu ambreiaj (DSG)",
   "Robotizată",
   "Variator (CVT)",
 ];

@@ -3,13 +3,24 @@
 import { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
-import { Input, Select } from "@/components/ui/Input";
+import { Input } from "@/components/ui/Input";
+import { Picker } from "@/components/ui/Picker";
 import { Modal } from "@/components/ui/Modal";
 import { formatMoney } from "@/lib/utils";
 import {
   BODY_TYPES, FUEL_TYPES, TRANSMISSIONS, DRIVE_TYPES, CAR_CONDITIONS, DOOR_OPTIONS,
   type InventoryDTO,
 } from "@/types";
+
+// Statusul se alege pe etichetă, dar se salvează ca valoare din baza de date.
+const STATUS_LABEL: Record<string, string> = {
+  preparing: "În pregătire",
+  available: "Disponibilă",
+  sold: "Vândută",
+};
+const STATUS_VALUE: Record<string, string> = Object.fromEntries(
+  Object.entries(STATUS_LABEL).map(([k, v]) => [v, k])
+);
 
 const EMPTY = {
   brand: "", model: "", year: String(new Date().getFullYear()), vin: "", color: "", engine: "",
@@ -31,6 +42,8 @@ export function InventoryFormModal({
 }) {
   const [form, setForm] = useState({ ...EMPTY });
   const [saving, setSaving] = useState(false);
+  const [ownerOpen, setOwnerOpen] = useState(false);
+  const ownerBox = useRef<HTMLDivElement>(null);
   const [stagedFiles, setStagedFiles] = useState<File[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -52,6 +65,16 @@ export function InventoryFormModal({
       setForm({ ...EMPTY, status: defaultStatus });
     }
   }, [open, editing, defaultStatus]);
+
+  // Sugestia „Parcarea" se închide la click în afara câmpului.
+  useEffect(() => {
+    if (!ownerOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (!ownerBox.current?.contains(e.target as Node)) setOwnerOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [ownerOpen]);
 
   const setF = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
   const isParcare = form.ownerName.trim().toLowerCase() === "parcarea";
@@ -111,43 +134,53 @@ export function InventoryFormModal({
         <Input label="Culoare" value={form.color} onChange={(e) => setF("color", e.target.value)} placeholder="ex: Alb" />
         <Input label="Capacitate motor (cm³)" type="number" value={form.engine} onChange={(e) => setF("engine", e.target.value)} placeholder="ex: 2000" />
         <Input label="Parcurs (km)" type="number" value={form.mileage} onChange={(e) => setF("mileage", e.target.value)} placeholder="ex: 90000" />
-        <Select label="Caroserie" value={form.bodyType} onChange={(e) => setF("bodyType", e.target.value)}>
-          <option value="">—</option>
-          {BODY_TYPES.map((v) => <option key={v} value={v}>{v}</option>)}
-        </Select>
-        <Select label="Tip combustibil" value={form.fuelType} onChange={(e) => setF("fuelType", e.target.value)}>
-          <option value="">—</option>
-          {FUEL_TYPES.map((v) => <option key={v} value={v}>{v}</option>)}
-        </Select>
-        <Select label="Transmisie" value={form.transmission} onChange={(e) => setF("transmission", e.target.value)}>
-          <option value="">—</option>
-          {TRANSMISSIONS.map((v) => <option key={v} value={v}>{v}</option>)}
-        </Select>
-        <Select label="Tip tracțiune" value={form.driveType} onChange={(e) => setF("driveType", e.target.value)}>
-          <option value="">—</option>
-          {DRIVE_TYPES.map((v) => <option key={v} value={v}>{v}</option>)}
-        </Select>
-        <Select label="Stare" value={form.condition} onChange={(e) => setF("condition", e.target.value)}>
-          <option value="">—</option>
-          {CAR_CONDITIONS.map((v) => <option key={v} value={v}>{v}</option>)}
-        </Select>
-        <Select label="Uși" value={form.doors} onChange={(e) => setF("doors", e.target.value)}>
-          <option value="">—</option>
-          {DOOR_OPTIONS.map((v) => <option key={v} value={v}>{v}</option>)}
-        </Select>
-        <Input label="Proprietar *" value={form.ownerName} onChange={(e) => setF("ownerName", e.target.value)} list="inventory-owners" placeholder="Scrie sau alege „Parcarea”" />
-        <datalist id="inventory-owners">
-          <option value="Parcarea">Parcarea</option>
-        </datalist>
+        <Picker label="Caroserie" value={form.bodyType}
+          onChange={(v) => setF("bodyType", v)} options={BODY_TYPES} />
+        <Picker label="Tip combustibil" value={form.fuelType}
+          onChange={(v) => setF("fuelType", v)} options={FUEL_TYPES} />
+        <Picker label="Transmisie" value={form.transmission}
+          onChange={(v) => setF("transmission", v)} options={TRANSMISSIONS} />
+        <Picker label="Tip tracțiune" value={form.driveType}
+          onChange={(v) => setF("driveType", v)} options={DRIVE_TYPES} />
+        <Picker label="Stare" value={form.condition}
+          onChange={(v) => setF("condition", v)} options={CAR_CONDITIONS} />
+        <Picker label="Uși" value={form.doors}
+          onChange={(v) => setF("doors", v)} options={DOOR_OPTIONS} />
+        <div className="relative flex flex-col gap-1.5" ref={ownerBox}>
+          <label htmlFor="owner-name" className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+            Proprietar *
+          </label>
+          <input
+            id="owner-name"
+            value={form.ownerName}
+            onChange={(e) => setF("ownerName", e.target.value)}
+            onFocus={() => setOwnerOpen(true)}
+            placeholder="Numele clientului"
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20"
+          />
+          {ownerOpen && !isParcare && (
+            <ul className="absolute top-full z-30 mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-1 shadow-elevated">
+              <li>
+                <button
+                  type="button"
+                  onMouseDown={(e) => { e.preventDefault(); setF("ownerName", "Parcarea"); setOwnerOpen(false); }}
+                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-brand-tint hover:text-brand-dark"
+                >
+                  <span className="flex h-5 w-5 items-center justify-center rounded bg-slate-900 text-[9px] font-bold text-white">VA</span>
+                  Parcarea
+                  <span className="ml-auto text-xs text-slate-400">mașina proprie</span>
+                </button>
+              </li>
+            </ul>
+          )}
+        </div>
         <Input label={`Telefon proprietar${isParcare ? "" : " *"}`} value={form.ownerPhone} onChange={(e) => setF("ownerPhone", e.target.value)} disabled={isParcare} placeholder={isParcare ? "Nu e necesar (mașina parcării)" : ""} />
         <Input label="Preț cerut de client (€)" type="number" value={form.clientWantPrice} onChange={(e) => setF("clientWantPrice", e.target.value)} disabled={isParcare} placeholder={isParcare ? "Nu e necesar" : ""} />
         <Input label={`Preț cumpărare (€)${isParcare ? " *" : ""}`} type="number" value={form.purchasePrice} onChange={(e) => setF("purchasePrice", e.target.value)} disabled={!isParcare} placeholder={isParcare ? "Cât a plătit parcarea" : "Doar pentru mașinile parcării"} />
         <Input label="Preț de vânzare (€) *" type="number" value={form.sellPrice} onChange={(e) => setF("sellPrice", e.target.value)} />
-        <Select label="Status" value={form.status} onChange={(e) => setF("status", e.target.value)}>
-          <option value="preparing">În pregătire</option>
-          <option value="available">Disponibilă</option>
-          <option value="sold">Vândută</option>
-        </Select>
+        <Picker label="Status" value={STATUS_LABEL[form.status] ?? ""}
+          onChange={(v) => setF("status", STATUS_VALUE[v] ?? "available")}
+          options={Object.values(STATUS_LABEL)} placeholder="Disponibilă" />
         <div className="sm:col-span-2">
           <Input label="Note" value={form.notes} onChange={(e) => setF("notes", e.target.value)} />
         </div>
