@@ -77,11 +77,42 @@ export interface UserDTO {
 }
 
 // Opțiunile pentru specificațiile anunțului — aceleași în formular și la publicare.
-export const BODY_TYPES = ["Crossover", "SUV", "Sedan", "Hatchback", "Break", "Coupe", "Cabriolet", "Minivan", "Pickup", "Van"];
-export const FUEL_TYPES = ["Benzină", "Diesel", "Hibrid (Benzină)", "Plug-In Hybrid (Benzină)", "Plug-In Hybrid (Diesel)", "Electric", "Benzină + GPL", "Benzină + Metan"];
-export const TRANSMISSIONS = ["Automată", "Manuală"];
-export const DRIVE_TYPES = ["Tracțiune față", "Tracțiune spate", "Tracțiune integrală (AWD/4x4)"];
-export const CAR_CONDITIONS = ["Nou", "Cu parcurs"];
+export const BODY_TYPES = [
+  "Crossover", "SUV", "Sedan", "Hatchback", "Break (Universal)", "Coupe",
+  "Cabriolet", "Minivan", "Monovolum", "Pickup", "Van / Furgon", "Limuzină",
+];
+
+export const FUEL_TYPES = [
+  "Benzină",
+  "Diesel (motorină)",
+  "Benzină + GPL",
+  "Benzină + Metan",
+  "Mild Hybrid (Benzină)",
+  "Mild Hybrid (Diesel)",
+  "Hibrid (Benzină)",
+  "Hibrid (Diesel)",
+  "Plug-In Hybrid (Benzină)",
+  "Plug-In Hybrid (Diesel)",
+  "Electric",
+  "Hidrogen",
+];
+
+export const TRANSMISSIONS = [
+  "Manuală",
+  "Automată",
+  "Automată cu dublu ambreiaj (DSG)",
+  "Robotizată",
+  "Variator (CVT)",
+];
+
+export const DRIVE_TYPES = [
+  "Tracțiune față",
+  "Tracțiune spate",
+  "Tracțiune integrală (AWD/4x4)",
+];
+
+export const CAR_CONDITIONS = ["Nou", "Cu parcurs", "Accidentat"];
+
 export const DOOR_OPTIONS = ["2 Uși", "3 Uși", "4 Uși", "5 Uși"];
 
 export type StockStatus = "preparing" | "available" | "sold";
