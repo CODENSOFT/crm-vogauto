@@ -6,6 +6,26 @@ const MONTHLY_RATE = Number(process.env.FINANCE_MONTHLY_RATE || 0.021);
 /** Termenul maxim de finanțare, în luni. */
 const MAX_MONTHS = Number(process.env.FINANCE_MAX_MONTHS || 60);
 
+/** Avansul cerut, ca fracțiune din preț. 0 = „fără prima rată". */
+const DOWN_RATE = Number(process.env.FINANCE_DOWN_PAYMENT_RATE || 0);
+
+export const COMPANY = {
+  phone: process.env.COMPANY_PHONE || "",
+  contact: process.env.COMPANY_CONTACT_NAME || "",
+  email: process.env.COMPANY_EMAIL || "",
+  stockUrl: process.env.COMPANY_STOCK_URL || "https://vogauto.md/",
+};
+
+/** Cifrele de finanțare pentru un preț dat, formatate. */
+export function financeFor(price: number) {
+  const down = price * DOWN_RATE;
+  return {
+    price: eur(price),
+    down: eur(down),
+    monthly: price > 0 ? eur((price - down) * MONTHLY_RATE) : "—",
+  };
+}
+
 const STOCK_URL = process.env.COMPANY_STOCK_URL || "https://vogauto.md/";
 const ADDRESS = process.env.COMPANY_ADDRESS || "or.Chișinău str.Lunca Bîcului 21";
 const MAP_URL = process.env.COMPANY_MAP_URL || "https://g.co/kgs/bsPo7GB";

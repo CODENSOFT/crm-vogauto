@@ -258,6 +258,8 @@ async function addedColumns() {
   await sql`alter table inventory add column if not exists drive_type text`;
   await sql`alter table inventory add column if not exists condition text`;
   await sql`alter table inventory add column if not exists doors text`;
+  await sql`alter table inventory add column if not exists power integer`;
+  await sql`alter table inventory add column if not exists seats text`;
 
   // Legătura cu articolele din WordPress.
   await sql`alter table inventory add column if not exists wp_post_id text`;

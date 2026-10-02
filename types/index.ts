@@ -113,6 +113,8 @@ export const CAR_CONDITIONS = ["Nou", "Cu parcurs", "Accidentat"];
 
 export const DOOR_OPTIONS = ["2 Uși", "3 Uși", "4 Uși", "5 Uși"];
 
+export const SEAT_OPTIONS = ["2", "4", "5", "6", "7", "8", "9"];
+
 export type StockStatus = "preparing" | "available" | "sold";
 
 export const STOCK_STATUS_LABELS: Record<StockStatus, string> = {
@@ -148,6 +150,8 @@ export interface InventoryDTO {
   driveType?: string | null;
   condition?: string | null;
   doors?: string | null;
+  power?: number | null;
+  seats?: string | null;
   expensesTotal?: number;
   /** Adaos după scăderea cheltuielilor (doar pentru afișare). */
   netMargin?: number;

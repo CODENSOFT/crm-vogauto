@@ -84,7 +84,7 @@ export async function POST(request: Request) {
   const body = await request.json();
   const {
     brand, model, year, vin, color, engine,
-    bodyType, mileage, fuelType, transmission, driveType, condition, doors,
+    bodyType, mileage, fuelType, transmission, driveType, condition, doors, power, seats,
     ownerName, ownerPhone, clientWantPrice, purchasePrice, sellPrice, status, notes,
   } = body;
 
@@ -108,6 +108,8 @@ export async function POST(request: Request) {
       driveType: driveType || null,
       condition: condition || null,
       doors: doors || null,
+      power: power === "" || power == null ? null : Number(power),
+      seats: seats || null,
       ownerName, ownerPhone: ownerPhone ? String(ownerPhone) : "—",
       clientWantPrice: Number(clientWantPrice) || 0,
       purchasePrice: Number(purchasePrice) || 0,

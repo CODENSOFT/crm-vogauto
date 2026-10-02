@@ -8,7 +8,7 @@ import { Picker } from "@/components/ui/Picker";
 import { Modal } from "@/components/ui/Modal";
 import { formatMoney } from "@/lib/utils";
 import {
-  BODY_TYPES, FUEL_TYPES, TRANSMISSIONS, DRIVE_TYPES, CAR_CONDITIONS, DOOR_OPTIONS,
+  BODY_TYPES, FUEL_TYPES, TRANSMISSIONS, DRIVE_TYPES, CAR_CONDITIONS, DOOR_OPTIONS, SEAT_OPTIONS,
   type InventoryDTO,
 } from "@/types";
 
@@ -25,6 +25,7 @@ const STATUS_VALUE: Record<string, string> = Object.fromEntries(
 const EMPTY = {
   brand: "", model: "", year: String(new Date().getFullYear()), vin: "", color: "", engine: "",
   bodyType: "", mileage: "", fuelType: "", transmission: "", driveType: "", condition: "", doors: "",
+  power: "", seats: "",
   ownerName: "", ownerPhone: "", clientWantPrice: "", purchasePrice: "", sellPrice: "", status: "available", notes: "",
 };
 
@@ -56,6 +57,7 @@ export function InventoryFormModal({
         bodyType: editing.bodyType ?? "", mileage: String(editing.mileage ?? ""), fuelType: editing.fuelType ?? "",
         transmission: editing.transmission ?? "", driveType: editing.driveType ?? "",
         condition: editing.condition ?? "", doors: editing.doors ?? "",
+        power: String(editing.power ?? ""), seats: editing.seats ?? "",
         ownerName: editing.ownerName, ownerPhone: editing.ownerPhone,
         clientWantPrice: String(editing.clientWantPrice ?? ""), purchasePrice: String(editing.purchasePrice ?? ""),
         sellPrice: String(editing.sellPrice ?? ""),
@@ -146,6 +148,9 @@ export function InventoryFormModal({
           onChange={(v) => setF("condition", v)} options={CAR_CONDITIONS} />
         <Picker label="Uși" value={form.doors}
           onChange={(v) => setF("doors", v)} options={DOOR_OPTIONS} />
+        <Input label="Putere (CP)" type="number" value={form.power} onChange={(e) => setF("power", e.target.value)} placeholder="ex: 490" />
+        <Picker label="Număr de locuri" value={form.seats}
+          onChange={(v) => setF("seats", v)} options={SEAT_OPTIONS} />
         <div className="relative flex flex-col gap-1.5" ref={ownerBox}>
           <label htmlFor="owner-name" className="text-xs font-semibold uppercase tracking-wide text-slate-600">
             Proprietar *

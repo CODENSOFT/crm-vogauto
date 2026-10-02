@@ -45,7 +45,12 @@ export async function POST(request: Request, { params }: { params: { id: string 
     ? body.caption
     : buildCaption({
         brand: item.brand, model: item.model, year: item.year,
-        price: Number(item.sellPrice), description: item.listingDescription || undefined, color: item.color,
+        price: Number(item.sellPrice),
+        engine: item.engine, fuelType: item.fuelType, bodyType: item.bodyType,
+        power: item.power, color: item.color, transmission: item.transmission,
+        driveType: item.driveType, seats: item.seats, mileage: item.mileage,
+        // Linkul anunțului de pe site, dacă mașina e deja publicată acolo.
+        url: item.wpUrl,
       });
   const imageUrls = photos.map((p) => p.url);
 

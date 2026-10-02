@@ -80,6 +80,8 @@ export const inventory = pgTable("inventory", {
   driveType: text("drive_type"),      // Față / Spate / Integrală
   condition: text("condition"),       // Nou / Cu parcurs
   doors: text("doors"),               // 3 Uși / 5 Uși
+  power: integer("power"),            // putere, în CP
+  seats: text("seats"),               // numărul de locuri
   ownerName: text("owner_name").notNull(),
   ownerPhone: text("owner_phone").notNull(),
   clientWantPrice: doublePrecision("client_want_price").notNull().default(0),

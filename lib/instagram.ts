@@ -1,20 +1,64 @@
-import { formatMoney } from "@/lib/utils";
+import { COMPANY, financeFor } from "@/lib/listingTemplate";
 import type { PublicListing } from "@/lib/listings";
 
-// Construiește descrierea (caption) pentru un anunț Instagram.
-export function buildCaption(l: {
-  brand: string; model: string; year: number; price: number; description?: string; color?: string | null;
-}): string {
-  const tagBrand = l.brand.toLowerCase().replace(/[^a-z0-9]/g, "");
+export interface CaptionInput {
+  brand: string;
+  model: string;
+  year: number;
+  price: number;
+  engine?: string | null;      // cilindree, cm³
+  fuelType?: string | null;
+  bodyType?: string | null;
+  power?: number | null;       // CP
+  color?: string | null;
+  transmission?: string | null;
+  driveType?: string | null;
+  seats?: string | null;
+  mileage?: number | null;
+  /** Adresa anunțului pe site, dacă e publicat; altfel linkul stocului. */
+  url?: string | null;
+}
+
+function km(n: number): string {
+  try {
+    return new Intl.NumberFormat("ro-RO").format(n) + " km";
+  } catch {
+    return `${n} km`;
+  }
+}
+
+/**
+ * Textul anunțului pentru Facebook și Instagram, în formatul cerut de parcare:
+ * preț și finanțare sus, apoi specificațiile una pe rând, apoi contactul.
+ * Rândurile fără date se omit.
+ */
+export function buildCaption(l: CaptionInput): string {
+  const f = financeFor(l.price);
+  // „Tracțiune integrală (AWD/4x4)" → „Integrală"
+  const driveShort = l.driveType?.replace(/^Tracțiune\s*/i, "").replace(/\s*\(.*\)$/, "").trim();
+  const drive = driveShort ? driveShort.charAt(0).toUpperCase() + driveShort.slice(1) : "";
+
   const lines = [
     `🚗 ${l.brand} ${l.model} ${l.year}`,
-    l.color ? `🎨 ${l.color}` : "",
-    `💶 ${formatMoney(l.price)}`,
-    l.description ? `\n${l.description}` : "",
-    `\n📍 VOGAUTO`,
-    `#vogauto #auto #masini #masinidevanzare #${tagBrand}`,
+    "",
+    `✅ Preț: ${f.price}`,
+    `❎ Prima rată: ${f.down}`,
+    `➡️ Rata lunară: ${f.monthly}`,
+    `📅 Fabricație > ${l.year}`,
+    l.engine ? `🔧 Cilindree > ${l.engine} cm3` : "",
+    l.fuelType ? `⛽ Combustibil > ${l.fuelType}` : "",
+    l.bodyType ? `🚘 Caroserie > ${l.bodyType}` : "",
+    l.power ? `🐎 Putere > ${l.power} CP` : "",
+    l.color ? `🎨 Culoare > ${l.color}` : "",
+    l.transmission ? `⚙️ Cutie > ${l.transmission}` : "",
+    drive ? `🔄 Tracțiune > ${drive}` : "",
+    l.seats ? `💺 Numărul de locuri > ${l.seats}` : "",
+    l.mileage != null ? `🛣️ Parcurs > ${km(l.mileage)}` : "",
+    COMPANY.phone ? `☎️ ${COMPANY.phone}${COMPANY.contact ? ` (${COMPANY.contact})` : ""}` : "",
+    COMPANY.email ? `✉️ ${COMPANY.email}` : "",
+    `💻 ${l.url || COMPANY.stockUrl}`,
   ];
-  return lines.filter(Boolean).join("\n");
+  return lines.filter((x, i) => x !== "" || i === 1).join("\n");
 }
 
 // Postează pe Instagram prin Graph API (necesită cont Business + token Meta).
