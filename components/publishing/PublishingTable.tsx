@@ -33,21 +33,20 @@ function PlatformToggle({ on, onClick, label, color, icon }: {
 
 /** Tabelul de publicare: comutatoare per canal + acțiuni pe fiecare mașină. */
 export function PublishingTable({
-  items, onToggle, onListing, onPhotos, onInstagram, onFacebook,
+  items, onToggle, onListing, onPhotos, onSocial,
 }: {
   items: InventoryDTO[];
   onToggle: (it: InventoryDTO, field: "publishedSite" | "published999", channelName: string) => void;
   onListing: (it: InventoryDTO) => void;
   onPhotos: (it: InventoryDTO) => void;
-  onInstagram: (it: InventoryDTO) => void;
-  onFacebook: (it: InventoryDTO) => void;
+  onSocial: (it: InventoryDTO) => void;
 }) {
   return (
   <div className="overflow-x-auto rounded-xl border border-slate-200/80 bg-white shadow-card">
     <table className="min-w-full divide-y divide-slate-200 text-sm">
       <thead className="bg-slate-50/80">
         <tr>
-          {["Foto", "Mașină", "Preț", "Site", "999.md", "Facebook", "Instagram", "Acțiuni"].map((h, i) => (
+          {["Foto", "Mașină", "Preț", "Site", "999.md", "Facebook + Instagram", "Acțiuni"].map((h, i) => (
             <th key={i} className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">{h}</th>
           ))}
         </tr>
@@ -76,15 +75,13 @@ export function PublishingTable({
               <td className="px-3 py-2.5"><PlatformToggle on={!!it.publishedSite} onClick={() => onToggle(it, "publishedSite", "Site")} label="Site" color="blue" icon={<IconGlobe />} /></td>
               <td className="px-3 py-2.5"><PlatformToggle on={!!it.published999} onClick={() => onToggle(it, "published999", "999.md")} label="999.md" color="orange" /></td>
               <td className="px-3 py-2.5">
-                <button onClick={() => onFacebook(it)} title="Pregătește / postează pe Facebook"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#1877F2] px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:brightness-110 active:brightness-95">
-                  <IconFacebook /> Postează
-                </button>
-              </td>
-              <td className="px-3 py-2.5">
-                <button onClick={() => onInstagram(it)} title="Pregătește / postează pe Instagram"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-tr from-amber-400 via-pink-500 to-purple-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:brightness-105 active:brightness-95">
-                  <IconInstagram /> Postează
+                <button onClick={() => onSocial(it)} title="Pregătește și postează pe Facebook și Instagram"
+                  className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800 active:bg-slate-900">
+                  <span className="flex items-center gap-1">
+                    <span className="text-[#4e9bff]"><IconFacebook /></span>
+                    <span className="text-[#f58aa8]"><IconInstagram /></span>
+                  </span>
+                  Postează
                 </button>
               </td>
               <td className="whitespace-nowrap px-3 py-2.5 text-right">

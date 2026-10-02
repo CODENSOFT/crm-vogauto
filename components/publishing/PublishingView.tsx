@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
-import { SocialPostModal, type SocialPlatform } from "@/components/publishing/SocialPostModal";
+import { SocialPostModal, type PlatformResult } from "@/components/publishing/SocialPostModal";
 import { PublishingHeader } from "@/components/publishing/PublishingHeader";
 import { ListingModal } from "@/components/publishing/ListingModal";
 import { PublishingTable } from "@/components/publishing/PublishingTable";
@@ -30,13 +30,12 @@ export function PublishingView() {
 
   const [photoTarget, setPhotoTarget] = useState<InventoryDTO | null>(null);
 
-  const [socialPlatform, setSocialPlatform] = useState<SocialPlatform>("instagram");
   const [igItem, setIgItem] = useState<InventoryDTO | null>(null);
   const [igCaption, setIgCaption] = useState("");
   const [igPhotos, setIgPhotos] = useState<string[]>([]);
   const [igLoading, setIgLoading] = useState(false);
   const [igPosting, setIgPosting] = useState(false);
-  const [igDone, setIgDone] = useState<{ posted: boolean; note?: string } | null>(null);
+  const [igResults, setIgResults] = useState<PlatformResult[] | null>(null);
   const [igConfigured, setIgConfigured] = useState<boolean | null>(null);
   const [fbStatus, setFbStatus] = useState<{ ok: boolean; page?: string; error?: string } | null>(null);
   const [wpStatus, setWpStatus] = useState<{ ok: boolean; user?: string; error?: string } | null>(null);
@@ -104,11 +103,10 @@ export function PublishingView() {
   }
 
   // Pas 1: pregătește (fără a posta) — deschide editorul cu textul generat.
-  // Aceeași fereastră servește ambele rețele; diferă doar ruta apelată.
-  async function prepareSocial(it: InventoryDTO, platform: SocialPlatform) {
-    setSocialPlatform(platform);
-    setIgItem(it); setIgLoading(true); setIgDone(null); setIgCaption(""); setIgPhotos([]);
-    const res = await fetch(`/api/publish/${platform}/${it._id}`, {
+  // O singură fereastră și o singură apăsare pentru ambele rețele.
+  async function prepareSocial(it: InventoryDTO) {
+    setIgItem(it); setIgLoading(true); setIgResults(null); setIgCaption(""); setIgPhotos([]);
+    const res = await fetch(`/api/publish/social/${it._id}`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}),
     });
     const data = await res.json();
@@ -121,15 +119,18 @@ export function PublishingView() {
   async function postSocial() {
     if (!igItem) return;
     setIgPosting(true);
-    const res = await fetch(`/api/publish/${socialPlatform}/${igItem._id}`, {
+    const res = await fetch(`/api/publish/social/${igItem._id}`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ caption: igCaption, confirm: true }),
     });
     const data = await res.json();
     setIgPosting(false);
     if (!res.ok) { toast.error(data.error || "Eroare."); return; }
-    if (data.posted) { toast.success(`Postat pe ${socialPlatform === "facebook" ? "Facebook" : "Instagram"}${data.photoCount ? ` (${data.photoCount} poze)` : ""}!`); setIgDone({ posted: true }); }
-    else { setIgDone({ posted: false, note: data.note }); }
+    const list: PlatformResult[] = data.results ?? [];
+    setIgResults(list);
+    const ok = list.filter((r) => r.posted).map((r) => (r.platform === "facebook" ? "Facebook" : "Instagram"));
+    if (ok.length) toast.success(`Postat pe ${ok.join(" și ")}${data.photoCount ? ` (${data.photoCount} poze)` : ""}!`);
+    else toast.error("Nu s-a putut posta pe nicio rețea.");
   }
 
   const onSite = items.filter((i) => i.publishedSite).length;
@@ -155,8 +156,7 @@ export function PublishingView() {
           onToggle={toggleChannel}
           onListing={openListing}
           onPhotos={setPhotoTarget}
-          onInstagram={(it) => prepareSocial(it, "instagram")}
-          onFacebook={(it) => prepareSocial(it, "facebook")}
+          onSocial={prepareSocial}
         />
       )}
 
@@ -174,15 +174,15 @@ export function PublishingView() {
 
       {/* Editor + postare Instagram */}
       <SocialPostModal
-        platform={socialPlatform}
         item={igItem}
         caption={igCaption}
         setCaption={setIgCaption}
         photos={igPhotos}
         loading={igLoading}
         posting={igPosting}
-        done={igDone}
-        configured={socialPlatform === "facebook" ? (fbStatus?.ok ?? null) : igConfigured}
+        results={igResults}
+        fbReady={fbStatus?.ok ?? null}
+        igReady={igConfigured}
         onPost={postSocial}
         onClose={() => setIgItem(null)}
       />
