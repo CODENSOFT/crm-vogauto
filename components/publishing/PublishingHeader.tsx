@@ -5,9 +5,11 @@ import { Badge } from "@/components/ui/Table";
 /** Antetul paginii Publicare, cu starea conexiunilor externe. */
 export function PublishingHeader({
   wpStatus,
+  fbStatus,
   igConfigured,
 }: {
   wpStatus: { ok: boolean; user?: string; error?: string } | null;
+  fbStatus: { ok: boolean; page?: string; error?: string } | null;
   igConfigured: boolean | null;
 }) {
   return (
@@ -20,6 +22,11 @@ export function PublishingHeader({
       {wpStatus && (
         <span title={wpStatus.ok ? `Conectat ca ${wpStatus.user}` : wpStatus.error}>
           <Badge color={wpStatus.ok ? "green" : "gray"}>Site: {wpStatus.ok ? "conectat" : "neconectat"}</Badge>
+        </span>
+      )}
+      {fbStatus && (
+        <span title={fbStatus.ok ? `Pagina: ${fbStatus.page}` : fbStatus.error}>
+          <Badge color={fbStatus.ok ? "green" : "gray"}>Facebook: {fbStatus.ok ? "conectat" : "neconectat"}</Badge>
         </span>
       )}
       {igConfigured !== null && (

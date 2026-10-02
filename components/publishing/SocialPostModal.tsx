@@ -6,10 +6,18 @@ import { Badge } from "@/components/ui/Table";
 import { Modal } from "@/components/ui/Modal";
 import type { InventoryDTO } from "@/types";
 
-/** Fereastra de postare pe Instagram: previzualizare poze + text editabil. */
-export function InstagramModal({
-  item, caption, setCaption, photos, loading, posting, done, configured, onPost, onClose,
+export type SocialPlatform = "instagram" | "facebook";
+
+const PLATFORM_NAME: Record<SocialPlatform, string> = {
+  instagram: "Instagram",
+  facebook: "Facebook",
+};
+
+/** Fereastra de postare pe rețele: previzualizare poze + text editabil. */
+export function SocialPostModal({
+  platform, item, caption, setCaption, photos, loading, posting, done, configured, onPost, onClose,
 }: {
+  platform: SocialPlatform;
   item: InventoryDTO | null;
   caption: string;
   setCaption: (v: string) => void;
@@ -22,7 +30,7 @@ export function InstagramModal({
   onClose: () => void;
 }) {
   return (
-  <Modal open={!!item} onClose={onClose} title="Postează pe Instagram"
+  <Modal open={!!item} onClose={onClose} title={`Postează pe ${PLATFORM_NAME[platform]}`}
     footer={
       done?.posted ? (
         <Button variant="secondary" onClick={onClose}>Închide</Button>
@@ -42,7 +50,7 @@ export function InstagramModal({
       <div className="py-8 text-center text-slate-400">Se pregătește...</div>
     ) : done?.posted ? (
       <div className="py-6 text-center">
-        <Badge color="green">Postat pe Instagram</Badge>
+        <Badge color="green">Postat pe {PLATFORM_NAME[platform]}</Badge>
         <p className="mt-3 text-sm text-slate-600">Anunțul a fost publicat cu toate pozele.</p>
       </div>
     ) : (
@@ -64,7 +72,7 @@ export function InstagramModal({
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" />
         </div>
         {configured === false && (
-          <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-700">Instagram nu e conectat — la „Postează” primești textul + pozele ca să le pui manual.</p>
+          <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-700">{PLATFORM_NAME[platform]} nu e conectat — la „Postează” primești textul + pozele ca să le pui manual.</p>
         )}
         {done && !done.posted && done.note && <p className="text-xs text-slate-500">{done.note}</p>}
       </div>
