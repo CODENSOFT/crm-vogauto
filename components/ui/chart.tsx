@@ -203,7 +203,8 @@ function ChartTooltipContent({
                       !hideIndicator && (
                         <div
                           className={cn(
-                            "shrink-0 rounded-[2px] border-(--color-border) bg-(--color-bg)",
+                            // Sintaxa v4 `bg-(--var)` nu exista in Tailwind v3; aici e echivalentul.
+                            "shrink-0 rounded-[2px] border-[color:var(--color-border)] bg-[color:var(--color-bg)]",
                             {
                               "h-2.5 w-2.5": indicator === "dot",
                               "w-1": indicator === "line",

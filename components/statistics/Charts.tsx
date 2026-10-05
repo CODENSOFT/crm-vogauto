@@ -1,8 +1,8 @@
 "use client";
 
 import {
-  ComposedChart, BarChart, PieChart,
-  Bar, Area, Line, Pie, Cell,
+  AreaChart, BarChart, PieChart,
+  Bar, Area, Pie, Cell, Label, ReferenceLine,
   XAxis, YAxis, CartesianGrid, LabelList,
 } from "recharts";
 import {
@@ -32,25 +32,69 @@ function fullEuro(v: number) {
   return new Intl.NumberFormat("ro-RO", { maximumFractionDigits: 0 }).format(v) + " €";
 }
 
+function plural(n: number) {
+  return n === 1 ? "mașină" : "mașini";
+}
+
 /** Axe fără linii proprii: cifrele sunt de ajuns, cadrul doar aglomerează. */
 const AXIS = { tickLine: false, axisLine: false, tickMargin: 8 } as const;
 
-function ChartCard({
-  title, meta, hint, children,
+/* ——— Cadrul comun al panourilor ————————————————————————————————— */
+
+/** Evoluția ultimei luni față de precedenta, ca procent. `null` = nu se poate calcula. */
+function trendPct(series: number[]) {
+  if (series.length < 2) return null;
+  const now = series[series.length - 1];
+  const prev = series[series.length - 2];
+  if (prev === 0) return now === 0 ? null : 100;
+  return Math.round(((now - prev) / prev) * 100);
+}
+
+function TrendChip({ pct }: { pct: number | null }) {
+  if (pct === null) return null;
+  const up = pct >= 0;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
+        up ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"
+      }`}
+    >
+      {up ? "▲" : "▼"} {Math.abs(pct)}%
+    </span>
+  );
+}
+
+/**
+ * Panou de grafic: titlu cu cifra mare în stânga, evoluția în dreapta,
+ * graficul la mijloc și o linie de concluzie jos. Cifra se citește înaintea
+ * graficului, iar concluzia scutește cititorul de interpretare.
+ */
+function Panel({
+  title, value, note, trend, footer, children,
 }: {
   title: string;
-  meta?: string;
-  hint?: string;
+  value?: string;
+  note?: string;
+  trend?: number | null;
+  footer?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-card">
-      <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
-        {meta && <span className="text-xs font-medium text-slate-400">{meta}</span>}
+    <div className="flex flex-col overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-card">
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1 px-5 pt-5">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{title}</p>
+          {value && <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900">{value}</p>}
+          {note && <p className="mt-0.5 text-xs text-slate-400">{note}</p>}
+        </div>
+        {trend !== undefined && <TrendChip pct={trend ?? null} />}
       </div>
-      {hint && <p className="mb-2 text-xs text-slate-400">{hint}</p>}
-      {children}
+      <div className="px-2 pt-3 sm:px-4">{children}</div>
+      {footer && (
+        <div className="mt-3 border-t border-slate-100 bg-slate-50/70 px-5 py-2.5 text-xs text-slate-500">
+          {footer}
+        </div>
+      )}
     </div>
   );
 }
@@ -67,36 +111,48 @@ const revenueConfig = {
 } satisfies ChartConfig;
 
 export function RevenueLineChart({ data }: { data: MonthlyDatum[] }) {
-  const total = data.reduce((s, d) => s + d.revenue, 0);
+  // Două suprafețe suprapuse, nu stivuite: profitul poate fi și negativ
+  // (cheltuieli mai mari), iar o stivă l-ar face imposibil de citit.
+  const rows = data;
+  const total = rows.reduce((s, d) => s + d.revenue, 0);
+  const last = rows[rows.length - 1];
+
   return (
-    <ChartCard title="Venit și profit pe lună" meta={total ? `total ${compactEuro(total)}` : undefined}>
-      {data.length === 0 ? <Empty /> : (
-        <ChartContainer config={revenueConfig} className="aspect-auto h-[270px] w-full">
-          <ComposedChart data={data} accessibilityLayer margin={{ top: 4, right: 6, left: 0, bottom: 0 }}>
+    <Panel
+      title="Venit și profit pe lună"
+      value={fullEuro(total)}
+      note="venit total în perioadă"
+      trend={trendPct(rows.map((d) => d.revenue))}
+      footer={last && <>Ultima lună: {fullEuro(last.revenue)} venit, din care {fullEuro(last.profit)} profit net.</>}
+    >
+      {rows.length === 0 ? <Empty /> : (
+        <ChartContainer config={revenueConfig} className="aspect-auto h-[260px] w-full">
+          <AreaChart data={rows} accessibilityLayer margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
             <defs>
-              <linearGradient id="gRevenue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--color-revenue)" stopOpacity={0.22} />
-                <stop offset="100%" stopColor="var(--color-revenue)" stopOpacity={0.02} />
-              </linearGradient>
+              {(["revenue", "profit"] as const).map((k) => (
+                <linearGradient key={k} id={`g-${k}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={`var(--color-${k})`} stopOpacity={0.7} />
+                  <stop offset="100%" stopColor={`var(--color-${k})`} stopOpacity={0.08} />
+                </linearGradient>
+              ))}
             </defs>
             <CartesianGrid vertical={false} />
             <XAxis dataKey="month" tickFormatter={monthLabel} {...AXIS} />
             <YAxis tickFormatter={compactEuro} width={58} {...AXIS} />
             <ChartTooltip
-              content={<ChartTooltipContent labelFormatter={(l) => monthLabel(String(l))}
+              content={<ChartTooltipContent indicator="dot" labelFormatter={(l) => monthLabel(String(l))}
                 formatter={(v) => fullEuro(Number(v))} />}
             />
             <ChartLegend content={<ChartLegendContent />} />
-            {/* Venitul ca suprafață (volum), profitul ca linie (tendință). */}
             <Area type="monotone" dataKey="revenue" stroke="var(--color-revenue)"
-              strokeWidth={2} fill="url(#gRevenue)" />
-            <Line type="monotone" dataKey="profit" stroke="var(--color-profit)" strokeWidth={2.5}
-              dot={{ r: 3, fill: "var(--color-profit)", strokeWidth: 0 }}
-              activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }} />
-          </ComposedChart>
+              strokeWidth={2} fill="url(#g-revenue)" />
+            {/* Profitul desenat deasupra, ca să se vadă și când e negativ. */}
+            <Area type="monotone" dataKey="profit" stroke="var(--color-profit)"
+              strokeWidth={2} fill="url(#g-profit)" />
+          </AreaChart>
         </ChartContainer>
       )}
-    </ChartCard>
+    </Panel>
   );
 }
 
@@ -108,141 +164,151 @@ const countConfig = {
 
 export function SalesBarChart({ data }: { data: MonthlyDatum[] }) {
   const total = data.reduce((s, d) => s + d.count, 0);
+  const avg = data.length ? total / data.length : 0;
+
   return (
-    <ChartCard title="Mașini vândute pe lună" meta={total ? `${total} în total` : undefined}>
+    <Panel
+      title="Mașini vândute pe lună"
+      value={String(total)}
+      note={`${plural(total)} în perioadă`}
+      trend={trendPct(data.map((d) => d.count))}
+      footer={data.length > 1 && <>Media lunară: {avg.toFixed(1)} {plural(2)} (linia punctată).</>}
+    >
       {data.length === 0 ? <Empty /> : (
-        <ChartContainer config={countConfig} className="aspect-auto h-[270px] w-full">
-          <BarChart data={data} accessibilityLayer margin={{ top: 18, right: 6, left: 0, bottom: 0 }}>
+        <ChartContainer config={countConfig} className="aspect-auto h-[260px] w-full">
+          <BarChart data={data} accessibilityLayer margin={{ top: 22, right: 8, left: 8, bottom: 0 }}>
             <CartesianGrid vertical={false} />
             <XAxis dataKey="month" tickFormatter={monthLabel} {...AXIS} />
-            <YAxis allowDecimals={false} width={28} {...AXIS} />
             <ChartTooltip
-              content={<ChartTooltipContent labelFormatter={(l) => monthLabel(String(l))}
-                formatter={(v) => `${v} ${Number(v) === 1 ? "mașină" : "mașini"}`} />}
+              content={<ChartTooltipContent hideIndicator labelFormatter={(l) => monthLabel(String(l))}
+                formatter={(v) => `${v} ${plural(Number(v))}`} />}
             />
-            <Bar dataKey="count" fill="var(--color-count)" radius={[5, 5, 0, 0]} maxBarSize={38}>
-              {/* Cifra deasupra coloanei: nu mai trebuie citită axa. */}
-              <LabelList dataKey="count" position="top" className="fill-foreground" fontSize={11} fontWeight={600} />
+            {/* Fără axă verticală: cifra stă deasupra coloanei, iar media dă reperul. */}
+            {data.length > 1 && (
+              <ReferenceLine y={avg} stroke="#94a3b8" strokeDasharray="4 4" strokeWidth={1} />
+            )}
+            <Bar dataKey="count" fill="var(--color-count)" radius={8} maxBarSize={44}>
+              <LabelList dataKey="count" position="top" offset={8}
+                className="fill-foreground" fontSize={12} fontWeight={600} />
             </Bar>
           </BarChart>
         </ChartContainer>
       )}
-    </ChartCard>
+    </Panel>
   );
 }
 
-/* ——— Vânzări pe manager ———————————————————————————————————————— */
+/* ——— Clasamente orizontale (manageri, mărci) ———————————————————— */
 
-const managerConfig = {
-  total: { label: "Vândute", color: "var(--chart-1)" },
-} satisfies ChartConfig;
+const SERIES = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"];
 
-export function ManagerSalesChart({ data }: { data: { name: string; total: number }[] }) {
+/**
+ * Bare orizontale colorate, fiecare pe propria „pistă" gri. Pista arată cât
+ * mai e până la lider, ceea ce o bară singură nu spune.
+ */
+function RankBars({
+  rows, unitLabel, labelWidth,
+}: {
+  rows: { label: string; value: number }[];
+  unitLabel: string;
+  labelWidth: number;
+}) {
+  const config = { value: { label: unitLabel } } satisfies ChartConfig;
   return (
-    <ChartCard title="Total vânzări pe manager">
-      {data.length === 0 ? <Empty /> : (
-        <ChartContainer config={managerConfig}
-          className="aspect-auto w-full" style={{ height: Math.max(200, data.length * 40) }}>
-          <BarChart data={data} layout="vertical" accessibilityLayer margin={{ top: 4, right: 36, left: 0, bottom: 0 }}>
-            <CartesianGrid horizontal={false} />
-            <XAxis type="number" allowDecimals={false} {...AXIS} />
-            <YAxis type="category" dataKey="name" width={120} {...AXIS} />
-            <ChartTooltip content={<ChartTooltipContent formatter={(v) => `${v} vândute`} />} />
-            <Bar dataKey="total" fill="var(--color-total)" radius={[0, 5, 5, 0]} maxBarSize={22}>
-              <LabelList dataKey="total" position="right" className="fill-foreground" fontSize={11} fontWeight={600} />
-            </Bar>
-          </BarChart>
-        </ChartContainer>
+    <ChartContainer config={config} className="aspect-auto w-full"
+      style={{ height: Math.max(180, rows.length * 42 + 16) }}>
+      <BarChart data={rows} layout="vertical" accessibilityLayer
+        margin={{ top: 0, right: 40, left: 0, bottom: 0 }}>
+        <XAxis type="number" dataKey="value" hide />
+        <YAxis type="category" dataKey="label" width={labelWidth}
+          tickLine={false} axisLine={false} tickMargin={6} />
+        <ChartTooltip
+          content={<ChartTooltipContent hideIndicator formatter={(v) => `${v} ${unitLabel.toLowerCase()}`} />}
+        />
+        <Bar dataKey="value" radius={6} barSize={22}
+          background={{ fill: "#f1f5f9", radius: 6 }}>
+          {rows.map((r, i) => <Cell key={r.label} fill={SERIES[i % SERIES.length]} />)}
+          <LabelList dataKey="value" position="right" offset={10}
+            className="fill-foreground" fontSize={12} fontWeight={600} />
+        </Bar>
+      </BarChart>
+    </ChartContainer>
+  );
+}
+
+export function BrandBar({ data }: { data: { brand: string; count: number; revenue: number }[] }) {
+  const rows = data.map((d) => ({ label: d.brand, value: d.count })).sort((a, b) => b.value - a.value);
+  const top = rows[0];
+  return (
+    <Panel
+      title="Vânzări pe marcă"
+      value={top ? top.label : undefined}
+      note={top ? `${top.value} ${plural(top.value)} — cea mai vândută` : undefined}
+      footer={rows.length > 1 && <>{rows.length} mărci vândute în perioadă.</>}
+    >
+      {rows.length === 0 ? <Empty text="Nicio vânzare." /> : (
+        <RankBars rows={rows} unitLabel="Vândute" labelWidth={86} />
       )}
-    </ChartCard>
+    </Panel>
   );
 }
 
 /* ——— Metode de plată ——————————————————————————————————————————— */
 
 const PAYMENT_LABELS_RO: Record<string, string> = { cash: "Cash", transfer: "Transfer", rate: "Rate" };
-const PIE_VARS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"];
 
 export function PaymentDonut({ data }: { data: { method: string; count: number; revenue: number }[] }) {
-  const rows = data.map((d, i) => ({
-    name: PAYMENT_LABELS_RO[d.method] ?? d.method,
-    value: d.count,
-    color: PIE_VARS[i % PIE_VARS.length],
-  }));
+  const rows = data
+    .map((d, i) => ({
+      key: d.method,
+      name: PAYMENT_LABELS_RO[d.method] ?? d.method,
+      value: d.count,
+      fill: SERIES[i % SERIES.length],
+    }))
+    .sort((a, b) => b.value - a.value);
   const total = rows.reduce((s, r) => s + r.value, 0);
+  const top = rows[0];
 
+  // Cheile config trebuie să fie cele din `key`, ca tooltipul și legenda să
+  // găsească eticheta în română.
   const config = Object.fromEntries(
-    rows.map((r) => [r.name, { label: r.name, color: r.color }])
+    rows.map((r) => [r.key, { label: r.name, color: r.fill }])
   ) satisfies ChartConfig;
 
   return (
-    <ChartCard title="Metode de plată">
+    <Panel
+      title="Metode de plată"
+      value={top ? top.name : undefined}
+      note={top ? `cel mai folosit — ${Math.round((top.value / total) * 100)}% din vânzări` : undefined}
+      footer={total > 0 && <>{total} {total === 1 ? "vânzare" : "vânzări"} în perioadă.</>}
+    >
       {total === 0 ? <Empty text="Nicio vânzare." /> : (
-        <div className="flex flex-col items-center gap-4 sm:flex-row">
-          {/* Inelul, cu totalul în centru — altfel ochiul trebuie să adune. */}
-          <div className="relative shrink-0">
-            <ChartContainer config={config} className="aspect-square h-[200px] w-[200px]">
-              <PieChart>
-                <Pie data={rows} dataKey="value" nameKey="name"
-                  innerRadius={62} outerRadius={88} paddingAngle={2} stroke="none">
-                  {rows.map((r) => <Cell key={r.name} fill={r.color} />)}
-                </Pie>
-                <ChartTooltip
-                  content={<ChartTooltipContent nameKey="name" hideLabel
-                    formatter={(v, n) => `${n}: ${v} (${Math.round((Number(v) / total) * 100)}%)`} />}
-                />
-              </PieChart>
-            </ChartContainer>
-            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-2xl font-bold tracking-tight text-slate-900">{total}</span>
-              <span className="text-[11px] font-medium uppercase tracking-wide text-slate-400">vânzări</span>
-            </div>
-          </div>
-
-          {/* Legenda ca listă: are și cifre, nu doar culori. */}
-          <ul className="w-full flex-1 divide-y divide-slate-100">
-            {rows.map((r) => (
-              <li key={r.name} className="flex items-center gap-2.5 py-2">
-                <span className="size-2.5 shrink-0 rounded-full" style={{ background: r.color }} />
-                <span className="text-sm font-medium text-slate-700">{r.name}</span>
-                <span className="ml-auto text-sm font-semibold tabular-nums text-slate-900">{r.value}</span>
-                <span className="w-12 text-right text-xs tabular-nums text-slate-400">
-                  {Math.round((r.value / total) * 100)}%
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </ChartCard>
-  );
-}
-
-/* ——— Vânzări pe marcă —————————————————————————————————————————— */
-
-const brandConfig = {
-  count: { label: "Vândute", color: "var(--chart-1)" },
-} satisfies ChartConfig;
-
-export function BrandBar({ data }: { data: { brand: string; count: number; revenue: number }[] }) {
-  return (
-    <ChartCard title="Vânzări pe marcă">
-      {data.length === 0 ? <Empty text="Nicio vânzare." /> : (
-        <ChartContainer config={brandConfig}
-          className="aspect-auto w-full" style={{ height: Math.max(200, data.length * 36) }}>
-          <BarChart data={data} layout="vertical" accessibilityLayer margin={{ top: 4, right: 36, left: 0, bottom: 0 }}>
-            <CartesianGrid horizontal={false} />
-            <XAxis type="number" allowDecimals={false} {...AXIS} />
-            <YAxis type="category" dataKey="brand" width={86} {...AXIS} />
+        <ChartContainer config={config} className="mx-auto aspect-square max-h-[260px]">
+          <PieChart>
             <ChartTooltip
-              content={<ChartTooltipContent formatter={(v) => `${v} ${Number(v) === 1 ? "mașină" : "mașini"}`} />}
+              content={<ChartTooltipContent nameKey="key" hideLabel
+                formatter={(v, n) => `${config[String(n)]?.label ?? n}: ${v} (${Math.round((Number(v) / total) * 100)}%)`} />}
             />
-            <Bar dataKey="count" fill="var(--color-count)" radius={[0, 5, 5, 0]} maxBarSize={20}>
-              <LabelList dataKey="count" position="right" className="fill-foreground" fontSize={11} fontWeight={600} />
-            </Bar>
-          </BarChart>
+            <Pie data={rows} dataKey="value" nameKey="key"
+              innerRadius={62} outerRadius={92} paddingAngle={2} strokeWidth={0}>
+              {/* Totalul în inel: altfel ochiul ar trebui să adune feliile. */}
+              <Label content={({ viewBox }) => {
+                if (!viewBox || !("cx" in viewBox) || !("cy" in viewBox)) return null;
+                const { cx, cy } = viewBox as { cx: number; cy: number };
+                return (
+                  <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle">
+                    <tspan x={cx} y={cy - 6} className="fill-foreground text-2xl font-bold">{total}</tspan>
+                    <tspan x={cx} y={cy + 16} className="fill-muted-foreground text-xs">
+                      {total === 1 ? "vânzare" : "vânzări"}
+                    </tspan>
+                  </text>
+                );
+              }} />
+            </Pie>
+            <ChartLegend content={<ChartLegendContent nameKey="key" />} className="flex-wrap" />
+          </PieChart>
         </ChartContainer>
       )}
-    </ChartCard>
+    </Panel>
   );
 }
