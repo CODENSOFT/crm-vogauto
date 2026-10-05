@@ -23,6 +23,18 @@ const config: Config = {
         ],
       },
       colors: {
+        // Tokenuri semantice folosite de primitivele shadcn (grafice, tooltip).
+        background: "var(--background)",
+        foreground: "var(--foreground)",
+        border: "var(--border)",
+        muted: { DEFAULT: "var(--muted)", foreground: "var(--muted-foreground)" },
+        chart: {
+          1: "var(--chart-1)",
+          2: "var(--chart-2)",
+          3: "var(--chart-3)",
+          4: "var(--chart-4)",
+          5: "var(--chart-5)",
+        },
         // Bara laterală — navy profesional, profund.
         sidebar: {
           DEFAULT: "#0a0f1d",
