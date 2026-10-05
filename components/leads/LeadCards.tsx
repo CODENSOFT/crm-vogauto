@@ -29,7 +29,7 @@ export function LeadCards({
   onDelete: (lead: LeadDTO) => void;
 }) {
   return (
-    <div className="space-y-3 lg:hidden">
+    <div className="vg-stagger space-y-3 lg:hidden">
       {items.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 bg-white py-14 text-center text-slate-400">
           Niciun client potențial.

@@ -164,7 +164,7 @@ export function InventoryFormModal({
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20"
           />
           {ownerOpen && !isParcare && (
-            <ul className="absolute top-full z-30 mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-1 shadow-elevated">
+            <ul className="vg-pop absolute top-full z-30 mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-1 shadow-elevated">
               <li>
                 <button
                   type="button"

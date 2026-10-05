@@ -8,7 +8,7 @@ import type { CarDTO } from "@/types";
 /** Vânzările pe ecrane mici. Editarea în linie rămâne pe desktop. */
 export function SalesCards({ cars }: { cars: CarDTO[] }) {
   return (
-    <div className="space-y-3 lg:hidden">
+    <div className="vg-stagger space-y-3 lg:hidden">
       {cars.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 bg-white py-14 text-center text-slate-400">
           Nicio vânzare găsită.

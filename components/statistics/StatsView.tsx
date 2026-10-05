@@ -44,7 +44,7 @@ function Delta({ now, prev }: { now: number; prev: number }) {
 
 function Kpi({ label, value, sub, accent }: { label: string; value: string | number; sub?: React.ReactNode; accent?: string }) {
   return (
-    <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
+    <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-card transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-card-hover">
       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
       <p className={`mt-2 text-2xl font-bold tracking-tight ${accent ?? "text-slate-900"}`}>{value}</p>
       {sub && <p className="mt-1 text-xs text-slate-400">{sub}</p>}

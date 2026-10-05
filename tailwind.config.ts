@@ -1,6 +1,8 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  // Pe telefon, o atingere declanșa starea de hover și rămânea „lipită".
+  future: { hoverOnlyWhenSupported: true },
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -68,8 +70,14 @@ const config: Config = {
           "100%": { transform: "translateX(100%)" },
         },
       },
+      // Curbele implicite din CSS sunt prea slabe; acestea dau senzația de
+      // intenție. „out" pentru intrări (pornește rapid, răspunde imediat).
+      transitionTimingFunction: {
+        out: "cubic-bezier(0.23, 1, 0.32, 1)",
+        "in-out": "cubic-bezier(0.77, 0, 0.175, 1)",
+      },
       animation: {
-        "fade-in": "fade-in 0.25s ease-out",
+        "fade-in": "fade-in 0.25s cubic-bezier(0.23, 1, 0.32, 1)",
         "scale-in": "scale-in 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
       },
     },

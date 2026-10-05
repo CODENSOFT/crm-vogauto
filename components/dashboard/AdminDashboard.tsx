@@ -36,7 +36,7 @@ function StatCard({ label, value, Icon, tone, sub }: {
   label: string; value: string | number; Icon: (p: { className?: string }) => JSX.Element; tone: string; sub?: React.ReactNode;
 }) {
   return (
-    <div className="group relative overflow-hidden rounded-xl border border-slate-200/80 bg-white p-5 shadow-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover">
+    <div className="group relative overflow-hidden rounded-xl border border-slate-200/80 bg-white p-5 shadow-card transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-card-hover">
       <div className="flex items-start justify-between">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
@@ -60,7 +60,7 @@ function Delta({ now, prev }: { now: number; prev: number }) {
 
 function QuickLink({ href, label, Icon }: { href: string; label: string; Icon: (p: { className?: string }) => JSX.Element }) {
   return (
-    <Link href={href} className="flex flex-col items-center gap-2 rounded-xl border border-slate-200/80 bg-white px-3 py-4 text-center shadow-card transition-all hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-card-hover">
+    <Link href={href} className="flex flex-col items-center gap-2 rounded-xl border border-slate-200/80 bg-white px-3 py-4 text-center shadow-card transition-[transform,border-color,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-card-hover">
       <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-tint text-brand"><Icon className="h-5 w-5" /></span>
       <span className="text-xs font-semibold text-slate-700">{label}</span>
     </Link>
@@ -127,7 +127,7 @@ export function AdminDashboard({ name }: { name: string }) {
           </h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {alerts.map((a) => (
-              <Link key={a.key} href={a.link} className={`flex items-start justify-between gap-3 rounded-xl border px-4 py-3 transition-all hover:-translate-y-0.5 hover:shadow-card ${alertTone(a.severity)}`}>
+              <Link key={a.key} href={a.link} className={`flex items-start justify-between gap-3 rounded-xl border px-4 py-3 transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-card ${alertTone(a.severity)}`}>
                 <div><div className="text-sm font-semibold">{a.title}</div><div className="mt-0.5 text-xs opacity-80">{a.detail}</div></div>
                 <span className="mt-0.5 shrink-0 text-lg font-bold">→</span>
               </Link>

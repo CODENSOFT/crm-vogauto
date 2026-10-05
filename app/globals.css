@@ -203,10 +203,45 @@ dialog.vg-modal::backdrop {
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.32), transparent);
   transition: left 0.7s ease;
 }
-.vg-shine:hover::after { left: 130%; }
+/* Doar cu maus: pe touch, o atingere ar declanșa reflexia fără rost. */
+@media (hover: hover) and (pointer: fine) {
+  .vg-shine:hover::after { left: 130%; }
+}
 
 /* Cine a cerut mai puțină mișcare, o primește. */
 @media (prefers-reduced-motion: reduce) {
   .vg-orb, .vg-rise { animation: none; }
   .vg-shine::after { transition: none; }
+}
+
+/* ——— Liste derulante și intrări în listă ———————————————————————— */
+
+/* Panoul coboară din dreptul declanșatorului, nu din centrul ecranului.
+   Durată scurtă (sub 200 ms) ca să nu pară lent la a zecea deschidere. */
+.vg-pop {
+  transform-origin: top;
+  animation: vg-pop 170ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+@keyframes vg-pop {
+  from { opacity: 0; transform: scale(0.97) translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Cardurile dintr-o listă intră una după alta — cascada se simte mai firească
+   decât apariția simultană. Peste 8 elemente păstrăm aceeași întârziere, ca
+   listele lungi să nu pară încetinite. */
+.vg-stagger > * {
+  animation: vg-rise 320ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+.vg-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.vg-stagger > *:nth-child(2) { animation-delay: 40ms; }
+.vg-stagger > *:nth-child(3) { animation-delay: 80ms; }
+.vg-stagger > *:nth-child(4) { animation-delay: 120ms; }
+.vg-stagger > *:nth-child(5) { animation-delay: 160ms; }
+.vg-stagger > *:nth-child(6) { animation-delay: 200ms; }
+.vg-stagger > *:nth-child(n + 7) { animation-delay: 240ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .vg-pop { animation: none; }
+  .vg-stagger > * { animation: none; }
 }

@@ -19,11 +19,11 @@ export function TaskList({
   onDelete: (task: TaskDTO) => void;
 }) {
   return (
-    <div className="flex flex-col gap-3">
+    <div className="vg-stagger flex flex-col gap-3">
       {tasks.map((t) => (
         <div
           key={t._id}
-          className={`group relative overflow-hidden rounded-xl border bg-white shadow-card transition-all hover:border-slate-300 hover:shadow-card-hover ${t.status === "done" ? "border-slate-200/60" : "border-slate-200"}`}
+          className={`group relative overflow-hidden rounded-xl border bg-white shadow-card transition-[border-color,box-shadow] duration-200 ease-out hover:border-slate-300 hover:shadow-card-hover ${t.status === "done" ? "border-slate-200/60" : "border-slate-200"}`}
         >
           {/* Buton real care acoperă cardul; butoanele de acțiune stau peste el. */}
           <button

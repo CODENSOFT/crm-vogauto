@@ -58,7 +58,7 @@ export function MultiUserPicker({
         <svg className="relative z-10 ml-auto h-4 w-4 shrink-0 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
       </div>
       {open && (
-        <div className="absolute top-full z-20 mt-1 max-h-56 w-full overflow-auto rounded-lg border border-slate-200 bg-white shadow-elevated">
+        <div className="vg-pop absolute top-full z-20 mt-1 max-h-56 w-full overflow-auto rounded-lg border border-slate-200 bg-white shadow-elevated">
           {workers.length === 0 ? (
             <div className="px-3 py-3 text-sm text-slate-400">Niciun angajat.</div>
           ) : workers.map((w) => (

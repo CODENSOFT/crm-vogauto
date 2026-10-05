@@ -95,7 +95,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
                 key={href}
                 href={href}
                 onClick={onClose}
-                className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150 ${
+                className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-[background-color,color] duration-150 ease-out ${
                   active
                     ? "bg-sidebar-active text-white shadow-inner-top ring-1 ring-white/5"
                     : "text-slate-400 hover:bg-sidebar-hover hover:text-white"

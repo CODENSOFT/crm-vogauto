@@ -91,7 +91,7 @@ export function Picker({
           <div
             role="listbox"
             aria-label={label}
-            className="absolute z-30 mt-1.5 max-h-60 w-full overflow-auto rounded-xl border border-slate-200 bg-white p-1 shadow-elevated"
+            className="vg-pop absolute z-30 mt-1.5 max-h-60 w-full overflow-auto rounded-xl border border-slate-200 bg-white p-1 shadow-elevated"
           >
             {items.map((v, i) => {
               const selected = v === value;
