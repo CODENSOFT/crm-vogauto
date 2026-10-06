@@ -23,24 +23,56 @@ interface NavItem {
   Icon: (p: { className?: string }) => JSX.Element;
 }
 
-const WORKER_NAV: NavItem[] = [
-  { href: "/dashboard", label: "Înregistrare vânzare", Icon: IconForm },
-  { href: "/dashboard/tasks", label: "Sarcinile mele", Icon: IconTasks },
-  { href: "/dashboard/leads", label: "Clienți potențiali", Icon: IconTarget },
-  { href: "/dashboard/my-sales", label: "Vânzările mele", Icon: IconChart },
+interface NavGroup {
+  /** Titlul secțiunii. Lipsă = fără titlu (lista angajatului, scurtă). */
+  titlu?: string;
+  items: NavItem[];
+}
+
+const WORKER_NAV: NavGroup[] = [
+  {
+    items: [
+      { href: "/dashboard", label: "Înregistrare vânzare", Icon: IconForm },
+      { href: "/dashboard/tasks", label: "Sarcinile mele", Icon: IconTasks },
+      { href: "/dashboard/leads", label: "Clienți potențiali", Icon: IconTarget },
+      { href: "/dashboard/my-sales", label: "Vânzările mele", Icon: IconChart },
+    ],
+  },
 ];
 
-const ADMIN_NAV: NavItem[] = [
-  { href: "/dashboard", label: "Prezentare generală", Icon: IconDashboard },
-  { href: "/dashboard/tasks", label: "Sarcini", Icon: IconTasks },
-  { href: "/dashboard/leads", label: "Clienți potențiali", Icon: IconTarget },
-  { href: "/dashboard/cars", label: "Vânzări", Icon: IconCar },
-  { href: "/dashboard/inventory", label: "Stoc mașini", Icon: IconCube },
-  { href: "/dashboard/publishing", label: "Publicare", Icon: IconShare },
-  { href: "/dashboard/statistics", label: "Statistici", Icon: IconChart },
-  { href: "/dashboard/managers", label: "Manageri", Icon: IconTrend },
-  { href: "/dashboard/audit", label: "Jurnal audit", Icon: IconShield },
-  { href: "/dashboard/users", label: "Utilizatori", Icon: IconUsers },
+// Zece intrări una sub alta se citesc ca o grămadă. Grupate pe ce faci cu ele,
+// ochiul găsește pagina fără să parcurgă toată lista.
+const ADMIN_NAV: NavGroup[] = [
+  {
+    titlu: "Zi de zi",
+    items: [
+      { href: "/dashboard", label: "Prezentare generală", Icon: IconDashboard },
+      { href: "/dashboard/tasks", label: "Sarcini", Icon: IconTasks },
+      { href: "/dashboard/leads", label: "Clienți potențiali", Icon: IconTarget },
+    ],
+  },
+  {
+    titlu: "Mașini",
+    items: [
+      { href: "/dashboard/inventory", label: "Stoc mașini", Icon: IconCube },
+      { href: "/dashboard/cars", label: "Vânzări", Icon: IconCar },
+      { href: "/dashboard/publishing", label: "Publicare", Icon: IconShare },
+    ],
+  },
+  {
+    titlu: "Analiză",
+    items: [
+      { href: "/dashboard/statistics", label: "Statistici", Icon: IconChart },
+      { href: "/dashboard/managers", label: "Manageri", Icon: IconTrend },
+    ],
+  },
+  {
+    titlu: "Administrare",
+    items: [
+      { href: "/dashboard/users", label: "Utilizatori", Icon: IconUsers },
+      { href: "/dashboard/audit", label: "Jurnal audit", Icon: IconShield },
+    ],
+  },
 ];
 
 export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -71,58 +103,71 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-5">
+        <div className="flex h-16 shrink-0 items-center gap-3 border-b border-sidebar-border px-5">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-gradient text-sm font-bold tracking-tight text-white shadow-glow ring-1 ring-white/10">
             VA
           </div>
-          <div className="leading-tight">
-            <div className="text-sm font-bold tracking-wide text-white">VOGAUTO</div>
+          <div className="min-w-0 leading-tight">
+            <div className="text-sm font-bold tracking-[0.08em] text-white">VOGAUTO</div>
             <div className="text-[11px] font-medium text-sidebar-muted">Management auto</div>
           </div>
         </div>
 
-        <div className="px-5 pb-2 pt-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-sidebar-muted/80">
-            Meniu principal
-          </p>
-        </div>
-
-        <nav className="flex flex-1 flex-col gap-1 px-3">
-          {nav.map(({ href, label, Icon }) => {
-            const active = href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
-            return (
-              <Link
-                key={href}
-                href={href}
-                onClick={onClose}
-                className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-[background-color,color] duration-150 ease-out ${
-                  active
-                    ? "bg-sidebar-active text-white shadow-inner-top ring-1 ring-white/5"
-                    : "text-slate-400 hover:bg-sidebar-hover hover:text-white"
-                }`}
-              >
-                {active && (
-                  <span className="absolute inset-y-2 left-0 w-1 rounded-r-full bg-brand-light shadow-glow" />
-                )}
-                <Icon
-                  className={`h-5 w-5 transition-colors ${
-                    active ? "text-brand-lighter" : "text-slate-500 group-hover:text-slate-300"
-                  }`}
-                />
-                {label}
-              </Link>
-            );
-          })}
+        {/* Lista se poate derula singură: cu zece intrări plus cartonașul de
+            jos, pe un ecran de laptop ultimele erau împinse afară. */}
+        <nav aria-label="Meniu principal" className="flex-1 overflow-y-auto px-3 py-4">
+          {nav.map((grup, gi) => (
+            <div key={grup.titlu ?? gi} className={gi > 0 ? "mt-5" : ""}>
+              {grup.titlu && (
+                <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-sidebar-muted/70">
+                  {grup.titlu}
+                </p>
+              )}
+              <ul className="flex flex-col gap-0.5">
+                {grup.items.map(({ href, label, Icon }) => {
+                  const active = href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
+                  return (
+                    <li key={href}>
+                      <Link
+                        href={href}
+                        onClick={onClose}
+                        aria-current={active ? "page" : undefined}
+                        className={`group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-[background-color,color] duration-150 ease-out ${
+                          active
+                            ? "bg-sidebar-active font-semibold text-white ring-1 ring-white/5"
+                            : "font-medium text-slate-400 hover:bg-sidebar-hover hover:text-white"
+                        }`}
+                      >
+                        {active && (
+                          <span className="absolute inset-y-1.5 left-0 w-[3px] rounded-r-full bg-brand-light" />
+                        )}
+                        <Icon
+                          className={`h-[18px] w-[18px] shrink-0 transition-colors ${
+                            active ? "text-brand-lighter" : "text-slate-500 group-hover:text-slate-300"
+                          }`}
+                        />
+                        <span className="truncate">{label}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
         </nav>
 
-        <div className="m-3 flex items-center gap-3 rounded-xl border border-sidebar-border bg-white/[0.03] px-3 py-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-gradient text-xs font-bold text-white ring-1 ring-white/10">
-            {initials}
-          </div>
-          <div className="min-w-0 leading-tight">
-            <div className="truncate text-xs font-semibold text-slate-200">{name}</div>
-            <div className="text-[11px] text-sidebar-muted">
-              {isAdmin ? "Administrator" : "Angajat"}
+        {/* Lipit de marginea de jos, cu linie proprie: nu face parte din meniu,
+            ci spune cine ești. */}
+        <div className="shrink-0 border-t border-sidebar-border p-3">
+          <div className="flex items-center gap-3 rounded-xl bg-white/[0.04] px-3 py-2.5 ring-1 ring-white/5">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-gradient text-xs font-bold text-white ring-1 ring-white/10">
+              {initials}
+            </div>
+            <div className="min-w-0 leading-tight">
+              <div className="truncate text-xs font-semibold text-slate-100">{name}</div>
+              <div className="text-[11px] text-sidebar-muted">
+                {isAdmin ? "Administrator" : "Angajat"}
+              </div>
             </div>
           </div>
         </div>
