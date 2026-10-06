@@ -34,6 +34,30 @@ export async function POST(request: Request, { params }: { params: { id: string 
     return NextResponse.json({ error: "Mașina este vândută — nu poate fi publicată." }, { status: 400 });
   }
 
+  // Două cereri pornite în aceeași clipă pentru aceeași mașină ar crea două
+  // anunțuri. Prima o „revendică" aici, printr-o singură operație atomică în
+  // baza de date: trece published_site din false în true. A doua nu mai
+  // găsește nimic de schimbat și se oprește. Apărarea din browser poate fi
+  // ocolită (două taburi, o reîncercare), aceasta nu.
+  if (!item.wpPostId) {
+    const claimed = await db
+      .update(inventory)
+      .set({ publishedSite: true })
+      .where(and(eq(inventory.id, params.id), eq(inventory.publishedSite, false)))
+      .returning({ id: inventory.id });
+
+    if (claimed.length === 0) {
+      const [again] = await db.select().from(inventory).where(eq(inventory.id, params.id)).limit(1);
+      if (!again?.wpPostId) {
+        return NextResponse.json(
+          { error: "Publicarea acestei mașini e deja în curs. Așteaptă câteva secunde." },
+          { status: 409 },
+        );
+      }
+      item.wpPostId = again.wpPostId;
+    }
+  }
+
   try {
     // Salvăm id-ul anunțului de îndată ce e creat, înainte de urcarea pozelor.
     // Fără asta, o expirare la poze lăsa CRM-ul fără id, iar fiecare apăsare
@@ -63,6 +87,12 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
     return NextResponse.json({ item: inventoryToDTO(saved), url: result.url });
   } catch (e) {
+    // Revendicarea de mai sus a pus bifa; dacă nu s-a creat nimic pe site, o
+    // dăm înapoi, ca mașina să nu pară publicată fără să fie.
+    const [after] = await db.select().from(inventory).where(eq(inventory.id, params.id)).limit(1);
+    if (after && !after.wpPostId) {
+      await db.update(inventory).set({ publishedSite: false }).where(eq(inventory.id, params.id));
+    }
     const msg = e instanceof Error ? e.message : "Eroare la publicare.";
     return NextResponse.json({ error: `WordPress: ${msg}` }, { status: 502 });
   }

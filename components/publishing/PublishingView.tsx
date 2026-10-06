@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import toast from "react-hot-toast";
-import { SocialPostModal, type PlatformResult } from "@/components/publishing/SocialPostModal";
+import { SocialPostModal } from "@/components/publishing/SocialPostModal";
 import { PublishingHeader } from "@/components/publishing/PublishingHeader";
 import { ListingModal } from "@/components/publishing/ListingModal";
 import { PublishingTable } from "@/components/publishing/PublishingTable";
 import { PhotoManager } from "@/components/photos/PhotoManager";
+import { useSocialPost } from "@/components/publishing/useSocialPost";
 import type { InventoryDTO } from "@/types";
 
 function Stat({ label, value, tone }: { label: string; value: number | string; tone?: string }) {
@@ -30,12 +31,10 @@ export function PublishingView() {
 
   const [photoTarget, setPhotoTarget] = useState<InventoryDTO | null>(null);
 
-  const [igItem, setIgItem] = useState<InventoryDTO | null>(null);
-  const [igCaption, setIgCaption] = useState("");
-  const [igPhotos, setIgPhotos] = useState<string[]>([]);
-  const [igLoading, setIgLoading] = useState(false);
-  const [igPosting, setIgPosting] = useState(false);
-  const [igResults, setIgResults] = useState<PlatformResult[] | null>(null);
+  const {
+    igItem, setIgItem, igCaption, setIgCaption, igPhotos,
+    igLoading, igPosting, igResults, prepareSocial, postSocial,
+  } = useSocialPost();
   const [igConfigured, setIgConfigured] = useState<boolean | null>(null);
   const [fbStatus, setFbStatus] = useState<{ ok: boolean; page?: string; error?: string } | null>(null);
   const [wpStatus, setWpStatus] = useState<{ ok: boolean; user?: string; error?: string } | null>(null);
@@ -65,15 +64,21 @@ export function PublishingView() {
 
   // Publicarea pe site durează (se urcă pozele). Fără zăvor, apăsările
   // repetate porneau cereri în paralel, fiecare creând alt anunț.
+  // Zăvorul stă într-un ref, nu în state: starea din React se actualizează
+  // asincron, așa că două apăsări la o secundă distanță vedeau amândouă
+  // „liber" și porneau două cereri — exact aşa au apărut anunțuri duble.
+  const inFlight = useRef<Set<string>>(new Set());
   const [busy, setBusy] = useState<string | null>(null);
 
   async function toggleChannel(it: InventoryDTO, field: "publishedSite" | "published999", channelName: string) {
     const key = `${it._id}:${field}`;
-    if (busy === key) return;
+    if (inFlight.current.has(key)) return;
+    inFlight.current.add(key);
     setBusy(key);
     try {
       await doToggle(it, field, channelName);
     } finally {
+      inFlight.current.delete(key);
       setBusy(null);
     }
   }
@@ -124,37 +129,6 @@ export function PublishingView() {
     setItems((list) => list.map((x) => (x._id === listingTarget._id ? { ...data.item, primaryPhoto: x.primaryPhoto, photoCount: x.photoCount } : x)));
     setListingTarget(null);
     toast.success("Anunț salvat");
-  }
-
-  // Pas 1: pregătește (fără a posta) — deschide editorul cu textul generat.
-  // O singură fereastră și o singură apăsare pentru ambele rețele.
-  async function prepareSocial(it: InventoryDTO) {
-    setIgItem(it); setIgLoading(true); setIgResults(null); setIgCaption(""); setIgPhotos([]);
-    const res = await fetch(`/api/publish/social/${it._id}`, {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}),
-    });
-    const data = await res.json();
-    setIgLoading(false);
-    if (!res.ok) { toast.error(data.error || "Eroare."); setIgItem(null); return; }
-    setIgCaption(data.caption || ""); setIgPhotos(data.photos || []);
-  }
-
-  // Pas 2: postează cu textul (posibil editat).
-  async function postSocial() {
-    if (!igItem) return;
-    setIgPosting(true);
-    const res = await fetch(`/api/publish/social/${igItem._id}`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ caption: igCaption, confirm: true }),
-    });
-    const data = await res.json();
-    setIgPosting(false);
-    if (!res.ok) { toast.error(data.error || "Eroare."); return; }
-    const list: PlatformResult[] = data.results ?? [];
-    setIgResults(list);
-    const ok = list.filter((r) => r.posted).map((r) => (r.platform === "facebook" ? "Facebook" : "Instagram"));
-    if (ok.length) toast.success(`Postat pe ${ok.join(" și ")}${data.photoCount ? ` (${data.photoCount} poze)` : ""}!`);
-    else toast.error("Nu s-a putut posta pe nicio rețea.");
   }
 
   const onSite = items.filter((i) => i.publishedSite).length;
