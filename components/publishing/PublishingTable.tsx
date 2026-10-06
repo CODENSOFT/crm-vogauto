@@ -17,26 +17,30 @@ const IconInstagram = () => (
 );
 
 
-function PlatformToggle({ on, onClick, label, color, icon }: {
-  on: boolean; onClick: () => void; label: string; color: "blue" | "orange"; icon?: React.ReactNode;
+function PlatformToggle({ on, onClick, label, color, icon, busy }: {
+  on: boolean; onClick: () => void; label: string; color: "blue" | "orange";
+  icon?: React.ReactNode; busy?: boolean;
 }) {
   const filled = color === "blue" ? "bg-blue-600 text-white shadow-sm hover:bg-blue-700" : "bg-orange-500 text-white shadow-sm hover:bg-orange-600";
   const outline = color === "blue" ? "border border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100" : "border border-orange-300 bg-orange-50 text-orange-700 hover:bg-orange-100";
   return (
-    <button onClick={onClick} title={on ? `Retrage de pe ${label}` : `Publică pe ${label}`}
-      className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${on ? filled : outline}`}>
+    <button onClick={onClick} disabled={busy}
+      title={busy ? "Se trimite pe site..." : on ? `Retrage de pe ${label}` : `Publică pe ${label}`}
+      className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors disabled:cursor-wait disabled:opacity-60 ${on ? filled : outline}`}>
       {icon}
-      {on ? `${label} ✓` : label}
+      {busy ? "Se trimite..." : on ? `${label} ✓` : label}
     </button>
   );
 }
 
 /** Tabelul de publicare: comutatoare per canal + acțiuni pe fiecare mașină. */
 export function PublishingTable({
-  items, onToggle, onListing, onPhotos, onSocial,
+  items, onToggle, onListing, onPhotos, onSocial, busy,
 }: {
   items: InventoryDTO[];
   onToggle: (it: InventoryDTO, field: "publishedSite" | "published999", channelName: string) => void;
+  /** Cheia „id:canal" aflată în lucru, ca să nu se apese de două ori. */
+  busy?: string | null;
   onListing: (it: InventoryDTO) => void;
   onPhotos: (it: InventoryDTO) => void;
   onSocial: (it: InventoryDTO) => void;
@@ -76,13 +80,13 @@ export function PublishingTable({
                 {/* „Publicat" înseamnă că există anunț pe site, nu doar că
                     bifa e pusă. Altfel comutatorul arăta pornit degeaba, iar
                     apăsarea îl oprea în loc să publice. */}
-                <PlatformToggle on={!!(it.publishedSite && it.wpPostId)} onClick={() => onToggle(it, "publishedSite", "Site")} label="Site" color="blue" icon={<IconGlobe />} />
+                <PlatformToggle on={!!(it.publishedSite && it.wpPostId)} onClick={() => onToggle(it, "publishedSite", "Site")} label="Site" color="blue" icon={<IconGlobe />} busy={busy === `${it._id}:publishedSite`} />
                 {it.publishedSite && it.wpUrl && (
                   <a href={it.wpUrl} target="_blank" rel="noopener noreferrer"
                     className="mt-1 block text-[11px] font-medium text-brand hover:underline">vezi anunțul →</a>
                 )}
               </td>
-              <td className="px-3 py-2.5"><PlatformToggle on={!!it.published999} onClick={() => onToggle(it, "published999", "999.md")} label="999.md" color="orange" /></td>
+              <td className="px-3 py-2.5"><PlatformToggle on={!!it.published999} onClick={() => onToggle(it, "published999", "999.md")} label="999.md" color="orange" busy={busy === `${it._id}:published999`} /></td>
               <td className="px-3 py-2.5">
                 <button onClick={() => onSocial(it)} title="Pregătește și postează pe Facebook și Instagram"
                   className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800 active:bg-slate-900">

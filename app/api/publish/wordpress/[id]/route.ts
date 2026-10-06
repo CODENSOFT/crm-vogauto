@@ -9,6 +9,10 @@ import { inventoryToDTO } from "@/lib/serialize";
 import { wordpressConfigured, unpublishListing } from "@/lib/wordpress";
 import { syncListingToSite } from "@/lib/syncListing";
 
+// Site-ul lor stă pe găzduire partajată: salvarea anunțului și procesarea
+// fiecărei poze pot dura zeci de secunde, iar pozele se urcă una după alta.
+export const maxDuration = 300;
+
 // POST /api/publish/wordpress/[id] — publică (sau actualizează) anunțul mașinii
 // pe site-ul WordPress. [id] = inventoryId. ADMIN ONLY.
 export async function POST(request: Request, { params }: { params: { id: string } }) {
@@ -31,7 +35,14 @@ export async function POST(request: Request, { params }: { params: { id: string 
   }
 
   try {
-    const result = await syncListingToSite(item);
+    // Salvăm id-ul anunțului de îndată ce e creat, înainte de urcarea pozelor.
+    // Fără asta, o expirare la poze lăsa CRM-ul fără id, iar fiecare apăsare
+    // nouă crea încă un anunț pe site — s-au adunat 31 de duplicate publice.
+    const result = await syncListingToSite(item, async (postId, url) => {
+      await db.update(inventory)
+        .set({ wpPostId: postId, wpUrl: url, publishedSite: true })
+        .where(eq(inventory.id, params.id));
+    });
 
     const [saved] = await db
       .update(inventory)

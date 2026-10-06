@@ -9,6 +9,9 @@ import { inventoryToDTO } from "@/lib/serialize";
 import { wordpressConfigured, unpublishListing } from "@/lib/wordpress";
 import { syncListingToSite } from "@/lib/syncListing";
 
+// Editarea retrimite anunțul pe site, iar găzduirea lor e lentă.
+export const maxDuration = 300;
+
 // GET /api/inventory/[id] — o singură mașină din stoc (pentru pagina de detaliu).
 export async function GET(_request: Request, { params }: { params: { id: string } }) {
   const { error } = await requireSession();

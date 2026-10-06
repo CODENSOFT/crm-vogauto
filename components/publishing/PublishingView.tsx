@@ -63,7 +63,22 @@ export function PublishingView() {
   }, []);
   useEffect(() => { load(); }, [load]);
 
+  // Publicarea pe site durează (se urcă pozele). Fără zăvor, apăsările
+  // repetate porneau cereri în paralel, fiecare creând alt anunț.
+  const [busy, setBusy] = useState<string | null>(null);
+
   async function toggleChannel(it: InventoryDTO, field: "publishedSite" | "published999", channelName: string) {
+    const key = `${it._id}:${field}`;
+    if (busy === key) return;
+    setBusy(key);
+    try {
+      await doToggle(it, field, channelName);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function doToggle(it: InventoryDTO, field: "publishedSite" | "published999", channelName: string) {
     // Pentru site, starea reală e „există anunț acolo", nu doar bifa: o bifă
     // rămasă din trecut făcea ca apăsarea să retragă în loc să publice.
     const isSite = field === "publishedSite";
@@ -156,6 +171,7 @@ export function PublishingView() {
       ) : (
         <PublishingTable
           items={items}
+          busy={busy}
           onToggle={toggleChannel}
           onListing={openListing}
           onPhotos={setPhotoTarget}

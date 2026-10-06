@@ -20,7 +20,15 @@ export interface SyncResult {
   photoCount: number;
 }
 
-export async function syncListingToSite(item: InventoryRow): Promise<SyncResult> {
+/**
+ * Trimite mașina pe site. `onCreated` e chemat imediat ce anunțul există acolo,
+ * ÎNAINTE de pașii lenți (pozele). Așa id-ul se salvează în CRM chiar dacă
+ * restul cade: altfel o reîncercare ar crea un anunț nou de fiecare dată.
+ */
+export async function syncListingToSite(
+  item: InventoryRow,
+  onCreated?: (postId: string, url: string) => Promise<void>,
+): Promise<SyncResult> {
   const photoRows = await db
     .select({ url: carPhotos.url })
     .from(carPhotos)
@@ -53,6 +61,16 @@ export async function syncListingToSite(item: InventoryRow): Promise<SyncResult>
       condition: item.condition, doors: item.doors, color: item.color,
     },
   });
+
+  // Id-ul se reține acum, cât timp nu s-a întâmplat nimic lent. Dacă pasul cu
+  // pozele expiră, următoarea încercare actualizează același anunț.
+  if (onCreated) {
+    try {
+      await onCreated(result.postId, result.url);
+    } catch (e) {
+      console.error("[wordpress:onCreated]", e);
+    }
+  }
 
   // Pozele se leagă de anunț, deci se urcă după ce anunțul există.
   const slug = `${item.brand}-${item.model}-${item.year}`.toLowerCase().replace(/[^a-z0-9]+/g, "-");
@@ -111,6 +129,7 @@ export async function resyncIfPublished(inventoryId: string): Promise<void> {
     if (!item || item.isDeleted || !item.wpPostId || !item.publishedSite) return;
     if (item.status === "sold") return;
     const res = await syncListingToSite(item);
+
     if (res.mediaId !== item.wpMediaId) {
       await db.update(inventory).set({ wpMediaId: res.mediaId }).where(eq(inventory.id, inventoryId));
     }

@@ -24,7 +24,7 @@ async function wpFetch(path: string, init: RequestInit = {}): Promise<Record<str
   const res = await fetch(`${SITE}/wp-json/wp/v2${path}`, {
     ...init,
     headers: { Authorization: authHeader(), ...init.headers },
-    signal: AbortSignal.timeout(25000),
+    signal: AbortSignal.timeout(60000),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
@@ -55,7 +55,7 @@ function escapeRe(s: string): string {
  */
 async function uploadPhoto(imageUrl: string, name: string, postId?: string): Promise<UploadedPhoto | null> {
   try {
-    const img = await fetch(imageUrl, { signal: AbortSignal.timeout(20000) });
+    const img = await fetch(imageUrl, { signal: AbortSignal.timeout(30000) });
     if (!img.ok) return null;
     const buf = Buffer.from(await img.arrayBuffer());
     const type = img.headers.get("content-type") || "image/jpeg";
@@ -88,7 +88,7 @@ async function existingPhotos(postId: string): Promise<UploadedPhoto[]> {
   try {
     const res = await fetch(
       `${SITE}/wp-json/wp/v2/media?parent=${postId}&per_page=100&_fields=id,source_url`,
-      { headers: { Authorization: authHeader() }, signal: AbortSignal.timeout(20000) },
+      { headers: { Authorization: authHeader() }, signal: AbortSignal.timeout(30000) },
     );
     if (!res.ok) return [];
     const list = (await res.json()) as { id: number; source_url: string }[];
@@ -181,19 +181,11 @@ export function buildPostContent(c: ListingContent): string {
     .map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`)
     .join("");
 
-  const gallery = c.photos.length
-    ? `<figure class="wp-block-gallery columns-3 is-cropped">\n` +
-      c.photos
-        .map((u) => `<figure class="wp-block-image size-large"><img src="${esc(u)}" alt="${esc(c.title)}" loading="lazy" /></figure>`)
-        .join("\n") +
-      `\n</figure>`
-    : "";
 
   return [
     `<p class="has-text-align-left"><strong>Preț: ${formatPrice(c.price)}</strong></p>`,
     c.description ? esc(c.description).split(/\n{2,}/).map((par) => `<p>${par.replace(/\n/g, "<br />")}</p>`).join("\n") : "",
     `<figure class="wp-block-table"><table><tbody>${specs}</tbody></table></figure>`,
-    gallery,
   ].filter(Boolean).join("\n\n");
 }
 
@@ -235,7 +227,7 @@ async function termsOf(tax: string): Promise<Map<string, number>> {
   try {
     const res = await fetch(`${SITE}/wp-json/wp/v2/${tax}?per_page=100&_fields=id,name`, {
       headers: { Authorization: authHeader() },
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(30000),
     });
     if (res.ok) {
       const list = (await res.json()) as { id: number; name: string }[];
@@ -356,7 +348,7 @@ export async function writeListingFields(
     method: "POST",
     headers: { Authorization: authHeader(), "Content-Type": "application/json" },
     body: JSON.stringify({ fields }),
-    signal: AbortSignal.timeout(25000),
+    signal: AbortSignal.timeout(60000),
   });
   const data = (await res.json().catch(() => ({}))) as { written?: string[]; message?: string };
   if (!res.ok) {
