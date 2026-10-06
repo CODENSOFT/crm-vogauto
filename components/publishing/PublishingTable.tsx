@@ -23,17 +23,32 @@ function PlatformToggle({ on, onClick, label, color, icon, busy }: {
 }) {
   const filled = color === "blue" ? "bg-blue-600 text-white shadow-sm hover:bg-blue-700" : "bg-orange-500 text-white shadow-sm hover:bg-orange-600";
   const outline = color === "blue" ? "border border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100" : "border border-orange-300 bg-orange-50 text-orange-700 hover:bg-orange-100";
+  // Cât se publică, butonul își schimbă și culoarea, nu doar textul: câteva
+  // secunde de așteptare fără nicio mișcare par o apăsare care n-a mers.
+  const working = color === "blue"
+    ? "bg-blue-600 text-white shadow-sm"
+    : "bg-orange-500 text-white shadow-sm";
+
   return (
-    <button onClick={onClick} disabled={busy} aria-busy={busy}
-      title={busy ? `Se publică pe ${label}...` : on ? `Retrage de pe ${label}` : `Publică pe ${label}`}
-      className={`inline-flex min-w-[104px] items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors disabled:cursor-wait ${on ? filled : outline}`}>
-      {/* Cât se publică, cercul care se rotește arată că lucrează: fără el,
-          câteva secunde de așteptare par o apăsare care n-a mers. */}
-      {busy
-        ? <span className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent" />
-        : icon}
-      {busy ? "Se publică..." : on ? `${label} ✓` : label}
-    </button>
+    <div className="min-w-[116px]">
+      <button onClick={onClick} disabled={busy} aria-busy={busy}
+        title={busy ? `Se publică pe ${label}...` : on ? `Retrage de pe ${label}` : `Publică pe ${label}`}
+        className={`inline-flex w-full items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors disabled:cursor-wait ${busy ? working : on ? filled : outline}`}>
+        {busy
+          ? <span className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+          : icon}
+        {busy ? "Se publică..." : on ? `${label} ✓` : label}
+      </button>
+      {busy && (
+        <>
+          {/* Bară nedeterminată: arată că lucrarea e în curs, nu cât a mai rămas. */}
+          <span className="mt-1 block h-1 overflow-hidden rounded-full bg-slate-200">
+            <span className="vg-indeterminate block h-full w-1/3 rounded-full bg-blue-600" />
+          </span>
+          <span className="sr-only" aria-live="polite">Se publică pe {label}</span>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -65,7 +80,9 @@ export function PublishingTable({
         ) : items.map((it) => {
           const hasPhoto = (it.photoCount ?? 0) > 0;
           return (
-            <tr key={it._id} className="transition-colors hover:bg-brand-tint/40">
+            <tr key={it._id}
+              className={`transition-[background-color,opacity] duration-200 hover:bg-brand-tint/40 ${
+                busy?.startsWith(`${it._id}:`) ? "bg-blue-50/60" : ""}`}>
               <td className="px-3 py-2">
                 <div className="relative h-11 w-14 overflow-hidden rounded-md border border-slate-200 bg-slate-100">
                   {it.primaryPhoto ? (
