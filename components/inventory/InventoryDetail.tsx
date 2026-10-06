@@ -126,22 +126,28 @@ export function InventoryDetail({ id }: { id: string }) {
 
           <ExpensesCard inventoryId={id} onChanged={load} />
 
-          {(item.listingDescription || item.notes) && (
-            <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card">
-              {item.listingDescription && (
-                <>
-                  <h3 className="mb-1 text-sm font-semibold text-slate-700">Descriere</h3>
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-600">{item.listingDescription}</p>
-                </>
-              )}
-              {item.notes && (
-                <div className={item.listingDescription ? "mt-3 border-t border-slate-100 pt-3" : ""}>
-                  <h3 className="mb-1 text-sm font-semibold text-slate-700">Note interne</h3>
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-600">{item.notes}</p>
-                </div>
-              )}
+          {/* Secțiunea e mereu prezentă: dacă textul lipsește, trebuie să se
+              vadă că lipsește, nu să dispară în tăcere — așa a trecut
+              neobservat că mașinile vechi rămăseseră fără descriere. */}
+          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card">
+            <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
+              <h3 className="text-sm font-semibold text-slate-700">Descriere anunț</h3>
+              <span className="text-xs text-slate-400">textul care apare pe site</span>
             </div>
-          )}
+            {item.listingDescription ? (
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-600">{item.listingDescription}</p>
+            ) : (
+              <p className="text-sm text-amber-600">
+                Lipsește. Apasă {'„Editează”'} și scrie textul, sau {'„Reface șablonul”'}.
+              </p>
+            )}
+            {item.notes && (
+              <div className="mt-3 border-t border-slate-100 pt-3">
+                <h3 className="mb-1 text-sm font-semibold text-slate-700">Note interne</h3>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-600">{item.notes}</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
