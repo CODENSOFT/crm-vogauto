@@ -89,7 +89,10 @@ export async function GET(_request: Request, { params }: { params: { id: string 
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Fișă ${esc(titlu)}</title>
 <style>
-  @page { size: A4 landscape; margin: 0; }
+  /* Dimensiunile scrise explicit, nu cuvântul „landscape": unele browsere
+     ignoră cuvântul, dar respectă măsurile. Marginea zero scoate antetul și
+     subsolul pe care le adaugă browserul (adresa, data, numărul paginii). */
+  @page { size: 297mm 210mm; margin: 0; }
   * { box-sizing: border-box; }
   html, body { margin: 0; background: #e5e5e5; }
   body { font-family: "Times New Roman", Times, serif; font-weight: bold; color: #111; }
@@ -123,19 +126,31 @@ export async function GET(_request: Request, { params }: { params: { id: string 
   .phones { text-align: center; font-size: 22pt; margin: 0; }
   [contenteditable]:hover { outline: 1px dashed #bbb; }
   @media print {
-    html, body { background: #fff; }
-    .bara { display: none; }
-    .page { margin: 0; box-shadow: none; }
+    /* „overflow: hidden" și înălțimea exactă opresc a doua foaie goală: fără
+       ele, orice rest de spațiu de după foaie (chiar și un rând gol invizibil)
+       trece pe pagina următoare. */
+    html, body {
+      width: 297mm; height: 210mm; margin: 0; padding: 0;
+      background: #fff; overflow: hidden;
+    }
+    /* Nimic în afară de foaie nu ajunge pe hârtie. */
+    body > *:not(.page) { display: none !important; }
+    .page {
+      width: 297mm; height: 210mm; margin: 0; box-shadow: none;
+      overflow: hidden; break-inside: avoid; page-break-inside: avoid;
+    }
     [contenteditable]:hover { outline: none; }
   }
+  /* Fără asta, browserele scot culorile la tipar, iar prețul roșu iese gri. */
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 </style>
 </head>
-<body>
-<div class="bara">
+<body><div class="bara">
   <button type="button" onclick="window.print()">Printează</button>
-  <span>Poți corecta orice text direct pe foaie înainte de a tipări.</span>
-</div>
-<div class="page" contenteditable="true" spellcheck="false">
+  <span>Poți corecta orice text direct pe foaie. Dacă browserul tot pune data și
+  adresa jos, în fereastra de tipar: Mai multe setări → scoate bifa de la
+  „Antete și subsoluri”.</span>
+</div><div class="page" contenteditable="true" spellcheck="false">
   <img class="logo" src="/logo-vogauto.png" alt="VOG Auto">
   <h1>Marca: ${esc(titlu)}</h1>
   <div class="specs">
@@ -147,8 +162,7 @@ ${specsHtml}
   </div>
   <p class="slogan">Credit-Leasing-Schimb</p>
   <p class="phones">Manageri Vânzări : ${esc(PHONES)}</p>
-</div>
-</body>
+</div></body>
 </html>`;
 
   return new Response(html, {
