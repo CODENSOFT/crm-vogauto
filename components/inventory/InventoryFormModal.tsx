@@ -118,6 +118,18 @@ export function InventoryFormModal({
     if (stagedFiles.length && invId) {
       const n = await uploadStaged(invId, stagedFiles);
       if (n) toast.success(`${n} ${n === 1 ? "poză încărcată" : "poze încărcate"}`);
+      // O singură sincronizare, după tot setul: mașina disponibilă cu poze
+      // ajunge pe site fără să apese nimeni nimic.
+      if (n) {
+        const note = toast.loading("Se publică pe site...");
+        try {
+          await fetch(`/api/publish/site-sync/${invId}`, { method: "POST" });
+          toast.success("Anunțul de pe site e la zi", { id: note });
+        } catch (e) {
+          const why = e instanceof Error ? e.message : "cauză necunoscută";
+          toast.error(`Mașina e salvată, dar site-ul nu s-a actualizat: ${why}`, { id: note, duration: 9000 });
+        }
+      }
     }
     setSaving(false);
     toast.success(editing ? "Mașină actualizată" : "Mașină adăugată în stoc");

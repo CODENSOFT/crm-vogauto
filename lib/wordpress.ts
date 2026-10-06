@@ -16,57 +16,21 @@ export { wordpressConfigured };
 export interface ListingContent {
   title: string;
   description: string;
-  brand: string;
-  model: string;
-  year: number;
-  price: number;
-  photos: string[];
-  color?: string | null;
-  engine?: string | null;
-  vin?: string | null;
-  bodyType?: string | null;
-  mileage?: number | null;
-  fuelType?: string | null;
-  transmission?: string | null;
-  driveType?: string | null;
-  condition?: string | null;
-  doors?: string | null;
 }
 
 /**
- * Corpul articolului, scris cu blocurile standard WordPress și FĂRĂ stiluri
- * proprii: culorile, fonturile și spațierea vin din tema site-ului, deci
- * anunțurile arată exact ca restul conținutului lor.
+ * Textul anunțului. Doar descrierea — nimic altceva.
+ *
+ * Specificațiile și prețul sunt deja scrise în câmpurile temei, iar ea le
+ * afișează în tabelul ei. Dacă le-am pune și aici, apăreau de două ori pe
+ * aceeași pagină.
  */
 export function buildPostContent(c: ListingContent): string {
-  // Ordinea e cea din anunțurile lor; rândurile necompletate se omit.
-  const rows: [string, string | null | undefined][] = [
-    ["Marcă", c.brand],
-    ["Model", c.model],
-    ["Caroserie", c.bodyType],
-    ["Parcurs", c.mileage != null ? `${new Intl.NumberFormat("ro-RO").format(c.mileage)} km` : null],
-    ["Tip combustibil", c.fuelType],
-    ["Anul producerii", String(c.year)],
-    ["Transmisie", c.transmission],
-    ["Tip tracțiune", c.driveType],
-    ["Stare", c.condition],
-    ["Capacitate motor", c.engine ? `${c.engine} cm³` : null],
-    ["Uși", c.doors],
-    ["Culoare", c.color],
-    ["VIN", c.vin],
-  ];
-
-  const specs = rows
-    .filter(([, v]) => v != null && String(v).trim() !== "")
-    .map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`)
-    .join("");
-
-
-  return [
-    `<p class="has-text-align-left"><strong>Preț: ${formatPrice(c.price)}</strong></p>`,
-    c.description ? esc(c.description).split(/\n{2,}/).map((par) => `<p>${par.replace(/\n/g, "<br />")}</p>`).join("\n") : "",
-    `<figure class="wp-block-table"><table><tbody>${specs}</tbody></table></figure>`,
-  ].filter(Boolean).join("\n\n");
+  if (!c.description) return "";
+  return esc(c.description)
+    .split(/\n{2,}/)
+    .map((par) => `<p>${par.replace(/\n/g, "<br />")}</p>`)
+    .join("\n");
 }
 
 function esc(s: unknown): string {
@@ -75,13 +39,6 @@ function esc(s: unknown): string {
     .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
-function formatPrice(n: number): string {
-  try {
-    return new Intl.NumberFormat("ro-RO").format(n) + " €";
-  } catch {
-    return `${n} €`;
-  }
-}
 
 export interface PublishResult {
   postId: string;

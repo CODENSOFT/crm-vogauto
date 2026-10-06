@@ -182,7 +182,15 @@ export function PublishingView() {
       />
 
       {photoTarget && (
-        <PhotoManager open={!!photoTarget} onClose={() => { setPhotoTarget(null); load(); }} inventoryId={photoTarget._id} label={`${photoTarget.brand} ${photoTarget.model}`} />
+        <PhotoManager open={!!photoTarget} inventoryId={photoTarget._id}
+          label={`${photoTarget.brand} ${photoTarget.model}`}
+          onClose={async () => {
+            const id = photoTarget._id;
+            setPhotoTarget(null);
+            // Pozele s-au schimbat: aducem anunțul de pe site la zi, o dată.
+            await fetch(`/api/publish/site-sync/${id}`, { method: "POST" }).catch(() => {});
+            load();
+          }} />
       )}
     </div>
   );

@@ -4,10 +4,11 @@
 // anunțul e deja pe site, orice modificare în CRM trebuie să ajungă și acolo,
 // altfel site-ul rămâne cu datele vechi.
 
-import { eq, asc } from "drizzle-orm";
+import { eq, and, asc, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { inventory, carPhotos } from "@/lib/schema";
 import { engineSizeCm3 } from "@/lib/wpTaxonomy";
+import { buildDescriptionTemplate } from "@/lib/listingTemplate";
 import {
   publishListing, buildPostContent, writeListingFields, syncPhotos, setFeaturedImage,
 } from "@/lib/wordpress";
@@ -38,21 +39,16 @@ export async function syncListingToSite(
 
   const title = item.listingTitle?.trim() || `${item.brand} ${item.model} ${item.year}`;
 
+  // Textul de credit se pune de la sine, calculat pe prețul mașinii. Dacă
+  // cineva l-a scris sau modificat în CRM, îl folosim pe acela.
+  const description = item.listingDescription?.trim()
+    || buildDescriptionTemplate(Number(item.sellPrice));
+
   const result = await publishListing({
     postId: item.wpPostId,
     crmId: item.id,
     title,
-    content: buildPostContent({
-      title,
-      description: item.listingDescription ?? "",
-      brand: item.brand, model: item.model, year: item.year,
-      price: Number(item.sellPrice),
-      photos: urls,
-      color: item.color, engine: item.engine, vin: item.vin,
-      bodyType: item.bodyType, mileage: item.mileage, fuelType: item.fuelType,
-      transmission: item.transmission, driveType: item.driveType,
-      condition: item.condition, doors: item.doors,
-    }),
+    content: buildPostContent({ title, description }),
     // Aceleași specificații merg și în taxonomiile site-ului, ca mașina să
     // apară în filtrele lor (marcă, combustibil, cutie, culoare...).
     specs: {
@@ -92,7 +88,7 @@ export async function syncListingToSite(
       mileage: item.mileage,
       engineSize: engineSizeCm3(item.engine),
       title,
-      description: item.listingDescription ?? "",
+      description,
       photos,
     }, result.terms);
   } catch (e) {
@@ -137,5 +133,65 @@ export async function resyncIfPublished(inventoryId: string): Promise<void> {
     }
   } catch (e) {
     console.error("[wordpress:resync]", e);
+  }
+}
+
+/**
+ * Publică mașina pe site de la sine, dacă e gata: disponibilă în stoc, cu cel
+ * puțin o poză și fără anunț încă. Cerut explicit de parcare: mașina adăugată
+ * în stoc trebuie să ajungă pe site fără să apese nimeni un buton.
+ *
+ * Mașinile în pregătire nu se publică — acolo încă se adună cheltuielile.
+ * Nu aruncă niciodată: adăugarea în stoc nu trebuie să cadă din cauza site-ului.
+ */
+export async function autoPublish(inventoryId: string): Promise<void> {
+  try {
+    const { wordpressConfigured } = await import("@/lib/wordpress");
+    if (!wordpressConfigured()) return;
+
+    const [item] = await db.select().from(inventory).where(eq(inventory.id, inventoryId)).limit(1);
+    if (!item || item.isDeleted || item.status !== "available") return;
+
+    // Deja pe site: nu creăm nimic, doar aducem la zi (poze noi, preț schimbat).
+    if (item.wpPostId && item.publishedSite) {
+      await resyncIfPublished(inventoryId);
+      return;
+    }
+
+    const [{ n }] = await db
+      .select({ n: sql<number>`count(*)::int` })
+      .from(carPhotos)
+      .where(eq(carPhotos.inventoryId, inventoryId));
+    if (!n) return; // fără poze nu are rost un anunț
+
+    // Aceeași revendicare atomică ca la butonul de publicare: dacă două
+    // acțiuni pornesc odată (se adaugă ultima poză și se salvează mașina),
+    // doar una creează anunțul.
+    if (!item.wpPostId) {
+      const claimed = await db
+        .update(inventory)
+        .set({ publishedSite: true })
+        .where(and(eq(inventory.id, inventoryId), eq(inventory.publishedSite, false)))
+        .returning({ id: inventory.id });
+      if (claimed.length === 0) return;
+    }
+
+    const res = await syncListingToSite(item, async (postId, url) => {
+      await db.update(inventory)
+        .set({ wpPostId: postId, wpUrl: url, publishedSite: true })
+        .where(eq(inventory.id, inventoryId));
+    });
+    await db.update(inventory)
+      .set({ wpUrl: res.url, wpMediaId: res.mediaId, publishedSite: true })
+      .where(eq(inventory.id, inventoryId));
+  } catch (e) {
+    console.error("[wordpress:autoPublish]", e);
+    // Revendicarea a pus bifa; dacă n-a ieșit nimic, o dăm înapoi.
+    try {
+      const [after] = await db.select().from(inventory).where(eq(inventory.id, inventoryId)).limit(1);
+      if (after && !after.wpPostId) {
+        await db.update(inventory).set({ publishedSite: false }).where(eq(inventory.id, inventoryId));
+      }
+    } catch { /* nimic de făcut */ }
   }
 }

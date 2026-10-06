@@ -6,6 +6,7 @@ import { requireSession, requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
 import { escapeLike } from "@/lib/utils";
 import { inventoryToDTO } from "@/lib/serialize";
+import { autoPublish } from "@/lib/syncListing";
 
 // GET /api/inventory — listă stoc. Orice utilizator autentificat (workerii o
 // folosesc pentru a alege o mașină la înregistrarea vânzării).
@@ -77,6 +78,9 @@ export async function GET(request: Request) {
 }
 
 // POST /api/inventory — ADMIN ONLY. Adaugă o mașină în stoc.
+// Publicarea automata pe site urca pozele, deci poate dura.
+export const maxDuration = 300;
+
 export async function POST(request: Request) {
   const { user, error } = await requireAdmin();
   if (error) return error;
@@ -125,6 +129,10 @@ export async function POST(request: Request) {
     details: { stockId: item.id, brand, model, vin, sellPrice: Number(sellPrice) },
     request, coords: coordsOf(user),
   });
+
+  // Mașina disponibilă ajunge pe site de la sine. Dacă pozele vin după
+  // (se încarcă imediat după salvare), publicarea se face atunci.
+  await autoPublish(item.id);
 
   return NextResponse.json({ item: inventoryToDTO(item) }, { status: 201 });
 }

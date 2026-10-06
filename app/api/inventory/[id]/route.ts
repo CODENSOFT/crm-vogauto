@@ -7,7 +7,7 @@ import { logAction } from "@/lib/audit";
 import { isUuid } from "@/lib/utils";
 import { inventoryToDTO } from "@/lib/serialize";
 import { wordpressConfigured, unpublishListing } from "@/lib/wordpress";
-import { syncListingToSite } from "@/lib/syncListing";
+import { syncListingToSite, autoPublish } from "@/lib/syncListing";
 
 // Editarea retrimite anunțul pe site, iar găzduirea lor e lentă.
 export const maxDuration = 300;
@@ -90,6 +90,11 @@ export async function PUT(
   let siteSynced = false;
   let siteSyncError: string | null = null;
   let siteHint: string | null = null;
+
+  // Trecută din pregătire în stoc: se publică de la sine.
+  if (saved.status === "available" && !saved.wpPostId && wordpressConfigured()) {
+    await autoPublish(saved.id);
+  }
 
   if (saved.publishedSite && saved.status !== "sold" && wordpressConfigured()) {
     if (!saved.wpPostId) {
