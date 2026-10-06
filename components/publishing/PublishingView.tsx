@@ -64,12 +64,15 @@ export function PublishingView() {
   useEffect(() => { load(); }, [load]);
 
   async function toggleChannel(it: InventoryDTO, field: "publishedSite" | "published999", channelName: string) {
-    const next = !it[field];
+    // Pentru site, starea reală e „există anunț acolo", nu doar bifa: o bifă
+    // rămasă din trecut făcea ca apăsarea să retragă în loc să publice.
+    const isSite = field === "publishedSite";
+    const current = isSite ? !!(it.publishedSite && it.wpPostId) : !!it[field];
+    const next = !current;
     if (next && !(it.photoCount ?? 0)) { toast.error("Adaugă cel puțin o poză înainte de publicare."); return; }
 
     // Site-ul înseamnă un articol real în WordPress, deci are ruta lui;
     // 999.md citește feedul, deci acolo e suficient comutatorul.
-    const isSite = field === "publishedSite";
     const res = isSite
       ? await fetch(`/api/publish/wordpress/${it._id}`, { method: next ? "POST" : "DELETE" })
       : await fetch(`/api/inventory/${it._id}`, {

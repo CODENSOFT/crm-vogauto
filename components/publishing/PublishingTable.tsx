@@ -73,12 +73,10 @@ export function PublishingTable({
               </td>
               <td className="whitespace-nowrap px-3 py-2.5 font-semibold text-slate-900">{formatMoney(it.sellPrice)}</td>
               <td className="px-3 py-2.5">
-                <PlatformToggle on={!!it.publishedSite} onClick={() => onToggle(it, "publishedSite", "Site")} label="Site" color="blue" icon={<IconGlobe />} />
-                {/* Bifa singură nu înseamnă că anunțul există pe site: fără
-                    wpPostId nu s-a creat nimic acolo. Mai bine o spunem. */}
-                {it.publishedSite && !it.wpPostId && (
-                  <div className="mt-1 text-[11px] font-medium text-amber-600">nu e încă pe site — apasă Site</div>
-                )}
+                {/* „Publicat" înseamnă că există anunț pe site, nu doar că
+                    bifa e pusă. Altfel comutatorul arăta pornit degeaba, iar
+                    apăsarea îl oprea în loc să publice. */}
+                <PlatformToggle on={!!(it.publishedSite && it.wpPostId)} onClick={() => onToggle(it, "publishedSite", "Site")} label="Site" color="blue" icon={<IconGlobe />} />
                 {it.publishedSite && it.wpUrl && (
                   <a href={it.wpUrl} target="_blank" rel="noopener noreferrer"
                     className="mt-1 block text-[11px] font-medium text-brand hover:underline">vezi anunțul →</a>
