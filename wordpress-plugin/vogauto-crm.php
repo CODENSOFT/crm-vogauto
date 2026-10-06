@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       VogAuto CRM — punte pentru anunțuri
  * Description:       Permite CRM-ului să completeze prețul, anul și parcursul anunțurilor prin API. NU modifică designul, NU atinge anunțurile existente și NU adaugă nimic în paginile publice.
- * Version:           1.1.0
+ * Version:           1.2.0
  * Author:            VogAuto
  * Requires at least: 5.6
  * License:           GPL-2.0-or-later
@@ -85,6 +85,12 @@ add_action( 'rest_api_init', function () {
 								continue;
 							}
 							$k = is_numeric( $k ) ? (int) $k : sanitize_key( (string) $k );
+							// Id-urile de termeni se păstrează ca numere, exact cum le
+							// scrie tema în anunțurile create din panoul WordPress.
+							if ( is_numeric( $v ) && (string) (int) $v === (string) $v ) {
+								$clean[ $k ] = (int) $v;
+								continue;
+							}
 							$v = (string) $v;
 							$clean[ $k ] = preg_match( '#^https?://#i', $v )
 								? esc_url_raw( $v )
