@@ -6,8 +6,8 @@ import { requireAdmin, requireSession, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
 import { isUuid } from "@/lib/utils";
 import { inventoryToDTO } from "@/lib/serialize";
-import { wordpressConfigured, unpublishListing } from "@/lib/wordpress";
-import { syncListingToSite, autoPublish } from "@/lib/syncListing";
+import { wordpressConfigured } from "@/lib/wordpress";
+import { syncListingToSite, autoPublish, unpublishFromSite } from "@/lib/syncListing";
 
 // Editarea retrimite anunțul pe site, iar găzduirea lor e lentă.
 export const maxDuration = 300;
@@ -67,17 +67,10 @@ export async function PUT(
   }
 
   // Vândută → o scoatem automat de la publicare (site + 999.md).
-  if (updates.status === "sold") {
+  const becameSold = updates.status === "sold";
+  if (becameSold) {
     updates.publishedSite = false;
     updates.published999 = false;
-    // Și articolul de pe site trece în ciornă, ca să nu rămână anunț activ.
-    if (item.wpPostId && wordpressConfigured()) {
-      try {
-        await unpublishListing(item.wpPostId);
-      } catch (e) {
-        console.error("[wordpress:sold]", e);
-      }
-    }
   }
 
   const [saved] = Object.keys(updates).length
@@ -90,6 +83,10 @@ export async function PUT(
   let siteSynced = false;
   let siteSyncError: string | null = null;
   let siteHint: string | null = null;
+
+  // Anunțul trece în ciornă, deci dispare din lista de pe site. O singură
+  // funcție pentru toate drumurile care duc la „vândută".
+  if (becameSold) await unpublishFromSite(saved.id);
 
   // Trecută din pregătire în stoc: se publică de la sine.
   if (saved.status === "available" && !saved.wpPostId && wordpressConfigured()) {
@@ -148,6 +145,9 @@ export async function DELETE(
   if (!item || item.isDeleted) {
     return NextResponse.json({ error: "Mașina nu a fost găsită." }, { status: 404 });
   }
+
+  // Întâi de pe site, cât timp mai putem citi wpPostId, apoi ștergem.
+  await unpublishFromSite(params.id);
 
   await db
     .update(inventory)

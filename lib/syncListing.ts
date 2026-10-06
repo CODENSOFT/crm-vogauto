@@ -195,3 +195,33 @@ export async function autoPublish(inventoryId: string): Promise<void> {
     } catch { /* nimic de făcut */ }
   }
 }
+
+/**
+ * Scoate mașina de pe site. Anunțul trece în ciornă — dispare din lista
+ * publică, dar nu se pierde: dacă vânzarea se anulează, se poate publica
+ * din nou, cu același id.
+ *
+ * Chemat când mașina se vinde sau se șterge din stoc. Nu aruncă niciodată:
+ * vânzarea nu trebuie să cadă din cauza site-ului.
+ */
+export async function unpublishFromSite(inventoryId: string): Promise<void> {
+  try {
+    const { wordpressConfigured, unpublishListing } = await import("@/lib/wordpress");
+
+    const [item] = await db.select().from(inventory).where(eq(inventory.id, inventoryId)).limit(1);
+    if (!item) return;
+
+    // Comutatoarele cad oricum, chiar dacă site-ul nu răspunde.
+    if (item.publishedSite || item.published999) {
+      await db.update(inventory)
+        .set({ publishedSite: false, published999: false })
+        .where(eq(inventory.id, inventoryId));
+    }
+
+    if (item.wpPostId && wordpressConfigured()) {
+      await unpublishListing(item.wpPostId);
+    }
+  } catch (e) {
+    console.error("[wordpress:unpublish]", e);
+  }
+}

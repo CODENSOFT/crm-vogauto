@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { cars, users, inventory, carPhotos } from "@/lib/schema";
 import { requireSession, requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
+import { unpublishFromSite } from "@/lib/syncListing";
 import { escapeLike, isUuid } from "@/lib/utils";
 import { carToDTO } from "@/lib/serialize";
 
@@ -96,6 +97,9 @@ export async function GET(request: Request) {
 }
 
 // POST /api/cars — admin ȘI worker.
+// Vanzarea scoate si anuntul de pe site, deci apeleaza site-ul lor.
+export const maxDuration = 300;
+
 export async function POST(request: Request) {
   const { user, error } = await requireSession();
   if (error) return error;
@@ -167,6 +171,9 @@ export async function POST(request: Request) {
         .where(and(eq(inventory.id, inventoryId), eq(inventory.isDeleted, false)));
       // Pozele urcate pe mașina din stoc devin și pozele vânzării.
       await db.update(carPhotos).set({ carId: car.id }).where(eq(carPhotos.inventoryId, inventoryId));
+      // Și de pe site dispare: până acum bifele cădeau în CRM, dar anunțul
+      // rămânea public, deci o mașină vândută se putea încă vedea pe site.
+      await unpublishFromSite(inventoryId);
     }
 
     if (!isAdmin) return NextResponse.json({ ok: true }, { status: 201 });
