@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { PhotoGallery } from "@/components/shared/PhotoGallery";
 import { Istoric } from "@/components/shared/Istoric";
+import { ReducereModal } from "@/components/inventory/ReducereModal";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/Button";
@@ -33,6 +34,7 @@ export function InventoryDetail({ id }: { id: string }) {
   const [marking, setMarking] = useState(false);
 
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
+  const [reducereOpen, setReducereOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -91,6 +93,9 @@ export function InventoryDetail({ id }: { id: string }) {
             <Button onClick={markReady} loading={marking}>Mașină gata de vânzare</Button>
           )}
           <Button variant="secondary" onClick={() => setPhotoOpen(true)}>Gestionează poze</Button>
+          <Button variant="secondary" onClick={() => setReducereOpen(true)}>
+            {item.oldPrice && item.oldPrice > item.sellPrice ? "Modifică reducerea" : "Reducere"}
+          </Button>
           <Button variant="secondary" onClick={() => setEditOpen(true)}>Editează</Button>
         </div>
       </div>
@@ -183,6 +188,8 @@ export function InventoryDetail({ id }: { id: string }) {
         }} />
 
       <InventoryFormModal open={editOpen} editing={item} onClose={() => setEditOpen(false)} onSaved={load} />
+
+      <ReducereModal open={reducereOpen} item={item} onClose={() => setReducereOpen(false)} onSaved={load} />
     </div>
   );
 }

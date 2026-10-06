@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/Input";
 import { Picker } from "@/components/ui/Picker";
 import { Modal } from "@/components/ui/Modal";
 import { formatMoney } from "@/lib/utils";
+import { buildDescriptionTemplate } from "@/lib/listingTemplate";
 import {
   BODY_TYPES, FUEL_TYPES, TRANSMISSIONS, DRIVE_TYPES, CAR_CONDITIONS, DOOR_OPTIONS, SEAT_OPTIONS,
   type InventoryDTO,
@@ -39,8 +40,11 @@ const EMPTY = {
   brand: "", model: "", year: String(new Date().getFullYear()), vin: "", color: "", engine: "",
   bodyType: "", mileage: "", fuelType: "", transmission: "", driveType: "", condition: "", doors: "",
   power: "", seats: "",
-  ownerName: "", ownerPhone: "", clientWantPrice: "", purchasePrice: "", sellPrice: "", oldPrice: "",
-  status: "available", notes: "",
+  ownerName: "", ownerPhone: "", clientWantPrice: "", purchasePrice: "", sellPrice: "",
+  status: "available", notes: "", listingDescription: "",
+  // Reducerea se pune din pagina mașinii, nu de aici; o păstrăm ca să nu se
+  // piardă la o editare obișnuită.
+  oldPrice: "",
 };
 
 // Formular (modal) pentru adăugarea/editarea unei mașini din stoc + poze.
@@ -79,6 +83,7 @@ export function InventoryFormModal({
         sellPrice: String(editing.sellPrice ?? ""),
         oldPrice: editing.oldPrice ? String(editing.oldPrice) : "",
         status: editing.status, notes: editing.notes ?? "",
+        listingDescription: editing.listingDescription ?? "",
       });
     } else {
       setForm({ ...EMPTY, status: defaultStatus });
@@ -95,16 +100,22 @@ export function InventoryFormModal({
     return () => document.removeEventListener("mousedown", onDown);
   }, [ownerOpen]);
 
+  // Textul de credit urmează prețul de la sine. Din clipa în care cineva scrie
+  // în el, nu-l mai atingem: altfel și-ar pierde munca la fiecare ajustare.
+  const descAtinsa = useRef(false);
+  useEffect(() => {
+    if (descAtinsa.current) return;
+    const p = Number(form.sellPrice) || 0;
+    setForm((f) => ({ ...f, listingDescription: buildDescriptionTemplate(p) }));
+  }, [form.sellPrice]);
+
+  useEffect(() => { if (open) descAtinsa.current = false; }, [open]);
+
   const setF = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
   const isParcare = form.ownerName.trim().toLowerCase() === "parcarea";
   // La mașinile parcării costul e prețul de cumpărare, altfel prețul cerut de client.
   const cost = Number(isParcare ? form.purchasePrice : form.clientWantPrice) || 0;
   const markup = (Number(form.sellPrice) || 0) - cost;
-  // Reducerea e reală doar când prețul vechi e mai mare decât cel de vânzare.
-  const vechi = Number(form.oldPrice) || 0;
-  const vanzare = Number(form.sellPrice) || 0;
-  const reducere = vechi > vanzare ? vechi - vanzare : 0;
-  const procentReducere = reducere > 0 ? Math.round((reducere / vechi) * 100) : 0;
 
   function addFiles(files: FileList | null) {
     if (!files) return;
@@ -264,18 +275,6 @@ export function InventoryFormModal({
           <Input label="Preț cerut de client (€)" type="number" value={form.clientWantPrice} onChange={(e) => setF("clientWantPrice", e.target.value)} disabled={isParcare} placeholder={isParcare ? "Nu e necesar" : ""} />
           <Input label={`Preț cumpărare (€)${isParcare ? " *" : ""}`} type="number" value={form.purchasePrice} onChange={(e) => setF("purchasePrice", e.target.value)} disabled={!isParcare} placeholder={isParcare ? "Cât a plătit parcarea" : "Doar pentru mașinile parcării"} />
           <Input label="Preț de vânzare (€) *" type="number" value={form.sellPrice} onChange={(e) => setF("sellPrice", e.target.value)} />
-          <Input label="Preț înainte de reducere (€)" type="number" value={form.oldPrice}
-            onChange={(e) => setF("oldPrice", e.target.value)}
-            placeholder="lasă gol dacă nu e reducere" />
-          {reducere > 0 && (
-            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 sm:col-span-2 lg:col-span-3">
-              Reducere: <span className="font-semibold">{formatMoney(reducere)}</span>{" "}
-              <span className="text-emerald-700">({procentReducere}%)</span>
-              <span className="block text-xs text-emerald-700">
-                Pe site apare prețul vechi tăiat lângă cel nou, cum arată la celelalte anunțuri.
-              </span>
-            </div>
-          )}
           <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 sm:col-span-2 lg:col-span-3">
             {isParcare ? "Profit brut" : "Adaus parcare"}:{" "}
             <span className={`font-semibold ${markup >= 0 ? "text-emerald-700" : "text-red-600"}`}>{formatMoney(markup)}</span>
@@ -309,6 +308,24 @@ export function InventoryFormModal({
                 </div>
               </>
             )}
+          </div>
+        </Sectiune>
+
+        <Sectiune titlu="Descriere anunț" nota="se completează singură din preț; o poți rescrie">
+          <div className="sm:col-span-2 lg:col-span-3">
+            <div className="mb-1.5 flex items-center justify-between gap-2">
+              <label htmlFor="desc-anunt" className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                Text pentru site
+              </label>
+              <button type="button"
+                onClick={() => { descAtinsa.current = false; setF("listingDescription", buildDescriptionTemplate(Number(form.sellPrice) || 0)); }}
+                className="rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-600 transition-colors hover:border-brand hover:text-brand">
+                Reface șablonul
+              </button>
+            </div>
+            <textarea id="desc-anunt" rows={10} value={form.listingDescription}
+              onChange={(e) => { descAtinsa.current = true; setF("listingDescription", e.target.value); }}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm leading-relaxed text-slate-900 shadow-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20" />
           </div>
         </Sectiune>
 

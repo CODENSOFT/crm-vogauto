@@ -5,6 +5,7 @@
 
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { buildDescriptionTemplate } from "@/lib/listingTemplate";
 import type { InventoryDTO } from "@/types";
 
 export function useListingEditor(onItemSaved: (item: InventoryDTO) => void) {
@@ -16,7 +17,9 @@ export function useListingEditor(onItemSaved: (item: InventoryDTO) => void) {
   function openListing(it: InventoryDTO) {
     setListingTarget(it);
     setLTitle(it.listingTitle ?? `${it.brand} ${it.model} ${it.year}`);
-    setLDesc(it.listingDescription ?? "");
+    // Textul de credit apare deja scris, calculat pe prețul acestei mașini.
+    // Butonul „Șablon credit" rămâne doar pentru a-l reface după o editare.
+    setLDesc(it.listingDescription?.trim() || buildDescriptionTemplate(Number(it.sellPrice)));
   }
   async function saveListing() {
     if (!listingTarget) return;

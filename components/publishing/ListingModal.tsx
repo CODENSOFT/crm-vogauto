@@ -31,16 +31,17 @@ export function ListingModal({
             variant="secondary"
             size="sm"
             onClick={() => target && setDesc(buildDescriptionTemplate(Number(target.sellPrice)))}
-            title="Completează textul standard de credit, cu prețul acestei mașini"
+            title="Reface textul standard de credit, cu prețul actual al mașinii"
           >
-            Șablon credit
+            Reface șablonul
           </Button>
         </div>
         <textarea id="listing-desc" value={desc} onChange={(e) => setDesc(e.target.value)} rows={14}
           className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm leading-relaxed text-slate-900 shadow-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
-          placeholder={'Dotări, stare, detalii... sau apasă „Șablon credit”.'} />
+          placeholder="Dotări, stare, detalii..." />
         <span className="text-xs text-slate-400">
-          Șablonul completează automat prețul acestei mașini. Textul rămâne editabil.
+          Textul de credit e completat automat, cu prețul acestei mașini. Poți scrie peste el;
+          {" "}{'„Reface șablonul”'} îl aduce înapoi, cu prețul de acum.
         </span>
       </div>
     </div>
