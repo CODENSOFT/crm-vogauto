@@ -7,6 +7,7 @@ import { logAction } from "@/lib/audit";
 import { isUuid } from "@/lib/utils";
 import { inventoryToDTO } from "@/lib/serialize";
 import { wordpressConfigured } from "@/lib/wordpress";
+import { buildDescriptionTemplate } from "@/lib/listingTemplate";
 import { syncListingToSite, autoPublish, unpublishFromSite } from "@/lib/syncListing";
 
 // Editarea retrimite anunțul pe site, iar găzduirea lor e lentă.
@@ -64,6 +65,17 @@ export async function PUT(
     if (boolFields.includes(field)) value = Boolean(value);
     updates[field] = value;
     changes[field] = value;
+  }
+
+  // Preț schimbat → recalculăm textul de credit, dar NUMAI dacă e încă cel
+  // generat automat. Dacă l-a scris sau modificat cineva, rămâne al lui.
+  if (updates.sellPrice !== undefined && Number(updates.sellPrice) !== Number(item.sellPrice)) {
+    const vechiAutomat = buildDescriptionTemplate(Number(item.sellPrice));
+    const actuala = (item.listingDescription ?? "").trim();
+    if (actuala === "" || actuala === vechiAutomat.trim()) {
+      updates.listingDescription = buildDescriptionTemplate(Number(updates.sellPrice));
+      changes.listingDescription = "(recalculat pentru prețul nou)";
+    }
   }
 
   // Vândută → o scoatem automat de la publicare (site + 999.md).

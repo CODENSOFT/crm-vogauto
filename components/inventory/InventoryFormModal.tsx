@@ -12,6 +12,19 @@ import {
   type InventoryDTO,
 } from "@/types";
 
+/** Un grup de câmpuri cu titlul lui. Formularul avea 20 de câmpuri la rând. */
+function Sectiune({ titlu, nota, children }: { titlu: string; nota?: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+      <div className="mb-3 flex flex-wrap items-baseline gap-x-2">
+        <h3 className="text-xs font-bold uppercase tracking-wide text-slate-600">{titlu}</h3>
+        {nota && <span className="text-xs text-slate-400">{nota}</span>}
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">{children}</div>
+    </section>
+  );
+}
+
 // Statusul se alege pe etichetă, dar se salvează ca valoare din baza de date.
 const STATUS_LABEL: Record<string, string> = {
   preparing: "În pregătire",
@@ -168,102 +181,123 @@ export function InventoryFormModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={editing ? "Editează mașina" : "Adaugă mașină în stoc"}
+    <Modal open={open} onClose={onClose} size="xl"
+      title={editing ? "Editează mașina" : "Adaugă mașină în stoc"}
       footer={<>
         {progress && <span className="mr-auto text-xs font-medium text-slate-500">{progress}</span>}
         <Button variant="secondary" onClick={onClose} disabled={saving}>Anulează</Button>
         <Button onClick={save} loading={saving}>Salvează</Button>
       </>}>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Input label="Marcă *" value={form.brand} onChange={(e) => setF("brand", e.target.value)} />
-        <Input label="Model *" value={form.model} onChange={(e) => setF("model", e.target.value)} />
-        <Input label="An *" type="number" value={form.year} onChange={(e) => setF("year", e.target.value)} />
-        <Input label="VIN" value={form.vin} onChange={(e) => setF("vin", e.target.value)} />
-        <Input label="Culoare" value={form.color} onChange={(e) => setF("color", e.target.value)} placeholder="ex: Alb" />
-        <Input label="Capacitate motor (cm³)" type="number" value={form.engine} onChange={(e) => setF("engine", e.target.value)} placeholder="ex: 2000" />
-        <Input label="Parcurs (km)" type="number" value={form.mileage} onChange={(e) => setF("mileage", e.target.value)} placeholder="ex: 90000" />
-        <Picker label="Caroserie" value={form.bodyType}
-          onChange={(v) => setF("bodyType", v)} options={BODY_TYPES} />
-        <Picker label="Tip combustibil" value={form.fuelType}
-          onChange={(v) => setF("fuelType", v)} options={FUEL_TYPES} />
-        <Picker label="Transmisie" value={form.transmission}
-          onChange={(v) => setF("transmission", v)} options={TRANSMISSIONS} />
-        <Picker label="Tip tracțiune" value={form.driveType}
-          onChange={(v) => setF("driveType", v)} options={DRIVE_TYPES} />
-        <Picker label="Stare" value={form.condition}
-          onChange={(v) => setF("condition", v)} options={CAR_CONDITIONS} />
-        <Picker label="Uși" value={form.doors}
-          onChange={(v) => setF("doors", v)} options={DOOR_OPTIONS} />
-        <Input label="Putere (CP)" type="number" value={form.power} onChange={(e) => setF("power", e.target.value)} placeholder="ex: 490" />
-        <Picker label="Număr de locuri" value={form.seats}
-          onChange={(v) => setF("seats", v)} options={SEAT_OPTIONS} />
-        <div className="relative flex flex-col gap-1.5" ref={ownerBox}>
-          <label htmlFor="owner-name" className="text-xs font-semibold uppercase tracking-wide text-slate-600">
-            Proprietar *
-          </label>
-          <input
-            id="owner-name"
-            value={form.ownerName}
-            onChange={(e) => setF("ownerName", e.target.value)}
-            onFocus={() => setOwnerOpen(true)}
-            placeholder="Numele clientului"
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20"
-          />
-          {ownerOpen && !isParcare && (
-            <ul className="vg-pop absolute top-full z-30 mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-1 shadow-elevated">
-              <li>
-                <button
-                  type="button"
-                  onMouseDown={(e) => { e.preventDefault(); setF("ownerName", "Parcarea"); setOwnerOpen(false); }}
-                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-brand-tint hover:text-brand-dark"
-                >
-                  <span className="flex h-5 w-5 items-center justify-center rounded bg-slate-900 text-[9px] font-bold text-white">VA</span>
-                  Parcarea
-                  <span className="ml-auto text-xs text-slate-400">mașina proprie</span>
-                </button>
-              </li>
-            </ul>
-          )}
-        </div>
-        <Input label={`Telefon proprietar${isParcare ? "" : " *"}`} value={form.ownerPhone} onChange={(e) => setF("ownerPhone", e.target.value)} disabled={isParcare} placeholder={isParcare ? "Nu e necesar (mașina parcării)" : ""} />
-        <Input label="Preț cerut de client (€)" type="number" value={form.clientWantPrice} onChange={(e) => setF("clientWantPrice", e.target.value)} disabled={isParcare} placeholder={isParcare ? "Nu e necesar" : ""} />
-        <Input label={`Preț cumpărare (€)${isParcare ? " *" : ""}`} type="number" value={form.purchasePrice} onChange={(e) => setF("purchasePrice", e.target.value)} disabled={!isParcare} placeholder={isParcare ? "Cât a plătit parcarea" : "Doar pentru mașinile parcării"} />
-        <Input label="Preț de vânzare (€) *" type="number" value={form.sellPrice} onChange={(e) => setF("sellPrice", e.target.value)} />
-        <Picker label="Status" value={STATUS_LABEL[form.status] ?? ""}
-          onChange={(v) => setF("status", STATUS_VALUE[v] ?? "available")}
-          options={Object.values(STATUS_LABEL)} placeholder="Disponibilă" />
-        <div className="sm:col-span-2">
-          <Input label="Note" value={form.notes} onChange={(e) => setF("notes", e.target.value)} />
-        </div>
+      <div className="flex flex-col gap-4">
+        <Sectiune titlu="Identificare">
+          <Input label="Marcă *" value={form.brand} onChange={(e) => setF("brand", e.target.value)} />
+          <Input label="Model *" value={form.model} onChange={(e) => setF("model", e.target.value)} />
+          <Input label="An *" type="number" value={form.year} onChange={(e) => setF("year", e.target.value)} />
+          <Input label="VIN" value={form.vin} onChange={(e) => setF("vin", e.target.value)} />
+          <Input label="Culoare" value={form.color} onChange={(e) => setF("color", e.target.value)} placeholder="ex: Alb" />
+          <Picker label="Status" value={STATUS_LABEL[form.status] ?? ""}
+            onChange={(v) => setF("status", STATUS_VALUE[v] ?? "available")}
+            options={Object.values(STATUS_LABEL)} placeholder="Disponibilă" />
+        </Sectiune>
 
-        {/* Fotografii — se încarcă la salvarea mașinii. */}
-        <div className="sm:col-span-2">
-          <span className="text-xs font-semibold uppercase tracking-wide text-slate-600">Fotografii</span>
-          <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(e) => addFiles(e.target.files)} />
-          <button type="button" onClick={() => fileRef.current?.click()}
-            className="mt-1.5 w-full cursor-pointer rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 py-4 text-center text-sm text-slate-500 transition-colors hover:border-brand hover:text-brand">
-            + Adaugă poze (poți selecta mai multe)
-          </button>
-          {stagedFiles.length > 0 && (
-            <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
-              {stagedFiles.map((f, i) => (
-                <div key={i} className="group relative aspect-square overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={URL.createObjectURL(f)} alt="" className="h-full w-full object-cover" />
-                  <button type="button" onClick={() => removeStaged(i)}
-                    className="absolute right-1 top-1 rounded-md bg-black/55 p-1 text-white opacity-0 transition-opacity hover:bg-red-600 group-hover:opacity-100" aria-label="Elimină">
-                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+        <Sectiune titlu="Specificații" nota="apar pe anunțul de pe site și în filtrele lui">
+          <Input label="Capacitate motor (cm³)" type="number" value={form.engine} onChange={(e) => setF("engine", e.target.value)} placeholder="ex: 2000" />
+          <Input label="Putere (CP)" type="number" value={form.power} onChange={(e) => setF("power", e.target.value)} placeholder="ex: 490" />
+          <Input label="Parcurs (km)" type="number" value={form.mileage} onChange={(e) => setF("mileage", e.target.value)} placeholder="ex: 90000" />
+          <Picker label="Caroserie" value={form.bodyType}
+            onChange={(v) => setF("bodyType", v)} options={BODY_TYPES} />
+          <Picker label="Tip combustibil" value={form.fuelType}
+            onChange={(v) => setF("fuelType", v)} options={FUEL_TYPES} />
+          <Picker label="Transmisie" value={form.transmission}
+            onChange={(v) => setF("transmission", v)} options={TRANSMISSIONS} />
+          <Picker label="Tip tracțiune" value={form.driveType}
+            onChange={(v) => setF("driveType", v)} options={DRIVE_TYPES} />
+          <Picker label="Stare" value={form.condition}
+            onChange={(v) => setF("condition", v)} options={CAR_CONDITIONS} />
+          <Picker label="Uși" value={form.doors}
+            onChange={(v) => setF("doors", v)} options={DOOR_OPTIONS} />
+          <Picker label="Număr de locuri" value={form.seats}
+            onChange={(v) => setF("seats", v)} options={SEAT_OPTIONS} />
+        </Sectiune>
+
+        <Sectiune titlu="Proprietar">
+          <div className="relative flex flex-col gap-1.5" ref={ownerBox}>
+            <label htmlFor="owner-name" className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+              Proprietar *
+            </label>
+            <input
+              id="owner-name"
+              value={form.ownerName}
+              onChange={(e) => setF("ownerName", e.target.value)}
+              onFocus={() => setOwnerOpen(true)}
+              placeholder="Numele clientului"
+              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition-colors placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-brand/20"
+            />
+            {ownerOpen && !isParcare && (
+              <ul className="vg-pop absolute top-full z-30 mt-1.5 w-full rounded-xl border border-slate-200 bg-white p-1 shadow-elevated">
+                <li>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => { e.preventDefault(); setF("ownerName", "Parcarea"); setOwnerOpen(false); }}
+                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-brand-tint hover:text-brand-dark"
+                  >
+                    <span className="flex h-5 w-5 items-center justify-center rounded bg-slate-900 text-[9px] font-bold text-white">VA</span>
+                    Parcarea
+                    <span className="ml-auto text-xs text-slate-400">mașina proprie</span>
                   </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                </li>
+              </ul>
+            )}
+          </div>
+          <Input label={`Telefon proprietar${isParcare ? "" : " *"}`} value={form.ownerPhone} onChange={(e) => setF("ownerPhone", e.target.value)} disabled={isParcare} placeholder={isParcare ? "Nu e necesar (mașina parcării)" : ""} />
+          <div className="hidden lg:block" />
+        </Sectiune>
 
-        <div className="sm:col-span-2 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">
-          {isParcare ? "Profit brut" : "Adaus parcare"}: <span className={`font-semibold ${markup >= 0 ? "text-emerald-700" : "text-red-600"}`}>{formatMoney(markup)}</span>
-          <span className="text-slate-400"> (preț vânzare − preț client)</span>
-        </div>
+        <Sectiune titlu="Bani">
+          <Input label="Preț cerut de client (€)" type="number" value={form.clientWantPrice} onChange={(e) => setF("clientWantPrice", e.target.value)} disabled={isParcare} placeholder={isParcare ? "Nu e necesar" : ""} />
+          <Input label={`Preț cumpărare (€)${isParcare ? " *" : ""}`} type="number" value={form.purchasePrice} onChange={(e) => setF("purchasePrice", e.target.value)} disabled={!isParcare} placeholder={isParcare ? "Cât a plătit parcarea" : "Doar pentru mașinile parcării"} />
+          <Input label="Preț de vânzare (€) *" type="number" value={form.sellPrice} onChange={(e) => setF("sellPrice", e.target.value)} />
+          <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 sm:col-span-2 lg:col-span-3">
+            {isParcare ? "Profit brut" : "Adaus parcare"}:{" "}
+            <span className={`font-semibold ${markup >= 0 ? "text-emerald-700" : "text-red-600"}`}>{formatMoney(markup)}</span>
+            <span className="text-slate-400"> (preț vânzare − {isParcare ? "preț cumpărare" : "preț client"})</span>
+          </div>
+        </Sectiune>
+
+        <Sectiune titlu="Fotografii" nota="fără cel puțin una, mașina nu ajunge pe site">
+          <div className="sm:col-span-2 lg:col-span-3">
+            <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(e) => addFiles(e.target.files)} />
+            <button type="button" onClick={() => fileRef.current?.click()}
+              className="w-full cursor-pointer rounded-lg border-2 border-dashed border-slate-300 bg-white py-5 text-center text-sm text-slate-500 transition-colors hover:border-brand hover:text-brand">
+              + Adaugă poze (poți selecta mai multe)
+            </button>
+            {stagedFiles.length > 0 && (
+              <>
+                <p className="mt-2 text-xs text-slate-500">
+                  {stagedFiles.length} {stagedFiles.length === 1 ? "poză pregătită" : "poze pregătite"} — se încarcă la salvare
+                </p>
+                <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-6">
+                  {stagedFiles.map((f, i) => (
+                    <div key={`${f.name}-${f.lastModified}-${i}`} className="group relative aspect-square overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={URL.createObjectURL(f)} alt="" className="h-full w-full object-cover" />
+                      <button type="button" onClick={() => removeStaged(i)}
+                        className="absolute right-1 top-1 rounded-md bg-black/55 p-1 text-white transition-colors hover:bg-red-600 sm:opacity-0 sm:group-hover:opacity-100" aria-label="Elimină">
+                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </Sectiune>
+
+        <Sectiune titlu="Note interne" nota="nu apar pe site">
+          <div className="sm:col-span-2 lg:col-span-3">
+            <Input label="Note" value={form.notes} onChange={(e) => setF("notes", e.target.value)} />
+          </div>
+        </Sectiune>
       </div>
     </Modal>
   );

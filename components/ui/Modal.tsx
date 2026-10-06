@@ -4,15 +4,24 @@ import { useEffect, useRef } from "react";
 import { Button } from "./Button";
 import { IconClose } from "./Icons";
 
+/** Lățimea ferestrei. Implicit „md", ca ferestrele existente să nu se schimbe. */
+const WIDTH = {
+  md: "max-w-lg",
+  lg: "max-w-2xl",
+  xl: "max-w-4xl",
+} as const;
+
 interface ModalProps {
   open: boolean;
   onClose: () => void;
   title: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  /** Formularele cu multe câmpuri au nevoie de spațiu, nu de derulare lungă. */
+  size?: keyof typeof WIDTH;
 }
 
-export function Modal({ open, onClose, title, children, footer }: ModalProps) {
+export function Modal({ open, onClose, title, children, footer, size = "md" }: ModalProps) {
   const ref = useRef<HTMLDialogElement>(null);
 
   // <dialog> nativ: blochează focusul în fereastră și tratează Escape singur.
@@ -37,7 +46,7 @@ export function Modal({ open, onClose, title, children, footer }: ModalProps) {
 
   return (
     <dialog ref={ref} className="vg-modal" aria-label={title}>
-      <div className="mx-auto flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-slate-200/60 bg-white shadow-elevated animate-scale-in sm:max-h-[90vh] sm:rounded-2xl">
+      <div className={`mx-auto flex max-h-[92vh] w-full ${WIDTH[size]} flex-col overflow-hidden rounded-t-2xl border border-slate-200/60 bg-white shadow-elevated animate-scale-in sm:max-h-[90vh] sm:rounded-2xl`}>
         <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-5 py-4 sm:px-6">
           <h2 className="text-base font-semibold tracking-tight text-slate-900">{title}</h2>
           <button

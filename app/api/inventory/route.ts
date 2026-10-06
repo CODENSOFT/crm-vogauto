@@ -7,6 +7,7 @@ import { logAction } from "@/lib/audit";
 import { escapeLike } from "@/lib/utils";
 import { inventoryToDTO } from "@/lib/serialize";
 import { autoPublish } from "@/lib/syncListing";
+import { buildDescriptionTemplate } from "@/lib/listingTemplate";
 
 // GET /api/inventory — listă stoc. Orice utilizator autentificat (workerii o
 // folosesc pentru a alege o mașină la înregistrarea vânzării).
@@ -120,6 +121,9 @@ export async function POST(request: Request) {
       sellPrice: Number(sellPrice),
       status: status === "sold" ? "sold" : status === "preparing" ? "preparing" : "available",
       notes: notes || null,
+      // Textul de credit, calculat pe prețul acestei mașini. Se scrie o dată, la
+      // adăugare, ca să fie vizibil și editabil în CRM, nu doar pe site.
+      listingDescription: buildDescriptionTemplate(Number(sellPrice) || 0),
       addedBy: user.id, addedByName: user.fullName,
     })
     .returning();
