@@ -88,6 +88,21 @@ export function StockTable({
                   Gata de vânzare
                 </Button>
               )}
+              {/* Foaia A4 pentru vitrină. Document propriu, deci tab nou. */}
+              <button
+                type="button"
+                onClick={() => window.open(`/print/inventory/${it._id}`, "_blank")}
+                title="Printează fișa A4"
+                aria-label={`Printează fișa pentru ${it.brand} ${it.model}`}
+                className="mr-1 rounded-md p-1.5 text-slate-400 transition-colors hover:bg-brand-tint hover:text-brand"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                  strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M7 8V4h10v4" />
+                  <rect x="4" y="8" width="16" height="7" rx="1.5" />
+                  <path d="M7 15h10v5H7z" />
+                </svg>
+              </button>
               <button
                 type="button"
                 onClick={() => onDelete(it)}

@@ -42,5 +42,6 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  // Fișele de tipar stau în afara panoului, dar cer tot autentificare.
+  matcher: ["/dashboard/:path*", "/print/:path*"],
 };

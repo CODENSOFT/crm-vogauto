@@ -99,6 +99,16 @@ export function InventoryDetail({ id }: { id: string }) {
             <Button onClick={markReady} loading={marking}>Mașină gata de vânzare</Button>
           )}
           <Button variant="secondary" onClick={() => setPhotoOpen(true)}>Gestionează poze</Button>
+          {/* Foaia de tipar e un document propriu, deci se deschide în tab nou. */}
+          <Button variant="secondary" onClick={() => window.open(`/print/inventory/${id}`, "_blank")}>
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M7 8V4h10v4" />
+              <rect x="4" y="8" width="16" height="7" rx="1.5" />
+              <path d="M7 15h10v5H7z" />
+            </svg>
+            Printează fișa
+          </Button>
           <Button variant="discount" onClick={() => setReducereOpen(true)}>
             {/* Eticheta de preț spune ce face butonul chiar înainte de a citi. */}
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"

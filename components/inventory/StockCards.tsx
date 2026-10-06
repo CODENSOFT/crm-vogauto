@@ -61,12 +61,17 @@ export function StockCards({
           </div>
           <div className="relative z-10 mt-3 flex items-center gap-2 border-t border-slate-100 pt-2.5">
             {prep && <Button size="sm" onClick={() => onReady(it)}>Gata de vânzare</Button>}
+            {/* Pe telefon textul e mai util decât o pictogramă singură. */}
+            <Button variant="secondary" size="sm" className="ml-auto"
+              onClick={() => window.open(`/print/inventory/${it._id}`, "_blank")}>
+              Printează fișa
+            </Button>
             <button
               type="button"
               onClick={() => onDelete(it)}
               title="Șterge"
               aria-label={`Șterge ${it.brand} ${it.model}`}
-              className="ml-auto rounded-md p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+              className="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
             >
               <IconTrash className="h-4 w-4" />
             </button>
