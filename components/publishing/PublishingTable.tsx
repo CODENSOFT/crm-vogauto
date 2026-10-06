@@ -72,7 +72,18 @@ export function PublishingTable({
                 {!hasPhoto && <div className="text-[11px] font-medium text-amber-600">Adaugă poze ca să publici</div>}
               </td>
               <td className="whitespace-nowrap px-3 py-2.5 font-semibold text-slate-900">{formatMoney(it.sellPrice)}</td>
-              <td className="px-3 py-2.5"><PlatformToggle on={!!it.publishedSite} onClick={() => onToggle(it, "publishedSite", "Site")} label="Site" color="blue" icon={<IconGlobe />} /></td>
+              <td className="px-3 py-2.5">
+                <PlatformToggle on={!!it.publishedSite} onClick={() => onToggle(it, "publishedSite", "Site")} label="Site" color="blue" icon={<IconGlobe />} />
+                {/* Bifa singură nu înseamnă că anunțul există pe site: fără
+                    wpPostId nu s-a creat nimic acolo. Mai bine o spunem. */}
+                {it.publishedSite && !it.wpPostId && (
+                  <div className="mt-1 text-[11px] font-medium text-amber-600">nu e încă pe site — apasă Site</div>
+                )}
+                {it.publishedSite && it.wpUrl && (
+                  <a href={it.wpUrl} target="_blank" rel="noopener noreferrer"
+                    className="mt-1 block text-[11px] font-medium text-brand hover:underline">vezi anunțul →</a>
+                )}
+              </td>
               <td className="px-3 py-2.5"><PlatformToggle on={!!it.published999} onClick={() => onToggle(it, "published999", "999.md")} label="999.md" color="orange" /></td>
               <td className="px-3 py-2.5">
                 <button onClick={() => onSocial(it)} title="Pregătește și postează pe Facebook și Instagram"

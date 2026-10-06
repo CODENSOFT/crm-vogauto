@@ -84,18 +84,29 @@ export async function PUT(
   // Dacă anunțul e deja pe site, modificarea din CRM trebuie să ajungă și
   // acolo. Altfel site-ul ar rămâne cu prețul și specificațiile vechi, fără ca
   // nimeni să observe. Dacă trimiterea cade, salvarea în CRM rămâne făcută.
+  let siteSynced = false;
   let siteSyncError: string | null = null;
-  if (saved.wpPostId && saved.publishedSite && saved.status !== "sold" && wordpressConfigured()) {
-    try {
-      const res = await syncListingToSite(saved);
-      if (res.mediaId !== saved.wpMediaId || res.url !== saved.wpUrl) {
-        await db.update(inventory)
-          .set({ wpUrl: res.url, wpMediaId: res.mediaId })
-          .where(eq(inventory.id, params.id));
+  let siteHint: string | null = null;
+
+  if (saved.publishedSite && saved.status !== "sold" && wordpressConfigured()) {
+    if (!saved.wpPostId) {
+      // Bifa de „publicat" a rămas din perioada când era doar un comutator
+      // local, fără legătură cu site-ul. Nu creăm un anunț public de la sine:
+      // spunem ce lipsește și lăsăm decizia la om.
+      siteHint = "Mașina e marcată ca publicată, dar nu are încă anunț pe site. Deschide Publicare și apasă Site, o singură dată.";
+    } else {
+      try {
+        const res = await syncListingToSite(saved);
+        siteSynced = true;
+        if (res.mediaId !== saved.wpMediaId || res.url !== saved.wpUrl) {
+          await db.update(inventory)
+            .set({ wpUrl: res.url, wpMediaId: res.mediaId })
+            .where(eq(inventory.id, params.id));
+        }
+      } catch (e) {
+        siteSyncError = e instanceof Error ? e.message : "Eroare necunoscută";
+        console.error("[wordpress:resync]", e);
       }
-    } catch (e) {
-      siteSyncError = e instanceof Error ? e.message : "Eroare necunoscută";
-      console.error("[wordpress:resync]", e);
     }
   }
 
@@ -107,7 +118,9 @@ export async function PUT(
 
   return NextResponse.json({
     item: inventoryToDTO(saved),
+    siteSynced,
     ...(siteSyncError ? { siteWarning: `Salvat în CRM, dar site-ul nu s-a actualizat: ${siteSyncError}` } : {}),
+    ...(siteHint ? { siteHint } : {}),
   });
 }
 

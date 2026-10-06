@@ -121,10 +121,11 @@ export function InventoryFormModal({
     }
     setSaving(false);
     toast.success(editing ? "Mașină actualizată" : "Mașină adăugată în stoc");
-    // Dacă mașina e publicată pe site, modificarea se trimite și acolo; dacă
-    // site-ul n-a răspuns, trebuie să afle cineva, nu doar jurnalul.
-    if (data.siteWarning) toast.error(data.siteWarning, { duration: 8000 });
-    else if (editing && data.item?.publishedSite) toast.success("Anunțul de pe site a fost actualizat");
+    // Raportăm doar ce s-a întâmplat cu adevărat: serverul spune dacă anunțul
+    // de pe site a fost chiar actualizat.
+    if (data.siteWarning) toast.error(data.siteWarning, { duration: 9000 });
+    else if (data.siteHint) toast(data.siteHint, { duration: 9000, icon: "ℹ️" });
+    else if (data.siteSynced) toast.success("Anunțul de pe site a fost actualizat");
     onSaved();
     onClose();
   }
