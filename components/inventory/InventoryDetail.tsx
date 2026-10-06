@@ -151,7 +151,23 @@ export function InventoryDetail({ id }: { id: string }) {
 
       {/* Zoom fullscreen */}
 
-      <PhotoManager open={photoOpen} onClose={() => { setPhotoOpen(false); load(); }} inventoryId={id} label={`${item.brand} ${item.model}`} />
+      <PhotoManager open={photoOpen} inventoryId={id} label={`${item.brand} ${item.model}`}
+        onClose={async () => {
+          setPhotoOpen(false);
+          // Pozele adăugate aici fac mașina publicabilă. Fără pasul acesta,
+          // o mașină fără poze rămânea nepublicată chiar după ce primea poze.
+          const note = toast.loading("Se actualizează anunțul de pe site...");
+          try {
+            const res = await fetch(`/api/publish/site-sync/${id}`, { method: "POST" });
+            const d = await res.json().catch(() => ({}));
+            if (d.ok) toast.success("Anunțul de pe site e la zi", { id: note });
+            else toast.dismiss(note);
+          } catch (e) {
+            const why = e instanceof Error ? e.message : "cauză necunoscută";
+            toast.error(`Pozele s-au salvat, dar site-ul nu s-a actualizat: ${why}`, { id: note, duration: 9000 });
+          }
+          load();
+        }} />
 
       <InventoryFormModal open={editOpen} editing={item} onClose={() => setEditOpen(false)} onSaved={load} />
     </div>

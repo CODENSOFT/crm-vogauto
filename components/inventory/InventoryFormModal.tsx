@@ -46,6 +46,8 @@ export function InventoryFormModal({
   const [ownerOpen, setOwnerOpen] = useState(false);
   const ownerBox = useRef<HTMLDivElement>(null);
   const [stagedFiles, setStagedFiles] = useState<File[]>([]);
+  // Ce se întâmplă acum (încărcare poze, publicare), ca așteptarea să nu pară blocaj.
+  const [progress, setProgress] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -91,15 +93,36 @@ export function InventoryFormModal({
   }
   function removeStaged(i: number) { setStagedFiles((s) => s.filter((_, idx) => idx !== i)); }
 
+  /**
+   * Urcă pozele alese, una după alta, arătând la care s-a ajuns. Fiecare eșec
+   * se spune pe nume: înainte, o încărcare căzută lăsa mașina salvată fără
+   * poze, fără ca motivul să fie clar.
+   */
   async function uploadStaged(inventoryId: string, files: File[]): Promise<number> {
     let ok = 0;
-    for (const file of files) {
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("inventoryId", inventoryId);
-      const res = await fetch("/api/photos", { method: "POST", body: fd });
-      if (res.ok) ok++;
-      else { const d = await res.json().catch(() => ({})); toast.error(d.error || `Eroare la ${file.name}`); }
+    const failed: string[] = [];
+
+    for (const [i, file] of files.entries()) {
+      setProgress(`Se încarcă poza ${i + 1} din ${files.length}...`);
+      try {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("inventoryId", inventoryId);
+        const res = await fetch("/api/photos", { method: "POST", body: fd });
+        if (res.ok) { ok++; continue; }
+        const d = await res.json().catch(() => ({}));
+        failed.push(`${file.name}: ${d.error || `eroare ${res.status}`}`);
+      } catch (e) {
+        failed.push(`${file.name}: ${e instanceof Error ? e.message : "conexiune întreruptă"}`);
+      }
+    }
+    setProgress("");
+
+    if (failed.length) {
+      toast.error(
+        `${failed.length} ${failed.length === 1 ? "poză nu s-a încărcat" : "poze nu s-au încărcat"}:\n${failed.join("\n")}`,
+        { duration: 10000 },
+      );
     }
     return ok;
   }
@@ -121,6 +144,7 @@ export function InventoryFormModal({
       // O singură sincronizare, după tot setul: mașina disponibilă cu poze
       // ajunge pe site fără să apese nimeni nimic.
       if (n) {
+        setProgress("Se publică pe site...");
         const note = toast.loading("Se publică pe site...");
         try {
           await fetch(`/api/publish/site-sync/${invId}`, { method: "POST" });
@@ -129,6 +153,7 @@ export function InventoryFormModal({
           const why = e instanceof Error ? e.message : "cauză necunoscută";
           toast.error(`Mașina e salvată, dar site-ul nu s-a actualizat: ${why}`, { id: note, duration: 9000 });
         }
+        setProgress("");
       }
     }
     setSaving(false);
@@ -144,7 +169,11 @@ export function InventoryFormModal({
 
   return (
     <Modal open={open} onClose={onClose} title={editing ? "Editează mașina" : "Adaugă mașină în stoc"}
-      footer={<><Button variant="secondary" onClick={onClose} disabled={saving}>Anulează</Button><Button onClick={save} loading={saving}>Salvează</Button></>}>
+      footer={<>
+        {progress && <span className="mr-auto text-xs font-medium text-slate-500">{progress}</span>}
+        <Button variant="secondary" onClick={onClose} disabled={saving}>Anulează</Button>
+        <Button onClick={save} loading={saving}>Salvează</Button>
+      </>}>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Input label="Marcă *" value={form.brand} onChange={(e) => setF("brand", e.target.value)} />
         <Input label="Model *" value={form.model} onChange={(e) => setF("model", e.target.value)} />
