@@ -78,6 +78,11 @@ export function InventoryDetail({ id }: { id: string }) {
   }
 
   const urls = photos.map((p) => p.url);
+  // Reducerea e reală doar când prețul de dinainte e mai mare decât cel actual.
+  const hasReducere = !!item.oldPrice && item.oldPrice > item.sellPrice;
+  const procentReducere = hasReducere
+    ? Math.round(((item.oldPrice! - item.sellPrice) / item.oldPrice!) * 100)
+    : 0;
 
   return (
     <div>
@@ -87,14 +92,21 @@ export function InventoryDetail({ id }: { id: string }) {
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">{item.brand} {item.model} <span className="text-slate-400">{item.year}</span></h1>
           <Badge color={item.status === "available" ? "green" : item.status === "preparing" ? "yellow" : "gray"}>{STOCK_STATUS_LABELS[item.status]}</Badge>
           {item.published && <Badge color="blue">Publicat</Badge>}
+          {hasReducere && <Badge color="red">−{procentReducere}% reducere</Badge>}
         </div>
         <div className="flex gap-2">
           {item.status === "preparing" && (
             <Button onClick={markReady} loading={marking}>Mașină gata de vânzare</Button>
           )}
           <Button variant="secondary" onClick={() => setPhotoOpen(true)}>Gestionează poze</Button>
-          <Button variant="secondary" onClick={() => setReducereOpen(true)}>
-            {item.oldPrice && item.oldPrice > item.sellPrice ? "Modifică reducerea" : "Reducere"}
+          <Button variant="discount" onClick={() => setReducereOpen(true)}>
+            {/* Eticheta de preț spune ce face butonul chiar înainte de a citi. */}
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M20.6 13.4L13.4 20.6a2 2 0 01-2.8 0l-7.2-7.2A2 2 0 012.8 12V4a1.2 1.2 0 011.2-1.2h8c.5 0 1 .2 1.4.6l7.2 7.2a2 2 0 010 2.8z" />
+              <circle cx="7.5" cy="7.5" r="1.2" fill="currentColor" />
+            </svg>
+            {hasReducere ? "Modifică reducerea" : "Reducere"}
           </Button>
           <Button variant="secondary" onClick={() => setEditOpen(true)}>Editează</Button>
         </div>
@@ -110,40 +122,7 @@ export function InventoryDetail({ id }: { id: string }) {
         </div>
 
         <div className="flex flex-col gap-5">
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card">
-            <div className="mb-2 flex items-baseline justify-between">
-              <span className="text-sm font-semibold text-slate-500">Preț de vânzare</span>
-              <span className="flex items-baseline gap-2">
-                {/* Reducerea se arată la fel ca pe site: vechiul preț tăiat. */}
-                {!!item.oldPrice && item.oldPrice > item.sellPrice && (
-                  <span className="text-sm font-medium text-slate-400 line-through">{formatMoney(item.oldPrice)}</span>
-                )}
-                <span className="text-2xl font-extrabold text-brand">{formatMoney(item.sellPrice)}</span>
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-x-5">
-              <Spec label="An" value={item.year} />
-              <Spec label="Culoare" value={item.color || "—"} />
-              <Spec label="Motor" value={item.engine || "—"} />
-              <Spec label="VIN" value={<span className="font-mono text-xs">{item.vin || "—"}</span>} />
-              <Spec label="Status" value={STOCK_STATUS_LABELS[item.status]} />
-              <Spec label={item.ownerName?.trim().toLowerCase() === "parcarea" ? "Preț cumpărare" : "Preț cerut client"}
-                value={item.purchaseCost ? formatMoney(item.purchaseCost) : "—"} />
-              {!!item.oldPrice && item.oldPrice > item.sellPrice && (
-                <Spec label="Reducere" value={
-                  <span className="text-emerald-700">
-                    −{formatMoney(item.oldPrice - item.sellPrice)} ({Math.round(((item.oldPrice - item.sellPrice) / item.oldPrice) * 100)}%)
-                  </span>
-                } />
-              )}
-              <Spec label="Cheltuieli" value={item.expensesTotal ? <span className="text-amber-700">{formatMoney(item.expensesTotal)}</span> : "—"} />
-              <Spec label="Adaus net" strong value={<span className={(item.netMargin ?? item.markup) >= 0 ? "text-emerald-700" : "text-red-600"}>{formatMoney(item.netMargin ?? item.markup)}</span>} />
-              <Spec label="Proprietar" value={item.ownerName} />
-              <Spec label="Telefon" value={<span className="font-mono">{item.ownerPhone && item.ownerPhone !== "—" ? item.ownerPhone : "—"}</span>} />
-              <Spec label="Adăugată de" value={item.addedByName || "—"} />
-              <Spec label="Data adăugării" value={formatDateShort(item.createdAt)} />
-            </div>
-          </div>
+          <CardPret item={item} />
 
           <ExpensesCard inventoryId={id} onChanged={load} />
 
@@ -190,6 +169,51 @@ export function InventoryDetail({ id }: { id: string }) {
       <InventoryFormModal open={editOpen} editing={item} onClose={() => setEditOpen(false)} onSaved={load} />
 
       <ReducereModal open={reducereOpen} item={item} onClose={() => setReducereOpen(false)} onSaved={load} />
+    </div>
+  );
+}
+
+/** Prețul și specificațiile mașinii. Scoasă din pagină, care trecuse de 180 de linii. */
+function CardPret({ item }: { item: InventoryDTO }) {
+  const hasReducere = !!item.oldPrice && item.oldPrice > item.sellPrice;
+  const procentReducere = hasReducere
+    ? Math.round(((item.oldPrice! - item.sellPrice) / item.oldPrice!) * 100)
+    : 0;
+
+  return (
+    <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card">
+      <div className="mb-2 flex items-baseline justify-between">
+        <span className="text-sm font-semibold text-slate-500">Preț de vânzare</span>
+        <span className="flex items-baseline gap-2">
+          {/* Reducerea se arată la fel ca pe site: vechiul preț tăiat. */}
+          {hasReducere && (
+            <span className="text-sm font-medium text-slate-400 line-through">{formatMoney(item.oldPrice)}</span>
+          )}
+          <span className="text-2xl font-extrabold text-brand">{formatMoney(item.sellPrice)}</span>
+        </span>
+      </div>
+      <div className="grid grid-cols-2 gap-x-5">
+        <Spec label="An" value={item.year} />
+        <Spec label="Culoare" value={item.color || "—"} />
+        <Spec label="Motor" value={item.engine || "—"} />
+        <Spec label="VIN" value={<span className="font-mono text-xs">{item.vin || "—"}</span>} />
+        <Spec label="Status" value={STOCK_STATUS_LABELS[item.status]} />
+        <Spec label={item.ownerName?.trim().toLowerCase() === "parcarea" ? "Preț cumpărare" : "Preț cerut client"}
+          value={item.purchaseCost ? formatMoney(item.purchaseCost) : "—"} />
+        {hasReducere && (
+          <Spec label="Reducere" value={
+            <span className="font-semibold text-rose-600">
+              −{formatMoney(item.oldPrice! - item.sellPrice)} ({procentReducere}%)
+            </span>
+          } />
+        )}
+        <Spec label="Cheltuieli" value={item.expensesTotal ? <span className="text-amber-700">{formatMoney(item.expensesTotal)}</span> : "—"} />
+        <Spec label="Adaus net" strong value={<span className={(item.netMargin ?? item.markup) >= 0 ? "text-emerald-700" : "text-red-600"}>{formatMoney(item.netMargin ?? item.markup)}</span>} />
+        <Spec label="Proprietar" value={item.ownerName} />
+        <Spec label="Telefon" value={<span className="font-mono">{item.ownerPhone && item.ownerPhone !== "—" ? item.ownerPhone : "—"}</span>} />
+        <Spec label="Adăugată de" value={item.addedByName || "—"} />
+        <Spec label="Data adăugării" value={formatDateShort(item.createdAt)} />
+      </div>
     </div>
   );
 }

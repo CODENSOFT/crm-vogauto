@@ -2,7 +2,7 @@
 
 import { forwardRef } from "react";
 
-type Variant = "primary" | "secondary" | "danger" | "ghost";
+type Variant = "primary" | "secondary" | "danger" | "ghost" | "discount";
 type Size = "sm" | "md";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -20,6 +20,10 @@ const variants: Record<Variant, string> = {
     "bg-red-600 text-white shadow-sm hover:bg-red-700 active:bg-red-800 focus-visible:ring-red-300",
   ghost:
     "bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 active:bg-slate-200 focus-visible:ring-slate-200",
+  // Reducerea e roșie, ca să se vadă dintr-o privire, dar nu cu roșul de la
+  // ștergere: altfel ar părea o acțiune distructivă.
+  discount:
+    "bg-rose-600 text-white shadow-sm hover:bg-rose-700 active:bg-rose-800 focus-visible:ring-rose-300",
 };
 
 const sizes: Record<Size, string> = {
