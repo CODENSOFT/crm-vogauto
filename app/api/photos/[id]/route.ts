@@ -5,6 +5,7 @@ import { carPhotos } from "@/lib/schema";
 import { requireSession } from "@/lib/guard";
 import { isUuid } from "@/lib/utils";
 import { deleteFromBucket } from "@/lib/storage";
+import { resyncIfPublished } from "@/lib/syncListing";
 
 // DELETE /api/photos/[id] — șterge poza (adminul sau cel care a încărcat-o).
 export async function DELETE(
@@ -28,6 +29,9 @@ export async function DELETE(
 
   await deleteFromBucket(photo.path).catch(() => {});
   await db.delete(carPhotos).where(eq(carPhotos.id, params.id));
+
+  // Poza ștearsă trebuie să dispară și din galeria de pe site.
+  if (photo.inventoryId) await resyncIfPublished(photo.inventoryId);
 
   return NextResponse.json({ ok: true });
 }

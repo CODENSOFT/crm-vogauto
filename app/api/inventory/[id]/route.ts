@@ -7,6 +7,7 @@ import { logAction } from "@/lib/audit";
 import { isUuid } from "@/lib/utils";
 import { inventoryToDTO } from "@/lib/serialize";
 import { wordpressConfigured, unpublishListing } from "@/lib/wordpress";
+import { syncListingToSite } from "@/lib/syncListing";
 
 // GET /api/inventory/[id] — o singură mașină din stoc (pentru pagina de detaliu).
 export async function GET(_request: Request, { params }: { params: { id: string } }) {
@@ -80,13 +81,34 @@ export async function PUT(
     ? await db.update(inventory).set(updates).where(eq(inventory.id, params.id)).returning()
     : [item];
 
+  // Dacă anunțul e deja pe site, modificarea din CRM trebuie să ajungă și
+  // acolo. Altfel site-ul ar rămâne cu prețul și specificațiile vechi, fără ca
+  // nimeni să observe. Dacă trimiterea cade, salvarea în CRM rămâne făcută.
+  let siteSyncError: string | null = null;
+  if (saved.wpPostId && saved.publishedSite && saved.status !== "sold" && wordpressConfigured()) {
+    try {
+      const res = await syncListingToSite(saved);
+      if (res.mediaId !== saved.wpMediaId || res.url !== saved.wpUrl) {
+        await db.update(inventory)
+          .set({ wpUrl: res.url, wpMediaId: res.mediaId })
+          .where(eq(inventory.id, params.id));
+      }
+    } catch (e) {
+      siteSyncError = e instanceof Error ? e.message : "Eroare necunoscută";
+      console.error("[wordpress:resync]", e);
+    }
+  }
+
   await logAction({
     userId: user.id, userName: user.fullName, action: "EDIT_STOCK",
     details: { stockId: params.id, changes },
     request, coords: coordsOf(user),
   });
 
-  return NextResponse.json({ item: inventoryToDTO(saved) });
+  return NextResponse.json({
+    item: inventoryToDTO(saved),
+    ...(siteSyncError ? { siteWarning: `Salvat în CRM, dar site-ul nu s-a actualizat: ${siteSyncError}` } : {}),
+  });
 }
 
 // DELETE /api/inventory/[id] — ADMIN ONLY. Soft delete.

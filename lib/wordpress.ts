@@ -39,6 +39,16 @@ export interface UploadedPhoto {
   url: string;
 }
 
+/** Numele fișierului din adresa noastră, fără extensie și fără caractere ciudate. */
+function stemOf(url: string): string {
+  const last = url.split("?")[0].split("/").pop() || "poza";
+  return last.replace(/\.[a-z0-9]+$/i, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "poza";
+}
+
+function escapeRe(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 /**
  * Urcă o poză în biblioteca lor media. `postId` o leagă de anunț, ca galeria
  * temei să o găsească (tema citește atașamentele anunțului, nu adrese externe).
@@ -89,9 +99,12 @@ async function existingPhotos(postId: string): Promise<UploadedPhoto[]> {
 }
 
 /**
- * Pune toate pozele mașinii în biblioteca lor, legate de anunț. Dacă anunțul are
- * deja cel puțin atâtea poze, le refolosim: republicarea nu umple biblioteca
- * lor cu duplicate.
+ * Pune pozele mașinii în biblioteca lor, legate de anunț.
+ *
+ * Fiecare poză primește un nume previzibil (`marca-model-an-3.jpg`), așa că o
+ * recunoaștem la următoarea trimitere și nu o mai urcăm. Fără asta, adăugarea
+ * unei singure poze ar fi reîncărcat întreg setul, umplând biblioteca lor cu
+ * duplicate la fiecare salvare.
  */
 export async function syncPhotos(
   postId: string,
@@ -101,11 +114,20 @@ export async function syncPhotos(
   if (urls.length === 0) return [];
 
   const already = await existingPhotos(postId);
-  if (already.length >= urls.length) return already.slice(0, urls.length);
-
   const out: UploadedPhoto[] = [];
-  for (const [i, url] of urls.entries()) {
-    const up = await uploadPhoto(url, `${baseName}-${i + 1}`, postId);
+
+  for (const url of urls) {
+    // Numele vine din fișierul nostru, care e unic, nu din poziția în listă:
+    // dacă se șterge o poză din mijloc, restul nu se încurcă între ele.
+    const name = `${baseName}-${stemOf(url)}`;
+    // WordPress adaugă un sufix dacă fișierul există deja („...-1.jpg"),
+    // de aceea acceptăm și forma cu sufix.
+    const found = already.find((m) => new RegExp(`/${escapeRe(name)}(-\\d+)?\\.[a-z0-9]+$`, "i").test(m.url));
+    if (found) {
+      out.push(found);
+      continue;
+    }
+    const up = await uploadPhoto(url, name, postId);
     if (up) out.push(up);
   }
   return out;

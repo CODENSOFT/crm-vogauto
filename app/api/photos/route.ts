@@ -6,6 +6,7 @@ import { requireSession } from "@/lib/guard";
 import { isUuid } from "@/lib/utils";
 import { uploadToBucket } from "@/lib/storage";
 import { photoToDTO } from "@/lib/serialize";
+import { resyncIfPublished } from "@/lib/syncListing";
 
 const EXT: Record<string, string> = {
   "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp",
@@ -93,6 +94,10 @@ export async function POST(request: Request) {
       uploadedBy: user.id,
     })
     .returning();
+
+  // Dacă mașina e publicată pe site, galeria de acolo trebuie să prindă și
+  // poza nouă.
+  if (targetInv) await resyncIfPublished(targetInv);
 
   return NextResponse.json({ photo: photoToDTO(photo) }, { status: 201 });
 }
