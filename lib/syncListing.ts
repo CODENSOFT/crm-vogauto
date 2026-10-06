@@ -4,7 +4,7 @@
 // anunțul e deja pe site, orice modificare în CRM trebuie să ajungă și acolo,
 // altfel site-ul rămâne cu datele vechi.
 
-import { eq, and, asc, sql } from "drizzle-orm";
+import { eq, and, or, asc, sql, isNotNull } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { inventory, carPhotos } from "@/lib/schema";
 import { engineSizeCm3 } from "@/lib/wpTaxonomy";
@@ -224,4 +224,38 @@ export async function unpublishFromSite(inventoryId: string): Promise<void> {
   } catch (e) {
     console.error("[wordpress:unpublish]", e);
   }
+}
+
+/**
+ * Plasă de siguranță: caută mașini vândute sau șterse care au încă anunț activ
+ * pe site și le retrage.
+ *
+ * Există pentru că exact asta s-a întâmplat o dată: o vânzare înregistrată
+ * înainte ca retragerea automată să fie pusă la punct a lăsat anunțul public,
+ * iar nimeni nu avea cum să observe decât întâmplător. Rulează zilnic.
+ */
+export async function reconcileSoldListings(): Promise<{ checked: number; retracted: string[] }> {
+  const retracted: string[] = [];
+
+  const { wordpressConfigured, listingStatus } = await import("@/lib/wordpress");
+  if (!wordpressConfigured()) return { checked: 0, retracted };
+
+  const rows = await db
+    .select({ id: inventory.id, wpPostId: inventory.wpPostId, brand: inventory.brand, model: inventory.model })
+    .from(inventory)
+    .where(and(isNotNull(inventory.wpPostId), or(eq(inventory.status, "sold"), eq(inventory.isDeleted, true))));
+
+  for (const r of rows) {
+    if (!r.wpPostId) continue;
+    try {
+      // Doar anunțurile încă publicate: pe celelalte nu are rost să insistăm.
+      if ((await listingStatus(r.wpPostId)) !== "publish") continue;
+      await unpublishFromSite(r.id);
+      retracted.push(`${r.brand} ${r.model} (${r.wpPostId})`);
+    } catch (e) {
+      console.error("[wordpress:reconcile]", r.wpPostId, e);
+    }
+  }
+
+  return { checked: rows.length, retracted };
 }

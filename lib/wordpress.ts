@@ -252,6 +252,16 @@ export async function setFeaturedImage(postId: string, mediaId: string): Promise
   });
 }
 
+/** Starea unui anunț pe site („publish", „draft"...), sau null dacă nu există. */
+export async function listingStatus(postId: string): Promise<string | null> {
+  try {
+    const post = await wpFetch(`${TYPE}/${postId}?context=edit&_fields=status`);
+    return typeof post.status === "string" ? post.status : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Modulul de punte e instalat și activ pe site? */
 export async function bridgeInstalled(): Promise<boolean> {
   try {

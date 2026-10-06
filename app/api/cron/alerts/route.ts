@@ -3,9 +3,12 @@ import { and, eq, ne, gte, lt, isNotNull } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { tasks } from "@/lib/schema";
 import { computeAlerts } from "@/lib/alerts";
+import { reconcileSoldListings } from "@/lib/syncListing";
 import { sendTelegram, telegramConfigured, notify } from "@/lib/notify";
 
 export const dynamic = "force-dynamic";
+// Verificarea anunturilor de pe site cere cateva apeluri catre ei.
+export const maxDuration = 300;
 
 // GET /api/cron/alerts — rulat zilnic de Vercel Cron. Trimite un rezumat al
 // alertelor pe Telegram. Protejat cu CRON_SECRET (setat automat de Vercel Cron).
@@ -55,5 +58,19 @@ export async function GET(request: Request) {
     });
   }
 
-  return NextResponse.json({ count: alerts.length, agendas: byUser.size, telegram: telegramConfigured() });
+  // Plasă de siguranță: nicio mașină vândută nu trebuie să rămână pe site.
+  // S-a întâmplat o dată și nimeni n-a observat decât întâmplător.
+  const site = await reconcileSoldListings();
+  if (site.retracted.length && telegramConfigured()) {
+    await sendTelegram(
+      `<b>VOGAUTO — curățenie pe site</b>\nAm retras ${site.retracted.length} ` +
+      `${site.retracted.length === 1 ? "anunț" : "anunțuri"} de mașini vândute:\n` +
+      site.retracted.map((s) => `• ${s}`).join("\n"),
+    );
+  }
+
+  return NextResponse.json({
+    count: alerts.length, agendas: byUser.size, telegram: telegramConfigured(),
+    site,
+  });
 }
