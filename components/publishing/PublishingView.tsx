@@ -8,6 +8,7 @@ import { ListingModal } from "@/components/publishing/ListingModal";
 import { PublishingTable } from "@/components/publishing/PublishingTable";
 import { PhotoManager } from "@/components/photos/PhotoManager";
 import { useSocialPost } from "@/components/publishing/useSocialPost";
+import { useListingEditor } from "@/components/publishing/useListingEditor";
 import type { InventoryDTO } from "@/types";
 
 function Stat({ label, value, tone }: { label: string; value: number | string; tone?: string }) {
@@ -24,10 +25,12 @@ export function PublishingView() {
   const [items, setItems] = useState<InventoryDTO[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [listingTarget, setListingTarget] = useState<InventoryDTO | null>(null);
-  const [lTitle, setLTitle] = useState("");
-  const [lDesc, setLDesc] = useState("");
-  const [savingL, setSavingL] = useState(false);
+  const {
+    listingTarget, setListingTarget, lTitle, setLTitle, lDesc, setLDesc,
+    savingL, openListing, saveListing,
+  } = useListingEditor((item) =>
+    setItems((list) => list.map((x) => (x._id === item._id
+      ? { ...item, primaryPhoto: x.primaryPhoto, photoCount: x.photoCount } : x))));
 
   const [photoTarget, setPhotoTarget] = useState<InventoryDTO | null>(null);
 
@@ -121,25 +124,6 @@ export function PublishingView() {
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Conexiunea a eșuat.", { id: note });
     }
-  }
-
-  function openListing(it: InventoryDTO) {
-    setListingTarget(it);
-    setLTitle(it.listingTitle ?? `${it.brand} ${it.model} ${it.year}`);
-    setLDesc(it.listingDescription ?? "");
-  }
-  async function saveListing() {
-    if (!listingTarget) return;
-    setSavingL(true);
-    const res = await fetch(`/api/inventory/${listingTarget._id}`, {
-      method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ listingTitle: lTitle, listingDescription: lDesc }),
-    });
-    const data = await res.json();
-    setSavingL(false);
-    if (!res.ok) { toast.error(data.error || "Eroare."); return; }
-    setItems((list) => list.map((x) => (x._id === listingTarget._id ? { ...data.item, primaryPhoto: x.primaryPhoto, photoCount: x.photoCount } : x)));
-    setListingTarget(null);
-    toast.success("Anunț salvat");
   }
 
   const onSite = items.filter((i) => i.publishedSite).length;
