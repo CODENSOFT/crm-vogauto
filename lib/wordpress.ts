@@ -139,6 +139,8 @@ function formatPrice(n: number): string {
 export interface PublishResult {
   postId: string;
   url: string;
+  /** Termenii aplicați, ca să-i putem scrie și în câmpurile temei. */
+  terms: Record<string, number[]>;
 }
 
 /**
@@ -207,8 +209,10 @@ export async function publishListing(opts: {
   if (opts.featuredMediaId) body.featured_media = Number(opts.featuredMediaId);
   if (CATEGORY) body.listing_category = [Number(CATEGORY)];
 
+  let terms: Record<string, number[]> = {};
   if (opts.specs) {
-    Object.assign(body, staticTerms(opts.specs), await lookupTerms(opts.specs));
+    terms = { ...staticTerms(opts.specs), ...(await lookupTerms(opts.specs)) };
+    Object.assign(body, terms);
   }
 
   const path = opts.postId ? `${TYPE}/${opts.postId}` : TYPE;
@@ -218,7 +222,71 @@ export async function publishListing(opts: {
     body: JSON.stringify(body),
   });
 
-  return { postId: String(post.id), url: String(post.link ?? "") };
+  return { postId: String(post.id), url: String(post.link ?? ""), terms };
+}
+
+/**
+ * Tema lor (WP CarDealer) nu citește datele din taxonomii când afișează un
+ * anunț, ci din câmpuri proprii, cu prefixul `_listing_`. Taxonomiile servesc
+ * filtrele din catalog, câmpurile servesc pagina anunțului — deci le scriem pe
+ * amândouă. Ruta e adăugată de modulul nostru de punte, instalat pe site.
+ */
+export interface ListingFields {
+  price: number;
+  year: number;
+  mileage?: number | null;
+  /** Capacitatea motorului, în cm³. */
+  engineSize?: number | null;
+  title: string;
+  description?: string | null;
+}
+
+export async function writeListingFields(
+  postId: string,
+  f: ListingFields,
+  terms: Record<string, number[]>,
+): Promise<string[]> {
+  // Câmpurile cu o singură valoare primesc id-ul simplu; cele pe care tema le
+  // ține ca listă (culoare, tip ofertă) primesc listă.
+  const AS_LIST = new Set(["listing_color", "listing_offer_type"]);
+  const fields: Record<string, unknown> = {
+    _listing_price: f.price,
+    _listing_year: f.year,
+    _listing_title: f.title,
+    _listing_post_type: "listing",
+  };
+  if (f.mileage != null) fields._listing_mileage = f.mileage;
+  if (f.engineSize != null) fields._listing_engine_size = f.engineSize;
+  if (f.description) fields._listing_description = f.description;
+
+  for (const [tax, ids] of Object.entries(terms)) {
+    if (!ids.length) continue;
+    fields[`_${tax}`] = AS_LIST.has(tax) ? ids : ids[0];
+  }
+
+  const res = await fetch(`${SITE}/wp-json/vogauto-crm/v1/listing/${postId}/fields`, {
+    method: "POST",
+    headers: { Authorization: authHeader(), "Content-Type": "application/json" },
+    body: JSON.stringify({ fields }),
+    signal: AbortSignal.timeout(25000),
+  });
+  const data = (await res.json().catch(() => ({}))) as { written?: string[]; message?: string };
+  if (!res.ok) {
+    throw new Error(data.message || `Modulul de punte a răspuns ${res.status}`);
+  }
+  return data.written ?? [];
+}
+
+/** Modulul de punte e instalat și activ pe site? */
+export async function bridgeInstalled(): Promise<boolean> {
+  try {
+    const res = await fetch(`${SITE}/wp-json/`, { signal: AbortSignal.timeout(10000) });
+    if (!res.ok) return false;
+    const d = (await res.json()) as { namespaces?: string[] };
+    return (d.namespaces ?? []).includes("vogauto-crm/v1");
+  } catch {
+    return false;
+  }
 }
 
 /** Scoate anunțul de pe site, fără să-l șteargă (rămâne ciornă, reversibil). */

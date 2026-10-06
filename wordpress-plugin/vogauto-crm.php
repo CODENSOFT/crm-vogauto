@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       VogAuto CRM — punte pentru anunțuri
  * Description:       Permite CRM-ului să completeze prețul, anul și parcursul anunțurilor prin API. NU modifică designul, NU atinge anunțurile existente și NU adaugă nimic în paginile publice.
- * Version:           1.0.0
+ * Version:           1.1.0
  * Author:            VogAuto
  * Requires at least: 5.6
  * License:           GPL-2.0-or-later
@@ -70,11 +70,32 @@ add_action( 'rest_api_init', function () {
 
 				$written = array();
 				foreach ( $fields as $key => $value ) {
-					// Numai chei simple; nimic serializat sau cu structură.
-					if ( ! is_string( $key ) || ! preg_match( '/^[A-Za-z0-9_\-]{1,100}$/', $key ) ) {
+					// Numai chei simple, inclusiv cele cu „_" la început (câmpurile
+					// temei sunt protejate, deci încep toate cu underscore).
+					if ( ! is_string( $key ) || ! preg_match( '/^_?[A-Za-z0-9_\-]{1,100}$/', $key ) ) {
 						continue;
 					}
-					if ( is_array( $value ) || is_object( $value ) ) {
+
+					// Tema ține unele câmpuri ca listă (culoarea, tipul ofertei,
+					// galeria), deci acceptăm și liste — curățate element cu element.
+					if ( is_array( $value ) ) {
+						$clean = array();
+						foreach ( $value as $k => $v ) {
+							if ( is_array( $v ) || is_object( $v ) ) {
+								continue;
+							}
+							$k = is_numeric( $k ) ? (int) $k : sanitize_key( (string) $k );
+							$v = (string) $v;
+							$clean[ $k ] = preg_match( '#^https?://#i', $v )
+								? esc_url_raw( $v )
+								: sanitize_text_field( $v );
+						}
+						update_post_meta( $id, $key, $clean );
+						$written[] = $key;
+						continue;
+					}
+
+					if ( is_object( $value ) ) {
 						continue;
 					}
 					update_post_meta( $id, $key, sanitize_text_field( (string) $value ) );

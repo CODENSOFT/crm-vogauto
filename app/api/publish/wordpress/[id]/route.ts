@@ -8,7 +8,7 @@ import { isUuid } from "@/lib/utils";
 import { inventoryToDTO } from "@/lib/serialize";
 import {
   wordpressConfigured, publishListing, unpublishListing,
-  uploadFeaturedImage, buildPostContent,
+  uploadFeaturedImage, buildPostContent, writeListingFields,
 } from "@/lib/wordpress";
 
 // POST /api/publish/wordpress/[id] — publică (sau actualizează) anunțul mașinii
@@ -73,6 +73,22 @@ export async function POST(request: Request, { params }: { params: { id: string 
         condition: item.condition, doors: item.doors, color: item.color,
       },
     });
+
+    // Specificațiile numerice și textul merg și în câmpurile temei, altfel
+    // pagina anunțului le-ar afișa goale (tema nu citește din taxonomii).
+    try {
+      await writeListingFields(result.postId, {
+        price: Number(item.sellPrice),
+        year: item.year,
+        mileage: item.mileage,
+        engineSize: item.engine ? Number(String(item.engine).replace(/[^\d]/g, "")) || null : null,
+        title,
+        description: item.listingDescription ?? "",
+      }, result.terms);
+    } catch (e) {
+      // Anunțul e deja creat; semnalăm, dar nu anulăm publicarea.
+      console.error("[wordpress:fields]", e);
+    }
 
     const [saved] = await db
       .update(inventory)
