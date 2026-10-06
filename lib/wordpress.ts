@@ -29,7 +29,9 @@ async function wpFetch(path: string, init: RequestInit = {}): Promise<Record<str
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const msg = (data as { message?: string }).message || `WordPress a răspuns ${res.status}`;
-    throw new Error(msg);
+    const err = new Error(msg) as Error & { status?: number };
+    err.status = res.status;
+    throw err;
   }
   return data as Record<string, unknown>;
 }
@@ -282,12 +284,25 @@ export async function publishListing(opts: {
     Object.assign(body, terms);
   }
 
-  const path = opts.postId ? `${TYPE}/${opts.postId}` : TYPE;
-  const post = await wpFetch(path, {
+  const send = (path: string) => wpFetch(path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+
+  let post: Record<string, unknown>;
+  try {
+    post = await send(opts.postId ? `${TYPE}/${opts.postId}` : TYPE);
+  } catch (e) {
+    // Anunțul a fost șters între timp din panoul WordPress: în loc să dăm
+    // eroare la fiecare salvare, îl creăm din nou.
+    const status = (e as { status?: number }).status;
+    if (opts.postId && (status === 404 || status === 410)) {
+      post = await send(TYPE);
+    } else {
+      throw e;
+    }
+  }
 
   return { postId: String(post.id), url: String(post.link ?? ""), terms };
 }
