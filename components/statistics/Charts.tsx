@@ -1,8 +1,7 @@
 "use client";
 
 import {
-  AreaChart, BarChart, PieChart,
-  Bar, Area, Pie, Cell, Label, ReferenceLine,
+  BarChart, Bar, Cell, ReferenceLine,
   XAxis, YAxis, CartesianGrid, LabelList,
 } from "recharts";
 import {
@@ -111,46 +110,52 @@ const revenueConfig = {
 } satisfies ChartConfig;
 
 export function RevenueLineChart({ data }: { data: MonthlyDatum[] }) {
-  // Două suprafețe suprapuse, nu stivuite: profitul poate fi și negativ
-  // (cheltuieli mai mari), iar o stivă l-ar face imposibil de citit.
-  const rows = data;
-  const total = rows.reduce((s, d) => s + d.revenue, 0);
-  const last = rows[rows.length - 1];
+  const total = data.reduce((s, d) => s + d.revenue, 0);
+  const totalProfit = data.reduce((s, d) => s + d.profit, 0);
+  const last = data[data.length - 1];
+  // Peste șase luni, cifrele de deasupra barelor s-ar suprapune.
+  const cuEtichete = data.length > 0 && data.length <= 6;
 
   return (
     <Panel
       title="Venit și profit pe lună"
       value={fullEuro(total)}
-      note="venit total în perioadă"
-      trend={trendPct(rows.map((d) => d.revenue))}
-      footer={last && <>Ultima lună: {fullEuro(last.revenue)} venit, din care {fullEuro(last.profit)} profit net.</>}
+      note={`venit total; din care ${fullEuro(totalProfit)} profit net`}
+      trend={trendPct(data.map((d) => d.revenue))}
+      footer={last && <>Ultima lună: {fullEuro(last.revenue)} încasat, {fullEuro(last.profit)} profit.</>}
     >
-      {rows.length === 0 ? <Empty /> : (
-        <ChartContainer config={revenueConfig} className="aspect-auto h-[260px] w-full">
-          <AreaChart data={rows} accessibilityLayer margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-            <defs>
-              {(["revenue", "profit"] as const).map((k) => (
-                <linearGradient key={k} id={`g-${k}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={`var(--color-${k})`} stopOpacity={0.7} />
-                  <stop offset="100%" stopColor={`var(--color-${k})`} stopOpacity={0.08} />
-                </linearGradient>
-              ))}
-            </defs>
-            <CartesianGrid vertical={false} />
-            <XAxis dataKey="month" tickFormatter={monthLabel} {...AXIS} />
-            <YAxis tickFormatter={compactEuro} width={58} {...AXIS} />
-            <ChartTooltip
-              content={<ChartTooltipContent indicator="dot" labelFormatter={(l) => monthLabel(String(l))}
-                formatter={(v) => fullEuro(Number(v))} />}
-            />
-            <ChartLegend content={<ChartLegendContent />} />
-            <Area type="monotone" dataKey="revenue" stroke="var(--color-revenue)"
-              strokeWidth={2} fill="url(#g-revenue)" />
-            {/* Profitul desenat deasupra, ca să se vadă și când e negativ. */}
-            <Area type="monotone" dataKey="profit" stroke="var(--color-profit)"
-              strokeWidth={2} fill="url(#g-profit)" />
-          </AreaChart>
-        </ChartContainer>
+      {data.length === 0 ? <Empty /> : (
+        <>
+          {/* Două bare alăturate se compară dintr-o privire. Suprafețele
+              suprapuse de dinainte ascundeau una pe alta. */}
+          <p className="px-3 pb-1 text-xs text-slate-500">
+            Bara <span className="font-semibold text-slate-700">albastră</span> = cât s-a încasat.
+            Bara <span className="font-semibold text-emerald-700">verde</span> = cât a rămas profit.
+          </p>
+          <ChartContainer config={revenueConfig} className="aspect-auto h-[270px] w-full">
+            <BarChart data={data} accessibilityLayer
+              margin={{ top: cuEtichete ? 22 : 6, right: 8, left: 0, bottom: 0 }}>
+              <CartesianGrid vertical={false} />
+              <XAxis dataKey="month" tickFormatter={monthLabel} {...AXIS} />
+              <YAxis tickFormatter={compactEuro} width={58} {...AXIS} />
+              <ChartTooltip
+                content={<ChartTooltipContent indicator="dot" labelFormatter={(l) => monthLabel(String(l))}
+                  formatter={(v) => fullEuro(Number(v))} />}
+              />
+              <ChartLegend content={<ChartLegendContent />} />
+              <Bar dataKey="revenue" fill="var(--color-revenue)" radius={[5, 5, 0, 0]} maxBarSize={30}>
+                {cuEtichete && <LabelList dataKey="revenue" position="top" offset={6}
+                  className="fill-foreground" fontSize={10} fontWeight={600}
+                  formatter={(v: unknown) => compactEuro(Number(v))} />}
+              </Bar>
+              <Bar dataKey="profit" fill="var(--color-profit)" radius={[5, 5, 0, 0]} maxBarSize={30}>
+                {cuEtichete && <LabelList dataKey="profit" position="top" offset={6}
+                  className="fill-foreground" fontSize={10} fontWeight={600}
+                  formatter={(v: unknown) => compactEuro(Number(v))} />}
+              </Bar>
+            </BarChart>
+          </ChartContainer>
+        </>
       )}
     </Panel>
   );
@@ -257,23 +262,16 @@ export function BrandBar({ data }: { data: { brand: string; count: number; reven
 
 const PAYMENT_LABELS_RO: Record<string, string> = { cash: "Cash", transfer: "Transfer", rate: "Rate" };
 
+/**
+ * Bare, nu inel. Dintr-un inel nu se citesc cifrele: ochiul nu compară
+ * unghiuri. Aici fiecare metodă are bara ei, numărul și procentul scris.
+ */
 export function PaymentDonut({ data }: { data: { method: string; count: number; revenue: number }[] }) {
   const rows = data
-    .map((d, i) => ({
-      key: d.method,
-      name: PAYMENT_LABELS_RO[d.method] ?? d.method,
-      value: d.count,
-      fill: SERIES[i % SERIES.length],
-    }))
+    .map((d) => ({ name: PAYMENT_LABELS_RO[d.method] ?? d.method, value: d.count }))
     .sort((a, b) => b.value - a.value);
   const total = rows.reduce((s, r) => s + r.value, 0);
   const top = rows[0];
-
-  // Cheile config trebuie să fie cele din `key`, ca tooltipul și legenda să
-  // găsească eticheta în română.
-  const config = Object.fromEntries(
-    rows.map((r) => [r.key, { label: r.name, color: r.fill }])
-  ) satisfies ChartConfig;
 
   return (
     <Panel
@@ -283,31 +281,26 @@ export function PaymentDonut({ data }: { data: { method: string; count: number; 
       footer={total > 0 && <>{total} {total === 1 ? "vânzare" : "vânzări"} în perioadă.</>}
     >
       {total === 0 ? <Empty text="Nicio vânzare." /> : (
-        <ChartContainer config={config} className="mx-auto aspect-square max-h-[260px]">
-          <PieChart>
-            <ChartTooltip
-              content={<ChartTooltipContent nameKey="key" hideLabel
-                formatter={(v, n) => `${config[String(n)]?.label ?? n}: ${v} (${Math.round((Number(v) / total) * 100)}%)`} />}
-            />
-            <Pie data={rows} dataKey="value" nameKey="key"
-              innerRadius={62} outerRadius={92} paddingAngle={2} strokeWidth={0}>
-              {/* Totalul în inel: altfel ochiul ar trebui să adune feliile. */}
-              <Label content={({ viewBox }) => {
-                if (!viewBox || !("cx" in viewBox) || !("cy" in viewBox)) return null;
-                const { cx, cy } = viewBox as { cx: number; cy: number };
-                return (
-                  <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle">
-                    <tspan x={cx} y={cy - 6} className="fill-foreground text-2xl font-bold">{total}</tspan>
-                    <tspan x={cx} y={cy + 16} className="fill-muted-foreground text-xs">
-                      {total === 1 ? "vânzare" : "vânzări"}
-                    </tspan>
-                  </text>
-                );
-              }} />
-            </Pie>
-            <ChartLegend content={<ChartLegendContent nameKey="key" />} className="flex-wrap" />
-          </PieChart>
-        </ChartContainer>
+        <ul className="flex flex-col gap-3 px-3 py-2">
+          {rows.map((r, i) => {
+            const pct = Math.round((r.value / total) * 100);
+            return (
+              <li key={r.name}>
+                <div className="mb-1 flex items-baseline justify-between gap-2 text-sm">
+                  <span className="font-medium text-slate-700">{r.name}</span>
+                  <span className="tabular-nums text-slate-500">
+                    <span className="font-semibold text-slate-900">{r.value}</span>
+                    {" "}{r.value === 1 ? "vânzare" : "vânzări"} · {pct}%
+                  </span>
+                </div>
+                {/* Pista arată întregul, bara partea ei: se vede cât din total. */}
+                <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
+                  <div className="h-full rounded-full" style={{ width: `${pct}%`, background: SERIES[i % SERIES.length] }} />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       )}
     </Panel>
   );
