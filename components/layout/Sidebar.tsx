@@ -5,16 +5,16 @@ import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
   IconDashboard,
-  IconCar,
-  IconChart,
-  IconShield,
   IconUsers,
   IconForm,
-  IconTrend,
-  IconCube,
   IconTasks,
-  IconShare,
   IconTarget,
+  IconCarSide,
+  IconReceipt,
+  IconGlobe,
+  IconBars,
+  IconAward,
+  IconHistory,
 } from "@/components/ui/Icons";
 
 interface NavItem {
@@ -35,7 +35,7 @@ const WORKER_NAV: NavGroup[] = [
       { href: "/dashboard", label: "Înregistrare vânzare", Icon: IconForm },
       { href: "/dashboard/tasks", label: "Sarcinile mele", Icon: IconTasks },
       { href: "/dashboard/leads", label: "Clienți potențiali", Icon: IconTarget },
-      { href: "/dashboard/my-sales", label: "Vânzările mele", Icon: IconChart },
+      { href: "/dashboard/my-sales", label: "Vânzările mele", Icon: IconReceipt },
     ],
   },
 ];
@@ -54,23 +54,23 @@ const ADMIN_NAV: NavGroup[] = [
   {
     titlu: "Mașini",
     items: [
-      { href: "/dashboard/inventory", label: "Stoc mașini", Icon: IconCube },
-      { href: "/dashboard/cars", label: "Vânzări", Icon: IconCar },
-      { href: "/dashboard/publishing", label: "Publicare", Icon: IconShare },
+      { href: "/dashboard/inventory", label: "Stoc mașini", Icon: IconCarSide },
+      { href: "/dashboard/cars", label: "Vânzări", Icon: IconReceipt },
+      { href: "/dashboard/publishing", label: "Publicare", Icon: IconGlobe },
     ],
   },
   {
     titlu: "Analiză",
     items: [
-      { href: "/dashboard/statistics", label: "Statistici", Icon: IconChart },
-      { href: "/dashboard/managers", label: "Manageri", Icon: IconTrend },
+      { href: "/dashboard/statistics", label: "Statistici", Icon: IconBars },
+      { href: "/dashboard/managers", label: "Manageri", Icon: IconAward },
     ],
   },
   {
     titlu: "Administrare",
     items: [
       { href: "/dashboard/users", label: "Utilizatori", Icon: IconUsers },
-      { href: "/dashboard/audit", label: "Jurnal audit", Icon: IconShield },
+      { href: "/dashboard/audit", label: "Jurnal audit", Icon: IconHistory },
     ],
   },
 ];

@@ -239,3 +239,64 @@ export const IconTarget = ({ className }: IconProps) => (
     <circle cx="12" cy="12" r="0.6" fill="currentColor" />
   </Svg>
 );
+
+/* ——— Iconițe pentru meniul principal ————————————————————————————
+   Desenate pe aceeași grilă de 24, cu aceleași raze de colț și fără elemente
+   pline amestecate cu contur: la 18px, un set inconsecvent se vede imediat. */
+
+/** Mașină văzută din lateral. Pentru stoc — mașina fizică, nu vânzarea ei. */
+export const IconCarSide = ({ className }: IconProps) => (
+  <Svg className={className}>
+    <path d="M4 14l1.6-4.3A2.5 2.5 0 0 1 8 8h5.2a2.5 2.5 0 0 1 1.8.8L18 12l1.6.4A2 2 0 0 1 21 14.3V16a1 1 0 0 1-1 1h-1.2" />
+    <path d="M9.8 17H6.2" />
+    <path d="M3 17h1" />
+    <path d="M4 14h14" />
+    <circle cx="7.6" cy="17" r="1.9" />
+    <circle cx="16.4" cy="17" r="1.9" />
+  </Svg>
+);
+
+/** Bon cu monedă. Pentru vânzări — tranzacția, nu mașina. */
+export const IconReceipt = ({ className }: IconProps) => (
+  <Svg className={className}>
+    <path d="M6 3h12a1 1 0 0 1 1 1v16l-2.5-1.5L14 20l-2-1.5L10 20l-2.5-1.5L5 20V4a1 1 0 0 1 1-1z" />
+    <path d="M9 8h6M9 11.5h6" />
+  </Svg>
+);
+
+/** Glob cu meridiane. Pentru publicare — anunțul pleacă în lume. */
+export const IconGlobe = ({ className }: IconProps) => (
+  <Svg className={className}>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="M3.5 12h17" />
+    <path d="M12 3.5c2.2 2.3 3.4 5.3 3.4 8.5S14.2 18.2 12 20.5c-2.2-2.3-3.4-5.3-3.4-8.5S9.8 5.8 12 3.5z" />
+  </Svg>
+);
+
+/** Coloane cu axă. Pentru statistici — mai citeț decât dreptunghiuri libere. */
+export const IconBars = ({ className }: IconProps) => (
+  <Svg className={className}>
+    <path d="M4 20V4" />
+    <path d="M4 20h16" />
+    <path d="M8.5 20v-5.5" />
+    <path d="M13 20V9" />
+    <path d="M17.5 20v-8" />
+  </Svg>
+);
+
+/** Medalie. Pentru manageri — clasamentul lor, nu o simplă listă de oameni. */
+export const IconAward = ({ className }: IconProps) => (
+  <Svg className={className}>
+    <circle cx="12" cy="9" r="5.5" />
+    <path d="M9 13.8L7.5 21l4.5-2.4L16.5 21 15 13.8" />
+  </Svg>
+);
+
+/** Ceas cu săgeată înapoi. Pentru jurnal — istoricul a ce s-a întâmplat. */
+export const IconHistory = ({ className }: IconProps) => (
+  <Svg className={className}>
+    <path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1" />
+    <path d="M3.5 4.5V9H8" />
+    <path d="M12 8v4.3l2.8 1.7" />
+  </Svg>
+);
