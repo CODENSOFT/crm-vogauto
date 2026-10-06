@@ -84,6 +84,12 @@ export function PublishingView() {
     const isSite = field === "publishedSite";
     const current = isSite ? !!(it.publishedSite && it.wpPostId) : !!it[field];
     const next = !current;
+
+    // Retragerea ascunde anunțul de pe site. E ușor de apăsat din greșeală
+    // imediat după publicare, așa că întrebăm întâi.
+    if (!next && !window.confirm(`Retragi „${it.brand} ${it.model}" de pe ${channelName}?\n\nAnunțul devine ciornă și nu mai e vizibil pe site. Îl poți publica din nou oricând.`)) {
+      return;
+    }
     if (next && !(it.photoCount ?? 0)) { toast.error("Adaugă cel puțin o poză înainte de publicare."); return; }
 
     // Site-ul înseamnă un articol real în WordPress, deci are ruta lui;
