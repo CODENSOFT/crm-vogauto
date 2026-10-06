@@ -60,11 +60,39 @@ const BODY: Record<string, number> = {
   "Van / Furgon": 171,
 };
 
+// Culoarea se scrie liber în CRM, deci acceptăm și variantele locale
+// („sur" pentru gri, „cafeniu" pentru maro) și formele fără diacritice.
 const COLOR: Record<string, number> = {
-  alb: 178, albastru: 62, argintiu: 150, auriu: 102, bej: 750, bordo: 277,
-  galben: 281, gri: 278, maro: 751, negru: 61, "roșu": 143, rosu: 143,
-  roz: 133, verde: 280, violet: 282, "nardo grey": 279,
+  alb: 178, albastru: 62, bleu: 62, albastra: 62,
+  argintiu: 150, "argintie": 150, silver: 150,
+  auriu: 102, auriue: 102, bej: 750, beige: 750,
+  bordo: 277, bordou: 277, visiniu: 277,
+  galben: 281, galbena: 281,
+  gri: 278, sur: 278, sura: 278, gris: 278, grey: 278, gray: 278,
+  maro: 751, cafeniu: 751, brun: 751,
+  negru: 61, neagra: 61, black: 61,
+  "roșu": 143, rosu: 143, "roșie": 143, rosie: 143, red: 143,
+  roz: 133, verde: 280, violet: 282, mov: 282,
+  "nardo grey": 279, nardo: 279,
 };
+
+/**
+ * Capacitatea motorului, în cm³. În CRM se scrie liber: „3.0 benz", „2.0
+ * benzina", „1998". Sub 10 e în litri (3.0 → 3000), peste 100 e deja în cm³.
+ * Fără asta, „3.0 benz" ajungea pe site ca 30 cm³.
+ */
+export function engineSizeCm3(raw?: string | null): number | null {
+  if (!raw) return null;
+  // „2.o benz" — litera „o" tastată în locul zeroului.
+  const text = String(raw).toLowerCase().replace(/(\d)[,.]?o\b/g, "$1.0");
+  const m = text.match(/(\d+(?:[.,]\d+)?)/);
+  if (!m) return null;
+  const n = parseFloat(m[1].replace(",", "."));
+  if (!Number.isFinite(n) || n <= 0) return null;
+  if (n < 10) return Math.round(n * 1000);   // litri → cm³
+  if (n < 100) return Math.round(n * 100);   // „20" scris pentru 2.0
+  return Math.round(n);                       // deja în cm³
+}
 
 /** Valori implicite pentru un anunț de mașină pus în vânzare de parcare. */
 export const DEFAULTS = {

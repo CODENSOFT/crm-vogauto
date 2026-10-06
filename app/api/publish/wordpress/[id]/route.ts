@@ -6,6 +6,7 @@ import { requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
 import { isUuid } from "@/lib/utils";
 import { inventoryToDTO } from "@/lib/serialize";
+import { engineSizeCm3 } from "@/lib/wpTaxonomy";
 import {
   wordpressConfigured, publishListing, unpublishListing,
   uploadFeaturedImage, buildPostContent, writeListingFields,
@@ -81,7 +82,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
         price: Number(item.sellPrice),
         year: item.year,
         mileage: item.mileage,
-        engineSize: item.engine ? Number(String(item.engine).replace(/[^\d]/g, "")) || null : null,
+        engineSize: engineSizeCm3(item.engine),
         title,
         description: item.listingDescription ?? "",
       }, result.terms);
