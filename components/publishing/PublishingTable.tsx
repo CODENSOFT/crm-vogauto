@@ -96,7 +96,12 @@ export function PublishingTable({
                 <div className="font-medium text-slate-800">{it.brand} {it.model} <span className="text-slate-400">{it.year}</span></div>
                 {!hasPhoto && <div className="text-[11px] font-medium text-amber-600">Adaugă poze ca să publici</div>}
               </td>
-              <td className="whitespace-nowrap px-3 py-2.5 font-semibold text-slate-900">{formatMoney(it.sellPrice)}</td>
+              <td className="whitespace-nowrap px-3 py-2.5">
+                {!!it.oldPrice && it.oldPrice > it.sellPrice && (
+                  <div className="text-xs font-medium text-slate-400 line-through">{formatMoney(it.oldPrice)}</div>
+                )}
+                <div className="font-semibold text-slate-900">{formatMoney(it.sellPrice)}</div>
+              </td>
               <td className="px-3 py-2.5">
                 {/* „Publicat" înseamnă că există anunț pe site, nu doar că
                     bifa e pusă. Altfel comutatorul arăta pornit degeaba, iar

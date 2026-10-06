@@ -88,6 +88,9 @@ export const inventory = pgTable("inventory", {
   // Cât a plătit parcarea pe mașină (când proprietarul e „Parcarea").
   purchasePrice: doublePrecision("purchase_price").notNull().default(0),
   sellPrice: doublePrecision("sell_price").notNull(),
+  // Prețul de dinainte de reducere. Dacă e mai mare decât sellPrice, site-ul
+  // îl arată tăiat lângă cel curent, exact ca la anunțurile lor.
+  oldPrice: doublePrecision("old_price").notNull().default(0),
   status: text("status").notNull().default("available"),
   notes: text("notes"),
   // Publicare externă — comutatoare independente per canal.

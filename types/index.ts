@@ -161,7 +161,9 @@ export interface InventoryDTO {
   purchasePrice?: number;
   /** Costul real de achiziție (preț cumpărare la parcare, preț client altfel). */
   purchaseCost?: number; // prețul cerut de proprietar
-  sellPrice: number; // prețul de vânzare al parcării
+  sellPrice: number;
+  /** Preț înainte de reducere; > sellPrice înseamnă reducere activă. */
+  oldPrice?: number; // prețul de vânzare al parcării
   markup: number; // adaosul parcării = sellPrice - clientWantPrice
   status: StockStatus;
   notes?: string;

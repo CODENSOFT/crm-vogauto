@@ -183,6 +183,8 @@ export interface ListingFields {
   /** Id-ul mașinii din CRM, folosit ca marcă unică pe anunț. */
   crmId: string;
   price: number;
+  /** Preț înainte de reducere. Site-ul îl arată tăiat lângă cel curent. */
+  oldPrice?: number | null;
   year: number;
   mileage?: number | null;
   /** Capacitatea motorului, în cm³. */
@@ -205,7 +207,14 @@ export async function writeListingFields(
     // Marca unică a mașinii din CRM. Dacă id-ul anunțului se pierde din baza
     // noastră, o regăsim după ea în loc să creăm un al doilea anunț.
     _vogauto_crm_id: f.crmId,
-    _listing_price: f.price,
+    _listing_price: Math.round(f.price),
+    // Reducerea, exact ca la anunțurile lor: prețul vechi tăiat, cel nou
+    // alături. Când nu există reducere, câmpul se golește — altfel ar rămâne
+    // o reducere veche agățată de anunț.
+    // Numere întregi, fără separatori: la un anunț al lor „20.900" a fost citit
+    // ca 20,9 și afișat „21 €".
+    _listing_old_price:
+      f.oldPrice && f.oldPrice > f.price ? Math.round(f.oldPrice) : "",
     _listing_year: f.year,
     _listing_title: f.title,
     _listing_post_type: "listing",

@@ -93,6 +93,8 @@ async function main() {
   await sql`alter table inventory add column if not exists published_999 boolean not null default false`;
   await sql`alter table inventory add column if not exists listing_title text`;
   await sql`alter table inventory add column if not exists listing_description text`;
+  // Pret inainte de reducere: tema de pe site il arata tăiat lângă cel curent.
+  await sql`alter table inventory add column if not exists old_price double precision not null default 0`;
 
   await sql`
     create table if not exists car_photos (

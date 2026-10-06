@@ -108,7 +108,13 @@ export function InventoryDetail({ id }: { id: string }) {
           <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card">
             <div className="mb-2 flex items-baseline justify-between">
               <span className="text-sm font-semibold text-slate-500">Preț de vânzare</span>
-              <span className="text-2xl font-extrabold text-brand">{formatMoney(item.sellPrice)}</span>
+              <span className="flex items-baseline gap-2">
+                {/* Reducerea se arată la fel ca pe site: vechiul preț tăiat. */}
+                {!!item.oldPrice && item.oldPrice > item.sellPrice && (
+                  <span className="text-sm font-medium text-slate-400 line-through">{formatMoney(item.oldPrice)}</span>
+                )}
+                <span className="text-2xl font-extrabold text-brand">{formatMoney(item.sellPrice)}</span>
+              </span>
             </div>
             <div className="grid grid-cols-2 gap-x-5">
               <Spec label="An" value={item.year} />
@@ -118,6 +124,13 @@ export function InventoryDetail({ id }: { id: string }) {
               <Spec label="Status" value={STOCK_STATUS_LABELS[item.status]} />
               <Spec label={item.ownerName?.trim().toLowerCase() === "parcarea" ? "Preț cumpărare" : "Preț cerut client"}
                 value={item.purchaseCost ? formatMoney(item.purchaseCost) : "—"} />
+              {!!item.oldPrice && item.oldPrice > item.sellPrice && (
+                <Spec label="Reducere" value={
+                  <span className="text-emerald-700">
+                    −{formatMoney(item.oldPrice - item.sellPrice)} ({Math.round(((item.oldPrice - item.sellPrice) / item.oldPrice) * 100)}%)
+                  </span>
+                } />
+              )}
               <Spec label="Cheltuieli" value={item.expensesTotal ? <span className="text-amber-700">{formatMoney(item.expensesTotal)}</span> : "—"} />
               <Spec label="Adaus net" strong value={<span className={(item.netMargin ?? item.markup) >= 0 ? "text-emerald-700" : "text-red-600"}>{formatMoney(item.netMargin ?? item.markup)}</span>} />
               <Spec label="Proprietar" value={item.ownerName} />

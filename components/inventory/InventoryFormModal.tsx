@@ -39,7 +39,8 @@ const EMPTY = {
   brand: "", model: "", year: String(new Date().getFullYear()), vin: "", color: "", engine: "",
   bodyType: "", mileage: "", fuelType: "", transmission: "", driveType: "", condition: "", doors: "",
   power: "", seats: "",
-  ownerName: "", ownerPhone: "", clientWantPrice: "", purchasePrice: "", sellPrice: "", status: "available", notes: "",
+  ownerName: "", ownerPhone: "", clientWantPrice: "", purchasePrice: "", sellPrice: "", oldPrice: "",
+  status: "available", notes: "",
 };
 
 // Formular (modal) pentru adăugarea/editarea unei mașini din stoc + poze.
@@ -76,6 +77,7 @@ export function InventoryFormModal({
         ownerName: editing.ownerName, ownerPhone: editing.ownerPhone,
         clientWantPrice: String(editing.clientWantPrice ?? ""), purchasePrice: String(editing.purchasePrice ?? ""),
         sellPrice: String(editing.sellPrice ?? ""),
+        oldPrice: editing.oldPrice ? String(editing.oldPrice) : "",
         status: editing.status, notes: editing.notes ?? "",
       });
     } else {
@@ -98,6 +100,11 @@ export function InventoryFormModal({
   // La mașinile parcării costul e prețul de cumpărare, altfel prețul cerut de client.
   const cost = Number(isParcare ? form.purchasePrice : form.clientWantPrice) || 0;
   const markup = (Number(form.sellPrice) || 0) - cost;
+  // Reducerea e reală doar când prețul vechi e mai mare decât cel de vânzare.
+  const vechi = Number(form.oldPrice) || 0;
+  const vanzare = Number(form.sellPrice) || 0;
+  const reducere = vechi > vanzare ? vechi - vanzare : 0;
+  const procentReducere = reducere > 0 ? Math.round((reducere / vechi) * 100) : 0;
 
   function addFiles(files: FileList | null) {
     if (!files) return;
@@ -257,6 +264,18 @@ export function InventoryFormModal({
           <Input label="Preț cerut de client (€)" type="number" value={form.clientWantPrice} onChange={(e) => setF("clientWantPrice", e.target.value)} disabled={isParcare} placeholder={isParcare ? "Nu e necesar" : ""} />
           <Input label={`Preț cumpărare (€)${isParcare ? " *" : ""}`} type="number" value={form.purchasePrice} onChange={(e) => setF("purchasePrice", e.target.value)} disabled={!isParcare} placeholder={isParcare ? "Cât a plătit parcarea" : "Doar pentru mașinile parcării"} />
           <Input label="Preț de vânzare (€) *" type="number" value={form.sellPrice} onChange={(e) => setF("sellPrice", e.target.value)} />
+          <Input label="Preț înainte de reducere (€)" type="number" value={form.oldPrice}
+            onChange={(e) => setF("oldPrice", e.target.value)}
+            placeholder="lasă gol dacă nu e reducere" />
+          {reducere > 0 && (
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 sm:col-span-2 lg:col-span-3">
+              Reducere: <span className="font-semibold">{formatMoney(reducere)}</span>{" "}
+              <span className="text-emerald-700">({procentReducere}%)</span>
+              <span className="block text-xs text-emerald-700">
+                Pe site apare prețul vechi tăiat lângă cel nou, cum arată la celelalte anunțuri.
+              </span>
+            </div>
+          )}
           <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 sm:col-span-2 lg:col-span-3">
             {isParcare ? "Profit brut" : "Adaus parcare"}:{" "}
             <span className={`font-semibold ${markup >= 0 ? "text-emerald-700" : "text-red-600"}`}>{formatMoney(markup)}</span>

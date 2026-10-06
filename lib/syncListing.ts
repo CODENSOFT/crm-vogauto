@@ -84,6 +84,7 @@ export async function syncListingToSite(
     await writeListingFields(result.postId, {
       crmId: item.id,
       price: Number(item.sellPrice),
+      oldPrice: Number(item.oldPrice ?? 0),
       year: item.year,
       mileage: item.mileage,
       engineSize: engineSizeCm3(item.engine),

@@ -90,7 +90,7 @@ export async function POST(request: Request) {
   const {
     brand, model, year, vin, color, engine,
     bodyType, mileage, fuelType, transmission, driveType, condition, doors, power, seats,
-    ownerName, ownerPhone, clientWantPrice, purchasePrice, sellPrice, status, notes,
+    ownerName, ownerPhone, clientWantPrice, purchasePrice, sellPrice, oldPrice, status, notes,
   } = body;
 
   // Dacă proprietarul e „Parcarea", telefonul și prețul clientului nu sunt cerute.
@@ -119,6 +119,7 @@ export async function POST(request: Request) {
       clientWantPrice: Number(clientWantPrice) || 0,
       purchasePrice: Number(purchasePrice) || 0,
       sellPrice: Number(sellPrice),
+      oldPrice: Number(oldPrice) || 0,
       status: status === "sold" ? "sold" : status === "preparing" ? "preparing" : "available",
       notes: notes || null,
       // Textul de credit, calculat pe prețul acestei mașini. Se scrie o dată, la
