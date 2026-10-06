@@ -85,10 +85,12 @@ export function Picker({
 
         {open && (
           /* Tiparul ARIA „listbox", nu <select>: lista nativă nu poate fi
-             stilizată. Rolurile rămân ca cititoarele de ecran să anunțe
-             „listă cu N opțiuni, X selectat", nu un șir de butoane. */
-          // eslint-disable-next-line jsx-a11y/prefer-tag-over-role
+             stilizată, iar designul cerut are nevoie de ea. Rolurile rămân ca
+             cititoarele de ecran să anunțe „listă cu N opțiuni, X selectat",
+             nu un șir de butoane — fără ele widgetul ar fi mai puțin
+             accesibil, nu mai mult. */
           <div
+            // eslint-disable-next-line jsx-a11y/prefer-tag-over-role
             role="listbox"
             aria-label={label}
             className="vg-pop absolute z-30 mt-1.5 max-h-60 w-full overflow-auto rounded-xl border border-slate-200 bg-white p-1 shadow-elevated"
@@ -96,10 +98,10 @@ export function Picker({
             {items.map((v, i) => {
               const selected = v === value;
               return (
-                // eslint-disable-next-line jsx-a11y/prefer-tag-over-role
                 <button
                     key={v || "__empty"}
                     type="button"
+                    // eslint-disable-next-line jsx-a11y/prefer-tag-over-role
                     role="option"
                     aria-selected={selected}
                     onMouseEnter={() => setActive(i)}
