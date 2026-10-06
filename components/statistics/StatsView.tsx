@@ -22,7 +22,7 @@ interface StatsData {
   bestMonth: { month: string; count: number; revenue: number; profit: number } | null;
   thisMonth: MonthAgg;
   lastMonth: MonthAgg;
-  stock: { total: number; available: number; sold: number; value: number; avgAgeDays: number };
+  stock: { total: number; available: number; sold: number; value: number };
 }
 
 function monthName(m: string) {
@@ -126,10 +126,9 @@ export function StatsView() {
 
           {/* Stoc */}
           <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-500">Stoc mașini</h2>
-          <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-3">
+          <div className="mb-6 grid grid-cols-2 gap-4">
             <Kpi label="Mașini în stoc" value={data.stock.available} />
             <Kpi label="Valoare stoc" value={formatMoney(data.stock.value)} />
-            <Kpi label="Vechime medie în stoc" value={`${Math.round(data.stock.avgAgeDays)} zile`} sub="mașinile disponibile" />
           </div>
 
           {/* Grafice */}

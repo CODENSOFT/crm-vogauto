@@ -16,7 +16,7 @@ interface Stats {
   totalProfit: number;
   profitMargin: number;
   counts: { total: number; sold: number; available: number; reserved: number };
-  stock: { total: number; available: number; sold: number; value: number; avgAgeDays: number };
+  stock: { total: number; available: number; sold: number; value: number };
   thisMonth: MonthAgg;
   lastMonth: MonthAgg;
   monthly: { month: string; count: number; revenue: number; profit: number }[];
@@ -26,7 +26,7 @@ interface Stats {
 const ZERO: Stats = {
   totalRevenue: 0, totalProfit: 0, profitMargin: 0,
   counts: { total: 0, sold: 0, available: 0, reserved: 0 },
-  stock: { total: 0, available: 0, sold: 0, value: 0, avgAgeDays: 0 },
+  stock: { total: 0, available: 0, sold: 0, value: 0 },
   thisMonth: { count: 0, revenue: 0, profit: 0 },
   lastMonth: { count: 0, revenue: 0, profit: 0 },
   monthly: [], topWorkers: [],

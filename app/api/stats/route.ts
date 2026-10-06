@@ -56,17 +56,16 @@ async function countsAndStock() {
   const [stockTotal, stockAvailable, stockSold] = await Promise.all([
     invCount(), invCount(eq(inventory.status, "available")), invCount(eq(inventory.status, "sold")),
   ]);
-  const [{ stockValue, avgAgeDays }] = await db
+  const [{ stockValue }] = await db
     .select({
       stockValue: sql<number>`coalesce(sum(${inventory.sellPrice}),0)::float8`,
-      avgAgeDays: sql<number>`coalesce(avg(extract(epoch from (now() - ${inventory.createdAt})) / 86400), 0)::float8`,
     })
     .from(inventory)
     .where(and(eq(inventory.isDeleted, false), eq(inventory.status, "available")));
 
   return {
     counts: { total: allCount, sold: soldCount, available: availableCount, reserved: reservedCount },
-    stock: { total: stockTotal, available: stockAvailable, sold: stockSold, value: stockValue, avgAgeDays },
+    stock: { total: stockTotal, available: stockAvailable, sold: stockSold, value: stockValue },
   };
 }
 
