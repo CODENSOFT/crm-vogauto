@@ -259,12 +259,44 @@ async function lookupTerms(c: TaxonomyInput): Promise<Record<string, number[]>> 
   return out;
 }
 
+/**
+ * Anunțul acestei mașini, căutat pe site după marca ei unică.
+ *
+ * Plasa de siguranță împotriva duplicatelor: dacă id-ul anunțului lipsește din
+ * baza noastră (o expirare la mijlocul publicării, de pildă), îl găsim aici în
+ * loc să creăm un al doilea anunț pentru aceeași mașină.
+ */
+async function findByCrmId(crmId: string, title: string): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `${SITE}/wp-json/wp/v2/listing?status=any&per_page=50&orderby=id&order=desc` +
+      `&search=${encodeURIComponent(title)}&_fields=id`,
+      { headers: { Authorization: authHeader() }, signal: AbortSignal.timeout(30000) },
+    );
+    if (!res.ok) return null;
+    const list = (await res.json()) as { id: number }[];
+    for (const row of list) {
+      const f = await fetch(`${SITE}/wp-json/vogauto-crm/v1/listing/${row.id}/fields`, {
+        headers: { Authorization: authHeader() }, signal: AbortSignal.timeout(20000),
+      });
+      if (!f.ok) continue;
+      const data = (await f.json()) as { fields?: Record<string, string> };
+      if (data.fields?._vogauto_crm_id === crmId) return String(row.id);
+    }
+  } catch (e) {
+    console.error("[wordpress:findByCrmId]", e);
+  }
+  return null;
+}
+
 /** Creează sau actualizează anunțul mașinii. Întoarce id-ul și adresa publică. */
 export async function publishListing(opts: {
   postId?: string | null;
   title: string;
   content: string;
   featuredMediaId?: string | null;
+  /** Id-ul mașinii din CRM, pentru regăsirea anunțului ei. */
+  crmId?: string;
   /** Specificațiile, pentru filtrele de pe site. */
   specs?: TaxonomyInput;
   /** Ciornă = invizibil pentru vizitatori (folosit la primul test). */
@@ -290,14 +322,20 @@ export async function publishListing(opts: {
     body: JSON.stringify(body),
   });
 
+  // Fără id în baza noastră, întrebăm site-ul dacă mașina are deja un anunț.
+  let postId = opts.postId;
+  if (!postId && opts.crmId) {
+    postId = await findByCrmId(opts.crmId, opts.title);
+  }
+
   let post: Record<string, unknown>;
   try {
-    post = await send(opts.postId ? `${TYPE}/${opts.postId}` : TYPE);
+    post = await send(postId ? `${TYPE}/${postId}` : TYPE);
   } catch (e) {
     // Anunțul a fost șters între timp din panoul WordPress: în loc să dăm
     // eroare la fiecare salvare, îl creăm din nou.
     const status = (e as { status?: number }).status;
-    if (opts.postId && (status === 404 || status === 410)) {
+    if (postId && (status === 404 || status === 410)) {
       post = await send(TYPE);
     } else {
       throw e;
@@ -314,6 +352,8 @@ export async function publishListing(opts: {
  * amândouă. Ruta e adăugată de modulul nostru de punte, instalat pe site.
  */
 export interface ListingFields {
+  /** Id-ul mașinii din CRM, folosit ca marcă unică pe anunț. */
+  crmId: string;
   price: number;
   year: number;
   mileage?: number | null;
@@ -334,6 +374,9 @@ export async function writeListingFields(
   // ține ca listă (culoare, tip ofertă) primesc listă.
   const AS_LIST = new Set(["listing_color", "listing_offer_type"]);
   const fields: Record<string, unknown> = {
+    // Marca unică a mașinii din CRM. Dacă id-ul anunțului se pierde din baza
+    // noastră, o regăsim după ea în loc să creăm un al doilea anunț.
+    _vogauto_crm_id: f.crmId,
     _listing_price: f.price,
     _listing_year: f.year,
     _listing_title: f.title,

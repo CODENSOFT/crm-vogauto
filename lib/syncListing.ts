@@ -40,6 +40,7 @@ export async function syncListingToSite(
 
   const result = await publishListing({
     postId: item.wpPostId,
+    crmId: item.id,
     title,
     content: buildPostContent({
       title,
@@ -85,6 +86,7 @@ export async function syncListingToSite(
   // din taxonomii când afișează pagina anunțului.
   try {
     await writeListingFields(result.postId, {
+      crmId: item.id,
       price: Number(item.sellPrice),
       year: item.year,
       mileage: item.mileage,
