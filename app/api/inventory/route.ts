@@ -91,6 +91,7 @@ export async function POST(request: Request) {
     brand, model, year, vin, color, engine,
     bodyType, mileage, fuelType, transmission, driveType, condition, doors, power, seats,
     ownerName, ownerPhone, clientWantPrice, purchasePrice, sellPrice, oldPrice, status, notes,
+    listingDescription,
   } = body;
 
   // Dacă proprietarul e „Parcarea", telefonul și prețul clientului nu sunt cerute.
@@ -122,9 +123,11 @@ export async function POST(request: Request) {
       oldPrice: Number(oldPrice) || 0,
       status: status === "sold" ? "sold" : status === "preparing" ? "preparing" : "available",
       notes: notes || null,
-      // Textul de credit, calculat pe prețul acestei mașini. Se scrie o dată, la
-      // adăugare, ca să fie vizibil și editabil în CRM, nu doar pe site.
-      listingDescription: buildDescriptionTemplate(Number(sellPrice) || 0),
+      // Textul de credit, calculat pe prețul acestei mașini, scris din prima —
+      // fără să apese nimeni nimic. Dacă în formular s-a scris altceva, se
+      // păstrează acela: altfel textul omului s-ar pierde la salvare.
+      listingDescription: String(listingDescription ?? "").trim()
+        || buildDescriptionTemplate(Number(sellPrice) || 0),
       addedBy: user.id, addedByName: user.fullName,
     })
     .returning();
