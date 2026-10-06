@@ -218,9 +218,17 @@ export async function unpublishFromSite(inventoryId: string): Promise<void> {
         .where(eq(inventory.id, inventoryId));
     }
 
-    if (item.wpPostId && wordpressConfigured()) {
+    if (!item.wpPostId || !wordpressConfigured()) return;
+
+    // Nu ne mulțumim că am trimis comanda: citim înapoi starea. O retragere
+    // care pare reușită dar n-a prins ar lăsa o mașină vândută vizibilă pe
+    // site, iar asta nu se vede decât întâmplător.
+    const { listingStatus } = await import("@/lib/wordpress");
+    for (let i = 0; i < 2; i++) {
       await unpublishListing(item.wpPostId);
+      if ((await listingStatus(item.wpPostId)) !== "publish") return;
     }
+    console.error("[wordpress:unpublish] anunțul", item.wpPostId, "a rămas publicat");
   } catch (e) {
     console.error("[wordpress:unpublish]", e);
   }
