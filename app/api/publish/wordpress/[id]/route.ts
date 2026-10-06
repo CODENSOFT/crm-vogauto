@@ -64,6 +64,14 @@ export async function POST(request: Request, { params }: { params: { id: string 
         condition: item.condition, doors: item.doors,
       }),
       featuredMediaId: mediaId,
+      // Aceleași specificații merg și în taxonomiile site-ului, ca mașina să
+      // apară în filtrele lor (marcă, combustibil, cutie, culoare...).
+      specs: {
+        brand: item.brand, model: item.model,
+        bodyType: item.bodyType, fuelType: item.fuelType,
+        transmission: item.transmission, driveType: item.driveType,
+        condition: item.condition, doors: item.doors, color: item.color,
+      },
     });
 
     const [saved] = await db

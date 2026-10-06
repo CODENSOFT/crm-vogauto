@@ -4,6 +4,8 @@
 // parola contului: se generează din Utilizatori → Profil și poate fi revocată
 // oricând, fără să schimbi parola de administrator.
 
+import { staticTerms, type TaxonomyInput } from "@/lib/wpTaxonomy";
+
 const SITE = (process.env.WP_URL || "").replace(/\/+$/, "");
 const USER = process.env.WP_USER || "";
 const PASSWORD = process.env.WP_APP_PASSWORD || "";
@@ -139,22 +141,77 @@ export interface PublishResult {
   url: string;
 }
 
-/** Creează sau actualizează articolul mașinii. Întoarce id-ul și adresa publică. */
+/**
+ * Anunțurile lor nu sunt articole de blog, ci un tip de conținut propriu:
+ * `listing`. Publicând aici, anunțul intră în catalogul de mașini și preia
+ * automat designul temei, fără să atingem nimic din site.
+ */
+const TYPE = "/listing";
+
+/** Termenii unei taxonomii, după nume. Ținuți în memorie: se schimbă rar. */
+const termCache = new Map<string, Map<string, number>>();
+
+async function termsOf(tax: string): Promise<Map<string, number>> {
+  const cached = termCache.get(tax);
+  if (cached) return cached;
+  const map = new Map<string, number>();
+  try {
+    const res = await fetch(`${SITE}/wp-json/wp/v2/${tax}?per_page=100&_fields=id,name`, {
+      headers: { Authorization: authHeader() },
+      signal: AbortSignal.timeout(15000),
+    });
+    if (res.ok) {
+      const list = (await res.json()) as { id: number; name: string }[];
+      for (const t of list) map.set(t.name.trim().toLowerCase(), t.id);
+    }
+  } catch (e) {
+    console.error(`[wordpress:terms:${tax}]`, e);
+  }
+  termCache.set(tax, map);
+  return map;
+}
+
+/**
+ * Marca și modelul, căutate printre termenii existenți. Dacă nu există, lăsăm
+ * taxonomia goală — nu creăm termeni noi, ca structura site-ului să rămână
+ * neatinsă.
+ */
+async function lookupTerms(c: TaxonomyInput): Promise<Record<string, number[]>> {
+  const out: Record<string, number[]> = {};
+  const find = async (tax: string, value?: string | null) => {
+    if (!value) return;
+    const id = (await termsOf(tax)).get(value.trim().toLowerCase());
+    if (id !== undefined) out[tax] = [id];
+  };
+  await find("listing_make", c.brand);
+  await find("listing_model", c.model);
+  return out;
+}
+
+/** Creează sau actualizează anunțul mașinii. Întoarce id-ul și adresa publică. */
 export async function publishListing(opts: {
   postId?: string | null;
   title: string;
   content: string;
   featuredMediaId?: string | null;
+  /** Specificațiile, pentru filtrele de pe site. */
+  specs?: TaxonomyInput;
+  /** Ciornă = invizibil pentru vizitatori (folosit la primul test). */
+  draft?: boolean;
 }): Promise<PublishResult> {
   const body: Record<string, unknown> = {
     title: opts.title,
     content: opts.content,
-    status: "publish",
+    status: opts.draft ? "draft" : "publish",
   };
   if (opts.featuredMediaId) body.featured_media = Number(opts.featuredMediaId);
-  if (CATEGORY) body.categories = [Number(CATEGORY)];
+  if (CATEGORY) body.listing_category = [Number(CATEGORY)];
 
-  const path = opts.postId ? `/posts/${opts.postId}` : "/posts";
+  if (opts.specs) {
+    Object.assign(body, staticTerms(opts.specs), await lookupTerms(opts.specs));
+  }
+
+  const path = opts.postId ? `${TYPE}/${opts.postId}` : TYPE;
   const post = await wpFetch(path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -166,7 +223,7 @@ export async function publishListing(opts: {
 
 /** Scoate anunțul de pe site, fără să-l șteargă (rămâne ciornă, reversibil). */
 export async function unpublishListing(postId: string): Promise<void> {
-  await wpFetch(`/posts/${postId}`, {
+  await wpFetch(`${TYPE}/${postId}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ status: "draft" }),
