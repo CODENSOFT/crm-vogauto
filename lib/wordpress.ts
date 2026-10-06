@@ -34,8 +34,16 @@ async function wpFetch(path: string, init: RequestInit = {}): Promise<Record<str
   return data as Record<string, unknown>;
 }
 
-/** Urcă o poză în biblioteca media și întoarce id-ul ei (pentru imaginea reprezentativă). */
-export async function uploadFeaturedImage(imageUrl: string, name: string): Promise<string | null> {
+export interface UploadedPhoto {
+  id: number;
+  url: string;
+}
+
+/**
+ * Urcă o poză în biblioteca lor media. `postId` o leagă de anunț, ca galeria
+ * temei să o găsească (tema citește atașamentele anunțului, nu adrese externe).
+ */
+async function uploadPhoto(imageUrl: string, name: string, postId?: string): Promise<UploadedPhoto | null> {
   try {
     const img = await fetch(imageUrl, { signal: AbortSignal.timeout(20000) });
     if (!img.ok) return null;
@@ -43,7 +51,7 @@ export async function uploadFeaturedImage(imageUrl: string, name: string): Promi
     const type = img.headers.get("content-type") || "image/jpeg";
     const ext = type.includes("png") ? "png" : type.includes("webp") ? "webp" : "jpg";
 
-    const media = await wpFetch("/media", {
+    const media = await wpFetch(`/media${postId ? `?post=${postId}` : ""}`, {
       method: "POST",
       headers: {
         "Content-Type": type,
@@ -51,11 +59,56 @@ export async function uploadFeaturedImage(imageUrl: string, name: string): Promi
       },
       body: new Uint8Array(buf),
     });
-    return media.id ? String(media.id) : null;
+    if (!media.id) return null;
+    return { id: Number(media.id), url: String(media.source_url ?? "") };
   } catch (e) {
     console.error("[wordpress:media]", e);
     return null;
   }
+}
+
+/** Compatibilitate: doar imaginea reprezentativă. */
+export async function uploadFeaturedImage(imageUrl: string, name: string): Promise<string | null> {
+  const up = await uploadPhoto(imageUrl, name);
+  return up ? String(up.id) : null;
+}
+
+/** Pozele deja urcate pentru acest anunț (ca să nu le încărcăm de două ori). */
+async function existingPhotos(postId: string): Promise<UploadedPhoto[]> {
+  try {
+    const res = await fetch(
+      `${SITE}/wp-json/wp/v2/media?parent=${postId}&per_page=100&_fields=id,source_url`,
+      { headers: { Authorization: authHeader() }, signal: AbortSignal.timeout(20000) },
+    );
+    if (!res.ok) return [];
+    const list = (await res.json()) as { id: number; source_url: string }[];
+    return list.map((m) => ({ id: m.id, url: m.source_url }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Pune toate pozele mașinii în biblioteca lor, legate de anunț. Dacă anunțul are
+ * deja cel puțin atâtea poze, le refolosim: republicarea nu umple biblioteca
+ * lor cu duplicate.
+ */
+export async function syncPhotos(
+  postId: string,
+  urls: string[],
+  baseName: string,
+): Promise<UploadedPhoto[]> {
+  if (urls.length === 0) return [];
+
+  const already = await existingPhotos(postId);
+  if (already.length >= urls.length) return already.slice(0, urls.length);
+
+  const out: UploadedPhoto[] = [];
+  for (const [i, url] of urls.entries()) {
+    const up = await uploadPhoto(url, `${baseName}-${i + 1}`, postId);
+    if (up) out.push(up);
+  }
+  return out;
 }
 
 export interface ListingContent {
@@ -239,6 +292,8 @@ export interface ListingFields {
   engineSize?: number | null;
   title: string;
   description?: string | null;
+  /** Pozele urcate în biblioteca lor, în ordinea din CRM. */
+  photos?: UploadedPhoto[];
 }
 
 export async function writeListingFields(
@@ -259,6 +314,17 @@ export async function writeListingFields(
   if (f.engineSize != null) fields._listing_engine_size = f.engineSize;
   if (f.description) fields._listing_description = f.description;
 
+  // Galeria temei: un tablou { id atașament: adresă }. Prima poză e și cea
+  // reprezentativă. Fără asta, anunțul apare fără nicio fotografie.
+  if (f.photos?.length) {
+    const map: Record<number, string> = {};
+    for (const p of f.photos) map[p.id] = p.url;
+    fields._listing_gallery = map;
+    fields._listing_gallery_img = map;
+    fields._listing_featured_image = f.photos[0].url;
+    fields._listing_featured_image_img = f.photos[0].url;
+  }
+
   for (const [tax, ids] of Object.entries(terms)) {
     if (!ids.length) continue;
     fields[`_${tax}`] = AS_LIST.has(tax) ? ids : ids[0];
@@ -275,6 +341,15 @@ export async function writeListingFields(
     throw new Error(data.message || `Modulul de punte a răspuns ${res.status}`);
   }
   return data.written ?? [];
+}
+
+/** Doar imaginea reprezentativă, fără să atingem restul anunțului. */
+export async function setFeaturedImage(postId: string, mediaId: string): Promise<void> {
+  await wpFetch(`${TYPE}/${postId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ featured_media: Number(mediaId) }),
+  });
 }
 
 /** Modulul de punte e instalat și activ pe site? */

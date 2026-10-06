@@ -9,7 +9,7 @@ import { inventoryToDTO } from "@/lib/serialize";
 import { engineSizeCm3 } from "@/lib/wpTaxonomy";
 import {
   wordpressConfigured, publishListing, unpublishListing,
-  uploadFeaturedImage, buildPostContent, writeListingFields,
+  buildPostContent, writeListingFields, syncPhotos, setFeaturedImage,
 } from "@/lib/wordpress";
 
 // POST /api/publish/wordpress/[id] — publică (sau actualizează) anunțul mașinii
@@ -43,13 +43,6 @@ export async function POST(request: Request, { params }: { params: { id: string 
   const title = item.listingTitle?.trim() || `${item.brand} ${item.model} ${item.year}`;
 
   try {
-    // Imaginea reprezentativă se urcă o singură dată, la prima publicare;
-    // restul pozelor rămân servite din stocarea noastră.
-    let mediaId = item.wpMediaId;
-    if (!mediaId && urls[0]) {
-      mediaId = await uploadFeaturedImage(urls[0], `${item.brand}-${item.model}-${item.year}`.toLowerCase());
-    }
-
     const result = await publishListing({
       postId: item.wpPostId,
       title,
@@ -64,7 +57,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
         transmission: item.transmission, driveType: item.driveType,
         condition: item.condition, doors: item.doors,
       }),
-      featuredMediaId: mediaId,
+
       // Aceleași specificații merg și în taxonomiile site-ului, ca mașina să
       // apară în filtrele lor (marcă, combustibil, cutie, culoare...).
       specs: {
@@ -75,7 +68,19 @@ export async function POST(request: Request, { params }: { params: { id: string 
       },
     });
 
-    // Specificațiile numerice și textul merg și în câmpurile temei, altfel
+    // Pozele intră în biblioteca lor media, legate de anunț: galeria temei
+    // citește atașamentele anunțului, nu adrese din altă parte. Se poate face
+    // doar după ce anunțul există, de aceea pasul e aici.
+    const slug = `${item.brand}-${item.model}-${item.year}`.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    let photos: Awaited<ReturnType<typeof syncPhotos>> = [];
+    try {
+      photos = await syncPhotos(result.postId, urls, slug);
+    } catch (e) {
+      console.error("[wordpress:photos]", e);
+    }
+    const mediaId = photos[0] ? String(photos[0].id) : item.wpMediaId;
+
+    // Specificațiile numerice, textul și galeria merg în câmpurile temei, altfel
     // pagina anunțului le-ar afișa goale (tema nu citește din taxonomii).
     try {
       await writeListingFields(result.postId, {
@@ -85,10 +90,20 @@ export async function POST(request: Request, { params }: { params: { id: string 
         engineSize: engineSizeCm3(item.engine),
         title,
         description: item.listingDescription ?? "",
+        photos,
       }, result.terms);
     } catch (e) {
       // Anunțul e deja creat; semnalăm, dar nu anulăm publicarea.
       console.error("[wordpress:fields]", e);
+    }
+
+    // Imaginea reprezentativă, acum că pozele sunt urcate.
+    if (photos[0]) {
+      try {
+        await setFeaturedImage(result.postId, String(photos[0].id));
+      } catch (e) {
+        console.error("[wordpress:thumb]", e);
+      }
     }
 
     const [saved] = await db
