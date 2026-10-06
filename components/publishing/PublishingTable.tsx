@@ -24,11 +24,15 @@ function PlatformToggle({ on, onClick, label, color, icon, busy }: {
   const filled = color === "blue" ? "bg-blue-600 text-white shadow-sm hover:bg-blue-700" : "bg-orange-500 text-white shadow-sm hover:bg-orange-600";
   const outline = color === "blue" ? "border border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100" : "border border-orange-300 bg-orange-50 text-orange-700 hover:bg-orange-100";
   return (
-    <button onClick={onClick} disabled={busy}
-      title={busy ? "Se trimite pe site..." : on ? `Retrage de pe ${label}` : `Publică pe ${label}`}
-      className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors disabled:cursor-wait disabled:opacity-60 ${on ? filled : outline}`}>
-      {icon}
-      {busy ? "Se trimite..." : on ? `${label} ✓` : label}
+    <button onClick={onClick} disabled={busy} aria-busy={busy}
+      title={busy ? `Se publică pe ${label}...` : on ? `Retrage de pe ${label}` : `Publică pe ${label}`}
+      className={`inline-flex min-w-[104px] items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors disabled:cursor-wait ${on ? filled : outline}`}>
+      {/* Cât se publică, cercul care se rotește arată că lucrează: fără el,
+          câteva secunde de așteptare par o apăsare care n-a mers. */}
+      {busy
+        ? <span className="h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent" />
+        : icon}
+      {busy ? "Se publică..." : on ? `${label} ✓` : label}
     </button>
   );
 }

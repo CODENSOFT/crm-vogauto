@@ -97,19 +97,30 @@ export function PublishingView() {
     }
     if (next && !(it.photoCount ?? 0)) { toast.error("Adaugă cel puțin o poză înainte de publicare."); return; }
 
-    // Site-ul înseamnă un articol real în WordPress, deci are ruta lui;
-    // 999.md citește feedul, deci acolo e suficient comutatorul.
-    const res = isSite
-      ? await fetch(`/api/publish/wordpress/${it._id}`, { method: next ? "POST" : "DELETE" })
-      : await fetch(`/api/inventory/${it._id}`, {
-          method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ [field]: next }),
-        });
+    // Publicarea pe site urcă pozele una după alta, deci durează. Ținem un
+    // mesaj deschis tot timpul, ca să se vadă că lucrează și la ce anume.
+    const slow = isSite && next;
+    const note = slow
+      ? toast.loading(`Se publică „${it.brand} ${it.model}" pe site — se urcă ${it.photoCount ?? 0} ${(it.photoCount ?? 0) === 1 ? "poză" : "poze"}...`)
+      : undefined;
 
-    const data = await res.json();
-    if (!res.ok) { toast.error(data.error || "Eroare."); return; }
-    // Păstrăm poza/numărul de poze (rutele de salvare nu le întorc).
-    setItems((list) => list.map((x) => (x._id === it._id ? { ...data.item, primaryPhoto: x.primaryPhoto, photoCount: x.photoCount } : x)));
-    toast.success(next ? `Publicat pe ${channelName}` : `Retras de pe ${channelName}`);
+    try {
+      // Site-ul înseamnă un articol real în WordPress, deci are ruta lui;
+      // 999.md citește feedul, deci acolo e suficient comutatorul.
+      const res = isSite
+        ? await fetch(`/api/publish/wordpress/${it._id}`, { method: next ? "POST" : "DELETE" })
+        : await fetch(`/api/inventory/${it._id}`, {
+            method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ [field]: next }),
+          });
+
+      const data = await res.json();
+      if (!res.ok) { toast.error(data.error || "Eroare.", { id: note }); return; }
+      // Păstrăm poza/numărul de poze (rutele de salvare nu le întorc).
+      setItems((list) => list.map((x) => (x._id === it._id ? { ...data.item, primaryPhoto: x.primaryPhoto, photoCount: x.photoCount } : x)));
+      toast.success(next ? `Publicat pe ${channelName}` : `Retras de pe ${channelName}`, { id: note });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Conexiunea a eșuat.", { id: note });
+    }
   }
 
   function openListing(it: InventoryDTO) {
