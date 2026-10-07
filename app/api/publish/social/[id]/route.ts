@@ -7,6 +7,7 @@ import { logAction } from "@/lib/audit";
 import { isUuid } from "@/lib/utils";
 import { buildCaption, postToInstagram, instagramConfigured } from "@/lib/instagram";
 import { postToFacebook, facebookConfigured } from "@/lib/facebook";
+import { masoaraImagine, potrivitaPentruInstagram } from "@/lib/imageInfo";
 
 export interface PlatformResult {
   platform: "facebook" | "instagram";
@@ -56,16 +57,42 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
   // Pas 1 (previzualizare): doar textul și pozele, ca să poată fi editate.
   if (!body.confirm) {
+    // Instagram refuză formatele prea late sau prea mici. Îi spunem omului
+    // dinainte câte poze vor ajunge acolo — nu după ce apasă și cad.
+    let igPoze = imageUrls.length;
+    if (instagramConfigured() && imageUrls.length) {
+      const masurate = await Promise.all(imageUrls.map(masoaraImagine));
+      igPoze = masurate.filter(potrivitaPentruInstagram).length;
+    }
     return NextResponse.json({
       preview: true,
       caption,
       photos: imageUrls,
       facebook: facebookConfigured(),
       instagram: instagramConfigured(),
+      igPoze,
     });
   }
 
-  // Pas 2: postăm pe amândouă. Eșecul uneia nu o oprește pe cealaltă.
+  const results = await posteaza(imageUrls, caption);
+
+  const posted = results.filter((r) => r.posted).map((r) => r.platform);
+  if (posted.length) {
+    await logAction({
+      userId: user.id, userName: user.fullName, action: "PUBLISH_SOCIAL",
+      details: { inventoryId: params.id, platforms: posted, photos: imageUrls.length },
+      request, coords: coordsOf(user),
+    });
+  }
+
+  return NextResponse.json({ results, caption, photoCount: imageUrls.length });
+}
+
+/**
+ * Postează pe ambele rețele. Eșecul uneia nu o oprește pe cealaltă: dacă
+ * Instagram refuză formatul pozelor, anunțul tot ajunge pe Facebook.
+ */
+async function posteaza(imageUrls: string[], caption: string): Promise<PlatformResult[]> {
   const results: PlatformResult[] = [];
 
   if (!facebookConfigured()) {
@@ -90,14 +117,5 @@ export async function POST(request: Request, { params }: { params: { id: string 
     }
   }
 
-  const posted = results.filter((r) => r.posted).map((r) => r.platform);
-  if (posted.length) {
-    await logAction({
-      userId: user.id, userName: user.fullName, action: "PUBLISH_SOCIAL",
-      details: { inventoryId: params.id, platforms: posted, photos: imageUrls.length },
-      request, coords: coordsOf(user),
-    });
-  }
-
-  return NextResponse.json({ results, caption, photoCount: imageUrls.length });
+  return results;
 }

@@ -1,4 +1,5 @@
 import { META_BASE } from "@/lib/metaApi";
+import { masoaraImagine, potrivitaPentruInstagram } from "@/lib/imageInfo";
 import { COMPANY, financeFor } from "@/lib/listingTemplate";
 import type { PublicListing } from "@/lib/listings";
 
@@ -72,8 +73,28 @@ export async function postToInstagram(imageUrls: string[], caption: string): Pro
     throw new Error("Instagram neconfigurat (lipsesc IG_ACCESS_TOKEN / IG_USER_ID).");
   }
   const base = META_BASE;
-  const urls = imageUrls.filter(Boolean).slice(0, 10); // Instagram: max 10 în carusel
-  if (urls.length === 0) throw new Error("Nicio poză de postat.");
+  // Instagram refuză imaginile prea late, prea înalte sau prea mici, iar una
+  // singură respinsă face să cadă toată postarea. Le măsurăm întâi și le lăsăm
+  // deoparte pe cele nepotrivite, ca restul să ajungă totuși pe Instagram.
+  const candidate = imageUrls.filter(Boolean);
+  const bune: string[] = [];
+  const lasate: string[] = [];
+  for (const u of candidate) {
+    if (potrivitaPentruInstagram(await masoaraImagine(u))) bune.push(u);
+    else lasate.push(u);
+  }
+  if (lasate.length) {
+    console.warn(`[instagram] ${lasate.length} poze lăsate deoparte (format nepotrivit):`, lasate);
+  }
+
+  const urls = bune.slice(0, 10); // Instagram: max 10 în carusel
+  if (urls.length === 0) {
+    throw new Error(
+      candidate.length
+        ? `Nicio poză nu are formatul cerut de Instagram (între 4:5 și 1.91:1, minimum 320px lățime). ${candidate.length} ${candidate.length === 1 ? "poză a fost lăsată deoparte" : "poze au fost lăsate deoparte"}.`
+        : "Nicio poză de postat.",
+    );
+  }
 
   async function post(body: Record<string, unknown>, step: string): Promise<string> {
     const res = await fetch(`${base}/${igUserId}/media`, {

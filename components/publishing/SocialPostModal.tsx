@@ -39,13 +39,15 @@ function ResultRow({ r }: { r: PlatformResult }) {
  * iar anunțul pleacă pe Facebook și Instagram în același timp.
  */
 export function SocialPostModal({
-  item, caption, setCaption, photos, loading, posting, results,
+  item, caption, setCaption, photos, igPoze, loading, posting, results,
   fbReady, igReady, onPost, onClose,
 }: {
   item: InventoryDTO | null;
   caption: string;
   setCaption: (v: string) => void;
   photos: string[];
+  /** Câte poze acceptă Instagram din ele. */
+  igPoze?: number;
   loading: boolean;
   posting: boolean;
   /** Rezultatele postării; null înainte de apăsare. */
@@ -96,7 +98,14 @@ export function SocialPostModal({
           {photos.length > 0 && (
             <div>
               <p className="mb-1.5 text-xs text-slate-500">
-                {photos.length} {photos.length === 1 ? "poză" : "poze"} — se postează toate, pe ambele rețele
+                {photos.length} {photos.length === 1 ? "poză" : "poze"}
+                {igPoze !== undefined && igPoze < photos.length ? (
+                  <> — pe Facebook toate, pe Instagram {igPoze === 0 ? "niciuna" : igPoze}
+                    <span className="ml-1 font-normal text-amber-600">
+                      ({photos.length - igPoze} cu format nepotrivit: Instagram cere între 4:5 și 1.91:1, minimum 320px)
+                    </span>
+                  </>
+                ) : " — se postează toate, pe ambele rețele"}
               </p>
               <div className="grid grid-cols-3 gap-2">
                 {photos.map((u, i) => (

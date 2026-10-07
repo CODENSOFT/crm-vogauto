@@ -12,6 +12,8 @@ export function useSocialPost() {
   const [igItem, setIgItem] = useState<InventoryDTO | null>(null);
   const [igCaption, setIgCaption] = useState("");
   const [igPhotos, setIgPhotos] = useState<string[]>([]);
+  // Câte din ele acceptă Instagram (formatul lui e mai strict decât al Facebook).
+  const [igPoze, setIgPoze] = useState<number | undefined>(undefined);
   const [igLoading, setIgLoading] = useState(false);
   const [igPosting, setIgPosting] = useState(false);
   const [igResults, setIgResults] = useState<PlatformResult[] | null>(null);
@@ -26,7 +28,7 @@ export function useSocialPost() {
     const data = await res.json();
     setIgLoading(false);
     if (!res.ok) { toast.error(data.error || "Eroare."); setIgItem(null); return; }
-    setIgCaption(data.caption || ""); setIgPhotos(data.photos || []);
+    setIgCaption(data.caption || ""); setIgPhotos(data.photos || []); setIgPoze(data.igPoze);
   }
 
   // Pas 2: postează cu textul (posibil editat).
@@ -49,6 +51,6 @@ export function useSocialPost() {
 
   return {
     igItem, setIgItem, igCaption, setIgCaption, igPhotos,
-    igLoading, igPosting, igResults, prepareSocial, postSocial,
+    igLoading, igPosting, igResults, igPoze, prepareSocial, postSocial,
   };
 }

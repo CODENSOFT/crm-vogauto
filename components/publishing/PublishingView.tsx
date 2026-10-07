@@ -37,7 +37,7 @@ export function PublishingView() {
 
   const {
     igItem, setIgItem, igCaption, setIgCaption, igPhotos,
-    igLoading, igPosting, igResults, prepareSocial, postSocial,
+    igLoading, igPosting, igResults, igPoze, prepareSocial, postSocial,
   } = useSocialPost();
   const { igConfigured, igStatus, fbStatus, wpStatus } = useConnectionStatus();
 
@@ -158,6 +158,7 @@ export function PublishingView() {
         caption={igCaption}
         setCaption={setIgCaption}
         photos={igPhotos}
+        igPoze={igPoze}
         loading={igLoading}
         posting={igPosting}
         results={igResults}
