@@ -103,6 +103,11 @@ export const inventory = pgTable("inventory", {
   wpUrl: text("wp_url"),
   wpMediaId: text("wp_media_id"),
   listingDescription: text("listing_description"),
+  // Postările de pe rețele, ca să le putem arăta ca publicate și retrage.
+  fbPostId: text("fb_post_id"),
+  igPostId: text("ig_post_id"),
+  /** Adresa postării de Instagram: de acolo se șterge manual, API-ul nu permite. */
+  igPermalink: text("ig_permalink"),
   addedBy: uuid("added_by"),
   addedByName: text("added_by_name"),
   soldBy: uuid("sold_by"),

@@ -81,6 +81,41 @@ export function buildCaption(l: CaptionInput): string {
 // Postează pe Instagram prin Graph API (necesită cont Business + token Meta).
 // Postează TOATE pozele: o singură imagine → post simplu; mai multe → carusel.
 // Întoarce id-ul postării. Aruncă dacă lipsesc credențialele sau apar erori.
+/**
+ * Așteaptă ca Instagram să termine de procesat containerul.
+ *
+ * Fără pasul acesta, publicarea cade cu „Media ID is not available": pozele
+ * sunt descărcate de Instagram de pe adresele noastre, iar asta durează câteva
+ * secunde — cu atât mai mult la un carusel.
+ */
+async function asteaptaContainer(base: string, creationId: string, token: string): Promise<void> {
+  const inceput = Date.now();
+  const limita = 90_000; // peste atât, ceva e în neregulă, nu doar lent
+  let pauza = 1500;
+
+  while (Date.now() - inceput < limita) {
+    await new Promise((r) => setTimeout(r, pauza));
+    pauza = Math.min(pauza * 1.4, 6000); // întrebăm din ce în ce mai rar
+
+    const res = await fetch(
+      `${base}/${creationId}?fields=status_code,status&access_token=${encodeURIComponent(token)}`,
+      { signal: AbortSignal.timeout(15000) },
+    );
+    const d = await res.json().catch(() => ({}));
+    const stare = d.status_code as string | undefined;
+
+    if (stare === "FINISHED") return;
+    if (stare === "ERROR" || stare === "EXPIRED") {
+      throw new Error(`Instagram nu a putut pregăti pozele: ${d.status || stare}`);
+    }
+    // IN_PROGRESS sau răspuns neclar: mai așteptăm.
+  }
+  throw new Error(
+    "Instagram nu a terminat de pregătit pozele în 90 de secunde. " +
+    "De obicei înseamnă că o poză e prea mare sau se descarcă greu.",
+  );
+}
+
 export async function postToInstagram(imageUrls: string[], caption: string): Promise<string> {
   const token = process.env.IG_ACCESS_TOKEN;
   const igUserId = process.env.IG_USER_ID;
@@ -134,6 +169,10 @@ export async function postToInstagram(imageUrls: string[], caption: string): Pro
     creationId = await post({ media_type: "CAROUSEL", children: childIds.join(","), caption }, "carousel");
   }
 
+  // Instagram descarcă pozele și le procesează; până termină, publicarea cade
+  // cu „Media ID is not available". Așteptăm să fie gata, întrebându-l.
+  await asteaptaContainer(base, creationId, token);
+
   const pubRes = await fetch(`${base}/${igUserId}/media_publish`, {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ creation_id: creationId, access_token: token }),
@@ -143,6 +182,28 @@ export async function postToInstagram(imageUrls: string[], caption: string): Pro
     throw new Error(`Instagram (publish): ${JSON.stringify(published)}`);
   }
   return published.id as string;
+}
+
+/**
+ * Adresa publică a unei postări de Instagram.
+ *
+ * Instagram NU permite ștergerea postărilor prin API — nu există un astfel de
+ * punct de acces. Singurul lucru pe care îl putem face e să ducem omul exact
+ * la postare, ca s-o șteargă din aplicație.
+ */
+export async function instagramPermalink(mediaId: string): Promise<string | null> {
+  const token = process.env.IG_ACCESS_TOKEN;
+  if (!token) return null;
+  try {
+    const res = await fetch(
+      `${META_BASE}/${mediaId}?fields=permalink&access_token=${encodeURIComponent(token)}`,
+      { signal: AbortSignal.timeout(15000) },
+    );
+    const d = await res.json();
+    return typeof d.permalink === "string" ? d.permalink : null;
+  } catch {
+    return null;
+  }
 }
 
 /**

@@ -172,6 +172,10 @@ export interface InventoryDTO {
   published999?: boolean;
   listingTitle?: string | null;
   wpPostId?: string | null;
+  /** Postările de pe rețele, când mașina e publicată acolo. */
+  fbPostId?: string | null;
+  igPostId?: string | null;
+  igPermalink?: string | null;
   wpUrl?: string | null;
   listingDescription?: string | null;
   addedByName?: string;

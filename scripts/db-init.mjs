@@ -95,6 +95,10 @@ async function main() {
   await sql`alter table inventory add column if not exists listing_description text`;
   // Pret inainte de reducere: tema de pe site il arata tăiat lângă cel curent.
   await sql`alter table inventory add column if not exists old_price double precision not null default 0`;
+  // Postarile de pe retele: le retinem ca sa le putem arata ca publicate si retrage.
+  await sql`alter table inventory add column if not exists fb_post_id text`;
+  await sql`alter table inventory add column if not exists ig_post_id text`;
+  await sql`alter table inventory add column if not exists ig_permalink text`;
 
   await sql`
     create table if not exists car_photos (

@@ -8,7 +8,13 @@ import toast from "react-hot-toast";
 import type { PlatformResult } from "@/components/publishing/SocialPostModal";
 import type { InventoryDTO } from "@/types";
 
-export function useSocialPost() {
+/**
+ * @param onPosted Id-urile postărilor, imediat după ce au apărut pe rețele.
+ *   Lista din pagină le păstrează ca să arate „Postat" fără o reîncărcare.
+ */
+export function useSocialPost(
+  onPosted?: (inventoryId: string, ids: { fbPostId: string | null; igPostId: string | null; igPermalink: string | null }) => void,
+) {
   const [igItem, setIgItem] = useState<InventoryDTO | null>(null);
   const [igCaption, setIgCaption] = useState("");
   const [igPhotos, setIgPhotos] = useState<string[]>([]);
@@ -44,6 +50,13 @@ export function useSocialPost() {
     if (!res.ok) { toast.error(data.error || "Eroare."); return; }
     const list: PlatformResult[] = data.results ?? [];
     setIgResults(list);
+    if (data.fbPostId || data.igPostId) {
+      onPosted?.(igItem._id, {
+        fbPostId: data.fbPostId ?? null,
+        igPostId: data.igPostId ?? null,
+        igPermalink: data.igPermalink ?? null,
+      });
+    }
     const ok = list.filter((r) => r.posted).map((r) => (r.platform === "facebook" ? "Facebook" : "Instagram"));
     if (ok.length) toast.success(`Postat pe ${ok.join(" și ")}${data.photoCount ? ` (${data.photoCount} poze)` : ""}!`);
     else toast.error("Nu s-a putut posta pe nicio rețea.");

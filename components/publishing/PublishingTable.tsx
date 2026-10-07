@@ -54,7 +54,7 @@ function PlatformToggle({ on, onClick, label, color, icon, busy }: {
 
 /** Tabelul de publicare: comutatoare per canal + acțiuni pe fiecare mașină. */
 export function PublishingTable({
-  items, onToggle, onListing, onPhotos, onSocial, busy,
+  items, onToggle, onListing, onPhotos, onSocial, onUnsocial, busy,
 }: {
   items: InventoryDTO[];
   onToggle: (it: InventoryDTO, field: "publishedSite" | "published999", channelName: string) => void;
@@ -63,6 +63,8 @@ export function PublishingTable({
   onListing: (it: InventoryDTO) => void;
   onPhotos: (it: InventoryDTO) => void;
   onSocial: (it: InventoryDTO) => void;
+  /** Retrage postarea deja publicată. */
+  onUnsocial: (it: InventoryDTO) => void;
 }) {
   return (
   <div className="overflow-x-auto rounded-xl border border-slate-200/80 bg-white shadow-card">
@@ -114,14 +116,32 @@ export function PublishingTable({
               </td>
               <td className="px-3 py-2.5"><PlatformToggle on={!!it.published999} onClick={() => onToggle(it, "published999", "999.md")} label="999.md" color="orange" busy={busy === `${it._id}:published999`} /></td>
               <td className="px-3 py-2.5">
-                <button onClick={() => onSocial(it)} title="Pregătește și postează pe Facebook și Instagram"
-                  className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800 active:bg-slate-900">
-                  <span className="flex items-center gap-1">
-                    <span className="text-[#4e9bff]"><IconFacebook /></span>
-                    <span className="text-[#f58aa8]"><IconInstagram /></span>
-                  </span>
-                  Postează
-                </button>
+                {/* Un singur buton, ca la Site: apasă o dată și se publică,
+                    apasă din nou și se retrage. */}
+                {it.fbPostId || it.igPostId ? (
+                  <button onClick={() => onUnsocial(it)} title="Retrage postarea"
+                    disabled={busy === `${it._id}:social`}
+                    className="inline-flex min-w-[116px] items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-70">
+                    {busy === `${it._id}:social` ? (
+                      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                    ) : "✓"}
+                    {busy === `${it._id}:social` ? "Se retrage..." : "Postat"}
+                  </button>
+                ) : (
+                  <button onClick={() => onSocial(it)} title="Pregătește și postează pe Facebook și Instagram"
+                    disabled={busy === `${it._id}:social`}
+                    className="inline-flex min-w-[116px] items-center justify-center gap-2 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-wait disabled:opacity-70">
+                    <span className="flex items-center gap-1">
+                      <span className="text-[#4e9bff]"><IconFacebook /></span>
+                      <span className="text-[#f58aa8]"><IconInstagram /></span>
+                    </span>
+                    Postează
+                  </button>
+                )}
+                {it.igPermalink && (
+                  <a href={it.igPermalink} target="_blank" rel="noopener noreferrer"
+                    className="mt-1 block text-[11px] font-medium text-brand hover:underline">vezi pe Instagram →</a>
+                )}
               </td>
               <td className="whitespace-nowrap px-3 py-2.5 text-right">
                 <Button variant="ghost" size="sm" className="text-slate-600" onClick={() => onPhotos(it)}>Poze</Button>

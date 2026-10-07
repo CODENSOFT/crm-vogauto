@@ -69,6 +69,25 @@ export async function postToFacebook(imageUrls: string[], message: string): Prom
 }
 
 /** Verifică tokenul și întoarce numele paginii (pentru indicatorul din CRM). */
+/**
+ * Șterge o postare de pe Pagină. Facebook permite asta prin API — spre
+ * deosebire de Instagram, unde nu există punct de acces pentru ștergere.
+ */
+export async function deleteFacebookPost(postId: string): Promise<void> {
+  const token = process.env.FB_PAGE_ACCESS_TOKEN;
+  if (!token) throw new Error("Facebook neconfigurat.");
+  const res = await fetch(
+    `${BASE}/${postId}?access_token=${encodeURIComponent(token)}`,
+    { method: "DELETE", signal: AbortSignal.timeout(25000) },
+  );
+  const d = await res.json().catch(() => ({}));
+  // O postare deja ștearsă manual nu e o eroare: rezultatul e același.
+  const lipseste = d?.error?.code === 100 || d?.error?.code === 803;
+  if (!res.ok && !lipseste) {
+    throw new Error(d?.error?.message || `Facebook a răspuns ${res.status}`);
+  }
+}
+
 export async function checkFacebook(): Promise<{ ok: boolean; page?: string; error?: string }> {
   const pageId = process.env.FB_PAGE_ID;
   const token = process.env.FB_PAGE_ACCESS_TOKEN;

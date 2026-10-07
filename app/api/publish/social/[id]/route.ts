@@ -5,8 +5,8 @@ import { inventory, carPhotos } from "@/lib/schema";
 import { requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
 import { isUuid } from "@/lib/utils";
-import { buildCaption, postToInstagram, instagramConfigured } from "@/lib/instagram";
-import { postToFacebook, facebookConfigured } from "@/lib/facebook";
+import { buildCaption, postToInstagram, instagramConfigured, instagramPermalink } from "@/lib/instagram";
+import { postToFacebook, facebookConfigured, deleteFacebookPost } from "@/lib/facebook";
 import { masoaraImagine, potrivitaPentruInstagram } from "@/lib/imageInfo";
 
 export interface PlatformResult {
@@ -20,6 +20,10 @@ export interface PlatformResult {
 
 // POST /api/publish/social/[id] — pregătește și publică anunțul pe Facebook ȘI
 // Instagram, într-o singură operație. [id] = inventoryId. ADMIN ONLY.
+// Instagram descarcă singur pozele și le procesează; la un carusel poate dura
+// zeci de secunde, iar noi așteptăm să termine.
+export const maxDuration = 300;
+
 export async function POST(request: Request, { params }: { params: { id: string } }) {
   const { user, error } = await requireAdmin();
   if (error) return error;
@@ -76,6 +80,18 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
   const results = await posteaza(imageUrls, caption);
 
+  // Reținem id-urile postărilor: fără ele nu putem arăta „postat" și nici
+  // retrage mai târziu.
+  const fb = results.find((r) => r.platform === "facebook" && r.posted)?.id;
+  const ig = results.find((r) => r.platform === "instagram" && r.posted)?.id;
+  const igLink = ig ? await instagramPermalink(ig) : null;
+  if (fb || ig) {
+    await db.update(inventory).set({
+      ...(fb ? { fbPostId: fb } : {}),
+      ...(ig ? { igPostId: ig, igPermalink: igLink } : {}),
+    }).where(eq(inventory.id, params.id));
+  }
+
   const posted = results.filter((r) => r.posted).map((r) => r.platform);
   if (posted.length) {
     await logAction({
@@ -85,7 +101,12 @@ export async function POST(request: Request, { params }: { params: { id: string 
     });
   }
 
-  return NextResponse.json({ results, caption, photoCount: imageUrls.length });
+  return NextResponse.json({
+    results, caption, photoCount: imageUrls.length,
+    // Pagina de publicare le folosește ca să arate butonul „Postat" imediat,
+    // fără să reîncarce lista.
+    fbPostId: fb ?? null, igPostId: ig ?? null, igPermalink: igLink,
+  });
 }
 
 /**
@@ -118,4 +139,54 @@ async function posteaza(imageUrls: string[], caption: string): Promise<PlatformR
   }
 
   return results;
+}
+
+/**
+ * DELETE /api/publish/social/[id] — retrage postarea.
+ *
+ * Facebook se șterge prin API. Instagram NU: nu există punct de acces pentru
+ * ștergere în API-ul lor de publicare. Îi dăm omului adresa postării, ca s-o
+ * șteargă din aplicație, și îi spunem limpede de ce.
+ */
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+  const { user, error } = await requireAdmin();
+  if (error) return error;
+  if (!isUuid(params.id)) return NextResponse.json({ error: "Mașina nu a fost găsită." }, { status: 404 });
+
+  const [item] = await db.select().from(inventory).where(eq(inventory.id, params.id)).limit(1);
+  if (!item) return NextResponse.json({ error: "Mașina nu a fost găsită." }, { status: 404 });
+
+  let facebookSters = false;
+  let eroareFb: string | null = null;
+
+  if (item.fbPostId) {
+    try {
+      await deleteFacebookPost(item.fbPostId);
+      facebookSters = true;
+    } catch (e) {
+      eroareFb = e instanceof Error ? e.message : "Eroare necunoscută";
+    }
+  }
+
+  // Id-ul de Facebook se uită doar dacă postarea chiar a fost ștearsă.
+  // Instagram îl uităm oricum: în CRM nu mai apare ca postat, dar spunem clar
+  // că postarea rămâne pe Instagram până o șterge cineva de acolo.
+  const permalink = item.igPermalink;
+  await db.update(inventory).set({
+    ...(facebookSters || !item.fbPostId ? { fbPostId: null } : {}),
+    igPostId: null,
+    igPermalink: null,
+  }).where(eq(inventory.id, params.id));
+
+  await logAction({
+    userId: user.id, userName: user.fullName, action: "UNPUBLISH_SOCIAL",
+    details: { inventoryId: params.id, facebookSters, instagramManual: !!item.igPostId },
+    request, coords: coordsOf(user),
+  });
+
+  return NextResponse.json({
+    facebookSters,
+    eroareFb,
+    instagramPermalink: item.igPostId ? permalink : null,
+  });
 }
