@@ -185,12 +185,59 @@ export async function postToInstagram(imageUrls: string[], caption: string): Pro
 }
 
 /**
- * Adresa publică a unei postări de Instagram.
+ * Șterge o postare de pe Instagram.
  *
- * Instagram NU permite ștergerea postărilor prin API — nu există un astfel de
- * punct de acces. Singurul lucru pe care îl putem face e să ducem omul exact
- * la postare, ca s-o șteargă din aplicație.
+ * Merge doar pentru conturile legate prin Facebook (al nostru e așa) și cere
+ * permisiunea `instagram_manage_contents` pe token. Un carusel se șterge
+ * întreg, dându-i id-ul postării — pozele din el nu se pot șterge separat.
+ *
+ * Dacă postarea nu mai există, socotim treaba făcută: scopul era să nu mai fie
+ * acolo. Dacă tokenul nu are permisiunea, spunem limpede ce lipsește, ca omul
+ * să știe că trebuie reautorizat, nu că CRM-ul e stricat.
  */
+export async function deleteInstagramPost(mediaId: string): Promise<void> {
+  const token = process.env.IG_ACCESS_TOKEN;
+  if (!token) throw new Error("Instagram neconfigurat (lipsește IG_ACCESS_TOKEN).");
+
+  const res = await fetch(`${META_BASE}/${mediaId}?access_token=${encodeURIComponent(token)}`, {
+    method: "DELETE",
+    signal: AbortSignal.timeout(20000),
+  });
+  const d = await res.json().catch(() => ({} as Record<string, unknown>));
+  if (res.ok && (d.success === true || d.deleted_id)) return;
+
+  const err = (d as { error?: { message?: string; code?: number } }).error;
+
+  // Meta răspunde cu același „Unsupported delete request" și când postarea nu
+  // mai există, și când tokenului îi lipsește permisiunea. Nu ghicim: întrebăm
+  // dacă postarea mai e acolo. Altfel am raporta „șters" peste o postare care
+  // a rămas sus — exact minciuna care nu trebuie să ajungă în CRM.
+  if (await maiExista(mediaId, token)) {
+    throw new Error(
+      "Instagram nu a lăsat postarea să fie ștearsă. De obicei înseamnă că " +
+      "tokenul nu are permisiunea instagram_manage_contents — conectarea cu " +
+      "Meta trebuie refăcută cu acest drept bifat." +
+      (err?.message ? ` (Meta: ${err.message})` : ""),
+    );
+  }
+  return; // postarea nu mai e acolo: scopul e atins
+}
+
+/** A mai rămas postarea pe Instagram? Nu putem citi → presupunem că da. */
+async function maiExista(mediaId: string, token: string): Promise<boolean> {
+  try {
+    const res = await fetch(
+      `${META_BASE}/${mediaId}?fields=id&access_token=${encodeURIComponent(token)}`,
+      { signal: AbortSignal.timeout(15000) },
+    );
+    const d = await res.json().catch(() => ({} as Record<string, unknown>));
+    return res.ok && typeof d.id === "string";
+  } catch {
+    return true;
+  }
+}
+
+/** Adresa publică a unei postări de Instagram. */
 export async function instagramPermalink(mediaId: string): Promise<string | null> {
   const token = process.env.IG_ACCESS_TOKEN;
   if (!token) return null;

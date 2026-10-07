@@ -5,7 +5,7 @@ import { inventory, carPhotos } from "@/lib/schema";
 import { requireAdmin, coordsOf } from "@/lib/guard";
 import { logAction } from "@/lib/audit";
 import { isUuid } from "@/lib/utils";
-import { buildCaption, postToInstagram, instagramConfigured, instagramPermalink } from "@/lib/instagram";
+import { buildCaption, postToInstagram, instagramConfigured, instagramPermalink, deleteInstagramPost } from "@/lib/instagram";
 import { postToFacebook, facebookConfigured, deleteFacebookPost } from "@/lib/facebook";
 import { masoaraImagine, potrivitaPentruInstagram } from "@/lib/imageInfo";
 
@@ -142,11 +142,12 @@ async function posteaza(imageUrls: string[], caption: string): Promise<PlatformR
 }
 
 /**
- * DELETE /api/publish/social/[id] — retrage postarea.
+ * DELETE /api/publish/social/[id] — retrage postarea de pe ambele rețele.
  *
- * Facebook se șterge prin API. Instagram NU: nu există punct de acces pentru
- * ștergere în API-ul lor de publicare. Îi dăm omului adresa postării, ca s-o
- * șteargă din aplicație, și îi spunem limpede de ce.
+ * Ștergem și de pe Instagram, prin API. Dacă Instagram refuză (de obicei
+ * pentru că tokenul nu are permisiunea de ștergere), nu ne prefacem că s-a
+ * șters: spunem eroarea și dăm adresa postării, ca s-o poată șterge din
+ * aplicație până se rezolvă permisiunea.
  */
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   const { user, error } = await requireAdmin();
@@ -156,9 +157,9 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
   const [item] = await db.select().from(inventory).where(eq(inventory.id, params.id)).limit(1);
   if (!item) return NextResponse.json({ error: "Mașina nu a fost găsită." }, { status: 404 });
 
+  // Fiecare rețea pe cont propriu: dacă una refuză, cealaltă tot se retrage.
   let facebookSters = false;
   let eroareFb: string | null = null;
-
   if (item.fbPostId) {
     try {
       await deleteFacebookPost(item.fbPostId);
@@ -168,25 +169,40 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     }
   }
 
-  // Id-ul de Facebook se uită doar dacă postarea chiar a fost ștearsă.
-  // Instagram îl uităm oricum: în CRM nu mai apare ca postat, dar spunem clar
-  // că postarea rămâne pe Instagram până o șterge cineva de acolo.
+  let instagramSters = false;
+  let eroareIg: string | null = null;
+  if (item.igPostId) {
+    try {
+      await deleteInstagramPost(item.igPostId);
+      instagramSters = true;
+    } catch (e) {
+      eroareIg = e instanceof Error ? e.message : "Eroare necunoscută";
+      console.error("[instagram:delete]", e);
+    }
+  }
+
+  // Id-ul se uită doar dacă postarea chiar a dispărut. Altfel l-am pierde și
+  // nu am mai putea încerca din nou — ar rămâne pe rețea fără să știe nimeni.
   const permalink = item.igPermalink;
-  await db.update(inventory).set({
-    ...(facebookSters || !item.fbPostId ? { fbPostId: null } : {}),
-    igPostId: null,
-    igPermalink: null,
-  }).where(eq(inventory.id, params.id));
+  const sters: Record<string, null> = {};
+  if (facebookSters || !item.fbPostId) sters.fbPostId = null;
+  if (instagramSters || !item.igPostId) { sters.igPostId = null; sters.igPermalink = null; }
+  if (Object.keys(sters).length) {
+    await db.update(inventory).set(sters).where(eq(inventory.id, params.id));
+  }
 
   await logAction({
     userId: user.id, userName: user.fullName, action: "UNPUBLISH_SOCIAL",
-    details: { inventoryId: params.id, facebookSters, instagramManual: !!item.igPostId },
+    details: { inventoryId: params.id, facebookSters, instagramSters, eroareFb, eroareIg },
     request, coords: coordsOf(user),
   });
 
   return NextResponse.json({
     facebookSters,
     eroareFb,
-    instagramPermalink: item.igPostId ? permalink : null,
+    instagramSters,
+    eroareIg,
+    // Doar dacă a rămas pe Instagram: atunci are rost să-l ducem la postare.
+    instagramPermalink: eroareIg ? permalink : null,
   });
 }

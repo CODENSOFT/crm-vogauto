@@ -38,7 +38,8 @@ export function usePublishToggles(patch: Patch, replace: Replace) {
   }
 
   function unpostSocial(it: InventoryDTO) {
-    if (!window.confirm(`Scoți postarea pentru „${it.brand} ${it.model}"?\n\nPostarea de pe Facebook se șterge.${it.igPostId ? " Cea de pe Instagram trebuie ștearsă de mână din aplicație — îți dăm adresa ei." : ""}`)) {
+    const unde = [it.fbPostId && "Facebook", it.igPostId && "Instagram"].filter(Boolean).join(" și ");
+    if (!window.confirm(`Scoți postarea pentru „${it.brand} ${it.model}"?\n\nSe șterge de pe ${unde || "rețele"}. Ștergerea nu se poate anula — mașina se poate posta din nou, dar ca o postare nouă.`)) {
       return Promise.resolve();
     }
     return cuZavor(`${it._id}:social`, () => scoateDeLaSocial(it, patch));
@@ -92,9 +93,8 @@ async function comutaCanal(
 }
 
 /**
- * Scoate postarea de pe rețele. Facebook se șterge prin API; Instagram nu are
- * așa ceva, deci dăm adresa postării ca s-o șteargă din aplicație — altfel
- * omul crede că s-a retras și de acolo.
+ * Scoate postarea de pe ambele rețele. Ce a rămas sus rămâne și în CRM marcat
+ * ca postat: altfel am pierde id-ul și nimeni n-ar mai putea încerca din nou.
  */
 async function scoateDeLaSocial(it: InventoryDTO, patch: Patch) {
   const note = toast.loading("Se scoate postarea...");
@@ -103,14 +103,25 @@ async function scoateDeLaSocial(it: InventoryDTO, patch: Patch) {
     const data = await res.json();
     if (!res.ok) { toast.error(data.error || "Eroare.", { id: note }); return; }
 
-    patch(it._id, { fbPostId: null, igPostId: null, igPermalink: null });
+    patch(it._id, {
+      ...(data.facebookSters || !it.fbPostId ? { fbPostId: null } : {}),
+      ...(data.instagramSters || !it.igPostId ? { igPostId: null, igPermalink: null } : {}),
+    });
 
-    if (data.eroareFb) toast.error(`Facebook: ${data.eroareFb}`, { id: note, duration: 8000 });
-    else if (data.instagramPermalink) {
-      toast.success("Postarea de pe Facebook a fost ștearsă.", { id: note });
-      toast(`Instagram nu permite ștergerea din CRM. Șterge-o din aplicație: ${data.instagramPermalink}`,
+    const nereusite = [
+      data.eroareFb && `Facebook: ${data.eroareFb}`,
+      data.eroareIg && `Instagram: ${data.eroareIg}`,
+    ].filter(Boolean) as string[];
+
+    if (!nereusite.length) {
+      toast.success("Postarea a fost ștearsă de pe rețele.", { id: note });
+      return;
+    }
+    toast.error(nereusite.join(" · "), { id: note, duration: 10000 });
+    if (data.instagramPermalink) {
+      toast(`Până se rezolvă, poți șterge postarea de pe Instagram de aici: ${data.instagramPermalink}`,
         { duration: 12000, icon: "⚠️" });
-    } else toast.success("Postarea a fost scoasă.", { id: note });
+    }
   } catch (e) {
     toast.error(e instanceof Error ? e.message : "Conexiunea a eșuat.", { id: note });
   }
