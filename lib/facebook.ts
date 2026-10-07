@@ -1,8 +1,9 @@
+import { META_BASE } from "@/lib/metaApi";
 // Postarea anunțurilor pe pagina de Facebook, prin Graph API.
 // Folosește un Page Access Token (același sistem ca Instagram, care oricum
 // merge prin Facebook), cu permisiunile pages_manage_posts + pages_read_engagement.
 
-const BASE = "https://graph.facebook.com/v21.0";
+const BASE = META_BASE;
 
 export function facebookConfigured(): boolean {
   return Boolean(process.env.FB_PAGE_ID && process.env.FB_PAGE_ACCESS_TOKEN);

@@ -7,10 +7,13 @@ export function PublishingHeader({
   wpStatus,
   fbStatus,
   igConfigured,
+  igStatus,
 }: {
   wpStatus: { ok: boolean; user?: string; error?: string } | null;
   fbStatus: { ok: boolean; page?: string; error?: string } | null;
   igConfigured: boolean | null;
+  /** Motivul de la Meta, când Instagram nu e conectat. */
+  igStatus?: { ok: boolean; account?: string; error?: string } | null;
 }) {
   return (
   <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
@@ -30,7 +33,13 @@ export function PublishingHeader({
         </span>
       )}
       {igConfigured !== null && (
-        <span title={igConfigured ? "Postarea automată pe Instagram este activă" : "Instagram neconfigurat — postarea pregătește doar textul"}>
+        <span title={
+          igStatus?.ok
+            ? `Contul: ${igStatus.account}`
+            : igStatus?.error
+              ? `Instagram: ${igStatus.error}`
+              : "Instagram neconfigurat — postarea pregătește doar textul"
+        }>
           <Badge color={igConfigured ? "green" : "gray"}>Instagram: {igConfigured ? "conectat" : "neconectat"}</Badge>
         </span>
       )}

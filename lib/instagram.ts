@@ -1,3 +1,4 @@
+import { META_BASE } from "@/lib/metaApi";
 import { COMPANY, financeFor } from "@/lib/listingTemplate";
 import type { PublicListing } from "@/lib/listings";
 
@@ -70,7 +71,7 @@ export async function postToInstagram(imageUrls: string[], caption: string): Pro
   if (!token || !igUserId) {
     throw new Error("Instagram neconfigurat (lipsesc IG_ACCESS_TOKEN / IG_USER_ID).");
   }
-  const base = "https://graph.facebook.com/v21.0";
+  const base = META_BASE;
   const urls = imageUrls.filter(Boolean).slice(0, 10); // Instagram: max 10 în carusel
   if (urls.length === 0) throw new Error("Nicio poză de postat.");
 
@@ -106,6 +107,29 @@ export async function postToInstagram(imageUrls: string[], caption: string): Pro
     throw new Error(`Instagram (publish): ${JSON.stringify(published)}`);
   }
   return published.id as string;
+}
+
+/**
+ * Verifică dacă datele de Instagram funcționează cu adevărat, nu doar dacă
+ * sunt setate. La configurare conteaza mesajul exact de la Meta: „token
+ * expirat" si „contul nu e Business" cer lucruri complet diferite.
+ */
+export async function checkInstagram(): Promise<{ ok: boolean; account?: string; error?: string }> {
+  const token = process.env.IG_ACCESS_TOKEN;
+  const igUserId = process.env.IG_USER_ID;
+  if (!token || !igUserId) return { ok: false, error: "Lipsesc datele de conectare." };
+  const base = META_BASE;
+  try {
+    const res = await fetch(
+      `${base}/${igUserId}?fields=username&access_token=${encodeURIComponent(token)}`,
+      { signal: AbortSignal.timeout(15000) },
+    );
+    const d = await res.json();
+    if (!res.ok || d.error) return { ok: false, error: d.error?.message || "Token invalid." };
+    return { ok: true, account: d.username ? `@${d.username}` : String(igUserId) };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Eroare necunoscută" };
+  }
 }
 
 export function instagramConfigured(): boolean {

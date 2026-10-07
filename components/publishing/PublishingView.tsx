@@ -9,6 +9,7 @@ import { PublishingTable } from "@/components/publishing/PublishingTable";
 import { PhotoManager } from "@/components/photos/PhotoManager";
 import { useSocialPost } from "@/components/publishing/useSocialPost";
 import { useListingEditor } from "@/components/publishing/useListingEditor";
+import { useConnectionStatus } from "@/components/publishing/useConnectionStatus";
 import type { InventoryDTO } from "@/types";
 
 function Stat({ label, value, tone }: { label: string; value: number | string; tone?: string }) {
@@ -38,22 +39,7 @@ export function PublishingView() {
     igItem, setIgItem, igCaption, setIgCaption, igPhotos,
     igLoading, igPosting, igResults, prepareSocial, postSocial,
   } = useSocialPost();
-  const [igConfigured, setIgConfigured] = useState<boolean | null>(null);
-  const [fbStatus, setFbStatus] = useState<{ ok: boolean; page?: string; error?: string } | null>(null);
-  const [wpStatus, setWpStatus] = useState<{ ok: boolean; user?: string; error?: string } | null>(null);
-
-  useEffect(() => {
-    fetch("/api/publish/instagram/status").then((r) => r.json())
-      .then((d) => setIgConfigured(!!d.configured)).catch(() => setIgConfigured(false));
-    fetch("/api/publish/facebook/status")
-      .then((r) => (r.ok ? r.json() : { ok: false }))
-      .then(setFbStatus)
-      .catch(() => setFbStatus({ ok: false }));
-    fetch("/api/publish/wordpress/status")
-      .then((r) => (r.ok ? r.json() : { ok: false }))
-      .then(setWpStatus)
-      .catch(() => setWpStatus({ ok: false }));
-  }, []);
+  const { igConfigured, igStatus, fbStatus, wpStatus } = useConnectionStatus();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -132,7 +118,7 @@ export function PublishingView() {
 
   return (
     <div>
-      <PublishingHeader wpStatus={wpStatus} fbStatus={fbStatus} igConfigured={igConfigured} />
+      <PublishingHeader wpStatus={wpStatus} fbStatus={fbStatus} igConfigured={igConfigured} igStatus={igStatus} />
 
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="Disponibile în stoc" value={items.length} />
