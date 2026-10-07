@@ -70,7 +70,7 @@ export function buildCaption(l: CaptionInput): string {
     val(l.transmission) ? `⚙️ Cutie > ${val(l.transmission)}` : "",
     drive ? `🔄 Tracțiune > ${drive}` : "",
     val(l.seats) ? `💺 Numărul de locuri > ${val(l.seats)}` : "",
-    l.mileage != null ? `🛣️ Parcurs > ${km(l.mileage)}` : "",
+    l.mileage ? `🛣️ Parcurs > ${km(l.mileage)}` : "",
     COMPANY.phone ? `☎️ ${COMPANY.phone}${COMPANY.contact ? ` (${COMPANY.contact})` : ""}` : "",
     COMPANY.email ? `✉️ ${COMPANY.email}` : "",
     `💻 ${l.url || COMPANY.stockUrl}`,

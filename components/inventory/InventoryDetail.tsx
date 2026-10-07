@@ -195,10 +195,72 @@ function CardPret({ item }: { item: InventoryDTO }) {
   const procentReducere = hasReducere
     ? Math.round(((item.oldPrice! - item.sellPrice) / item.oldPrice!) * 100)
     : 0;
+  const esteParcarea = item.ownerName?.trim().toLowerCase() === "parcarea";
+  const nr = (v?: number | null) => (v ? new Intl.NumberFormat("ro-RO").format(v) : "");
+
+  // Aceleași grupuri ca în formularul de adăugare: cine caută o valoare o
+  // găsește în același loc în care a scris-o.
+  const grupuri: { titlu: string; nota?: string; randuri: [string, React.ReactNode][] }[] = [
+    {
+      titlu: "Identificare",
+      randuri: [
+        ["Marcă", `${item.brand} ${item.model}`],
+        ["An", item.year],
+        ["VIN", <span key="v" className="font-mono text-xs">{item.vin || "—"}</span>],
+        ["Culoare", item.color || "—"],
+        ["Status", STOCK_STATUS_LABELS[item.status]],
+      ],
+    },
+    {
+      titlu: "Specificații",
+      nota: "apar pe anunțul de pe site și în filtrele lui",
+      randuri: [
+        ["Capacitate motor", item.engine ? `${item.engine} cm³` : "—"],
+        ["Putere", item.power ? `${item.power} CP` : "—"],
+        ["Parcurs", nr(item.mileage) ? `${nr(item.mileage)} km` : "—"],
+        ["Caroserie", item.bodyType || "—"],
+        ["Tip combustibil", item.fuelType || "—"],
+        ["Transmisie", item.transmission || "—"],
+        ["Tip tracțiune", item.driveType || "—"],
+        ["Stare", item.condition || "—"],
+        ["Uși", item.doors || "—"],
+        ["Număr de locuri", item.seats || "—"],
+      ],
+    },
+    {
+      titlu: "Proprietar",
+      randuri: [
+        ["Proprietar", item.ownerName],
+        ["Telefon", <span key="t" className="font-mono">{item.ownerPhone && item.ownerPhone !== "—" ? item.ownerPhone : "—"}</span>],
+        ["Adăugată de", item.addedByName || "—"],
+        ["Data adăugării", formatDateShort(item.createdAt)],
+      ],
+    },
+    {
+      titlu: "Bani",
+      randuri: [
+        [esteParcarea ? "Preț cumpărare" : "Preț cerut de client",
+          item.purchaseCost ? formatMoney(item.purchaseCost) : "—"],
+        ...(hasReducere
+          ? ([["Reducere",
+              <span key="r" className="font-semibold text-rose-600">
+                −{formatMoney(item.oldPrice! - item.sellPrice)} ({procentReducere}%)
+              </span>]] as [string, React.ReactNode][])
+          : []),
+        ["Cheltuieli", item.expensesTotal
+          ? <span key="c" className="text-amber-700">{formatMoney(item.expensesTotal)}</span>
+          : "—"],
+        [esteParcarea ? "Profit net" : "Adaus net",
+          <span key="a" className={(item.netMargin ?? item.markup) >= 0 ? "font-semibold text-emerald-700" : "font-semibold text-red-600"}>
+            {formatMoney(item.netMargin ?? item.markup)}
+          </span>],
+      ],
+    },
+  ];
 
   return (
     <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card">
-      <div className="mb-2 flex items-baseline justify-between">
+      <div className="mb-4 flex items-baseline justify-between gap-2">
         <span className="text-sm font-semibold text-slate-500">Preț de vânzare</span>
         <span className="flex items-baseline gap-2">
           {/* Reducerea se arată la fel ca pe site: vechiul preț tăiat. */}
@@ -208,27 +270,21 @@ function CardPret({ item }: { item: InventoryDTO }) {
           <span className="text-2xl font-extrabold text-brand">{formatMoney(item.sellPrice)}</span>
         </span>
       </div>
-      <div className="grid grid-cols-2 gap-x-5">
-        <Spec label="An" value={item.year} />
-        <Spec label="Culoare" value={item.color || "—"} />
-        <Spec label="Motor" value={item.engine || "—"} />
-        <Spec label="VIN" value={<span className="font-mono text-xs">{item.vin || "—"}</span>} />
-        <Spec label="Status" value={STOCK_STATUS_LABELS[item.status]} />
-        <Spec label={item.ownerName?.trim().toLowerCase() === "parcarea" ? "Preț cumpărare" : "Preț cerut client"}
-          value={item.purchaseCost ? formatMoney(item.purchaseCost) : "—"} />
-        {hasReducere && (
-          <Spec label="Reducere" value={
-            <span className="font-semibold text-rose-600">
-              −{formatMoney(item.oldPrice! - item.sellPrice)} ({procentReducere}%)
-            </span>
-          } />
-        )}
-        <Spec label="Cheltuieli" value={item.expensesTotal ? <span className="text-amber-700">{formatMoney(item.expensesTotal)}</span> : "—"} />
-        <Spec label="Adaus net" strong value={<span className={(item.netMargin ?? item.markup) >= 0 ? "text-emerald-700" : "text-red-600"}>{formatMoney(item.netMargin ?? item.markup)}</span>} />
-        <Spec label="Proprietar" value={item.ownerName} />
-        <Spec label="Telefon" value={<span className="font-mono">{item.ownerPhone && item.ownerPhone !== "—" ? item.ownerPhone : "—"}</span>} />
-        <Spec label="Adăugată de" value={item.addedByName || "—"} />
-        <Spec label="Data adăugării" value={formatDateShort(item.createdAt)} />
+
+      <div className="flex flex-col gap-4">
+        {grupuri.map((g) => (
+          <section key={g.titlu}>
+            <div className="mb-1.5 flex flex-wrap items-baseline gap-x-2 border-b border-slate-100 pb-1">
+              <h4 className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{g.titlu}</h4>
+              {g.nota && <span className="text-[11px] text-slate-400">{g.nota}</span>}
+            </div>
+            <div className="grid grid-cols-2 gap-x-5">
+              {g.randuri.map(([eticheta, valoare]) => (
+                <Spec key={eticheta} label={eticheta} value={valoare} />
+              ))}
+            </div>
+          </section>
+        ))}
       </div>
     </div>
   );
