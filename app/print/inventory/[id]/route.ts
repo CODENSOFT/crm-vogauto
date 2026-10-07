@@ -113,7 +113,13 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     padding: 10mm 16mm 9mm; display: flex; flex-direction: column;
     box-shadow: 0 2px 12px rgba(0,0,0,.2); overflow: hidden;
   }
-  .logo { display: block; width: 100mm; margin: 0 auto 4mm; }
+  /* Logoul lor e desenat pentru fundal închis — pe hârtie albă s-ar pierde.
+     Caseta neagră cu colțuri rotunjite îl pune în valoare. */
+  .logo-box {
+    width: 112mm; margin: 0 auto 4mm; padding: 3mm 6mm;
+    background: #000; border-radius: 5mm;
+  }
+  .logo { display: block; width: 100%; }
   h1 { text-align: center; font-size: 50pt; margin: 0 0 5mm; line-height: 1.1; }
   .specs { padding-left: 5mm; }
   .specs p { font-size: 32pt; margin: 0 0 1.8mm; line-height: 1.15; }
@@ -126,19 +132,21 @@ export async function GET(_request: Request, { params }: { params: { id: string 
   .phones { text-align: center; font-size: 22pt; margin: 0; }
   [contenteditable]:hover { outline: 1px dashed #bbb; }
   @media print {
-    /* „overflow: hidden" și înălțimea exactă opresc a doua foaie goală: fără
-       ele, orice rest de spațiu de după foaie (chiar și un rând gol invizibil)
-       trece pe pagina următoare. */
+    /* Foaia e lăsată cu 2mm mai scundă decât pagina. Când era exact 210mm,
+       conversia milimetri → puncte ieșea cu o fracțiune peste, iar fracțiunea
+       aceea năștea a doua foaie, goală. Nu se vede la tipar, dar rezolvă. */
     html, body {
-      width: 297mm; height: 210mm; margin: 0; padding: 0;
+      width: 297mm; height: 208mm; margin: 0; padding: 0;
       background: #fff; overflow: hidden;
     }
     /* Nimic în afară de foaie nu ajunge pe hârtie. */
     body > *:not(.page) { display: none !important; }
     .page {
-      width: 297mm; height: 210mm; margin: 0; box-shadow: none;
-      overflow: hidden; break-inside: avoid; page-break-inside: avoid;
+      width: 297mm; height: 208mm; max-height: 208mm; margin: 0;
+      box-shadow: none; overflow: hidden;
     }
+    /* Nicio regulă de „break": pe WebKit, un page-break-after pe ultimul
+       element e chiar una din cauzele foii în plus. */
     [contenteditable]:hover { outline: none; }
   }
   /* Fără asta, browserele scot culorile la tipar, iar prețul roșu iese gri. */
@@ -151,7 +159,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
   adresa jos, în fereastra de tipar: Mai multe setări → scoate bifa de la
   „Antete și subsoluri”.</span>
 </div><div class="page" contenteditable="true" spellcheck="false">
-  <img class="logo" src="/logo-vogauto.png" alt="VOG Auto">
+  <div class="logo-box"><img class="logo" src="/logo-vogauto.png" alt="VOG Auto"></div>
   <h1>Marca: ${esc(titlu)}</h1>
   <div class="specs">
 ${specsHtml}
