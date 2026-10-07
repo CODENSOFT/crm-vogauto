@@ -1,5 +1,6 @@
 import { META_BASE } from "@/lib/metaApi";
 import { masoaraImagine, potrivitaPentruInstagram } from "@/lib/imageInfo";
+import { engineSizeCm3 } from "@/lib/wpTaxonomy";
 import { COMPANY, financeFor } from "@/lib/listingTemplate";
 import type { PublicListing } from "@/lib/listings";
 
@@ -34,11 +35,25 @@ function km(n: number): string {
  * preț și finanțare sus, apoi specificațiile una pe rând, apoi contactul.
  * Rândurile fără date se omit.
  */
+/** Valoarea curățată, sau gol dacă e doar spațiu — un rând cu spații tot apărea. */
+function val(v?: string | null): string {
+  return (v ?? "").trim();
+}
+
+/** „ALBASTRU" → „Albastru". Pe un anunț, majusculele strigă. */
+function titlu(v?: string | null): string {
+  const s = val(v);
+  return s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "";
+}
+
 export function buildCaption(l: CaptionInput): string {
   const f = financeFor(l.price);
   // „Tracțiune integrală (AWD/4x4)" → „Integrală"
-  const driveShort = l.driveType?.replace(/^Tracțiune\s*/i, "").replace(/\s*\(.*\)$/, "").trim();
+  const driveShort = val(l.driveType).replace(/^Tracțiune\s*/i, "").replace(/\s*\(.*\)$/, "").trim();
   const drive = driveShort ? driveShort.charAt(0).toUpperCase() + driveShort.slice(1) : "";
+  // În CRM capacitatea se scrie liber („3.0 benz"). Fără asta, pe anunț ajungea
+  // „Cilindree > 3.0 benz cm3" în loc de „3000 cm3".
+  const cilindree = engineSizeCm3(l.engine);
 
   const lines = [
     `🚗 ${l.brand} ${l.model} ${l.year}`,
@@ -47,14 +62,14 @@ export function buildCaption(l: CaptionInput): string {
     `❎ Prima rată: ${f.down}`,
     `➡️ Rata lunară: ${f.monthly}`,
     `📅 Fabricație > ${l.year}`,
-    l.engine ? `🔧 Cilindree > ${l.engine} cm3` : "",
-    l.fuelType ? `⛽ Combustibil > ${l.fuelType}` : "",
-    l.bodyType ? `🚘 Caroserie > ${l.bodyType}` : "",
+    cilindree ? `🔧 Cilindree > ${cilindree} cm3` : "",
+    val(l.fuelType) ? `⛽ Combustibil > ${val(l.fuelType)}` : "",
+    val(l.bodyType) ? `🚘 Caroserie > ${val(l.bodyType)}` : "",
     l.power ? `🐎 Putere > ${l.power} CP` : "",
-    l.color ? `🎨 Culoare > ${l.color}` : "",
-    l.transmission ? `⚙️ Cutie > ${l.transmission}` : "",
+    titlu(l.color) ? `🎨 Culoare > ${titlu(l.color)}` : "",
+    val(l.transmission) ? `⚙️ Cutie > ${val(l.transmission)}` : "",
     drive ? `🔄 Tracțiune > ${drive}` : "",
-    l.seats ? `💺 Numărul de locuri > ${l.seats}` : "",
+    val(l.seats) ? `💺 Numărul de locuri > ${val(l.seats)}` : "",
     l.mileage != null ? `🛣️ Parcurs > ${km(l.mileage)}` : "",
     COMPANY.phone ? `☎️ ${COMPANY.phone}${COMPANY.contact ? ` (${COMPANY.contact})` : ""}` : "",
     COMPANY.email ? `✉️ ${COMPANY.email}` : "",
