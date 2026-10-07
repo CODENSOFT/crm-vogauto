@@ -56,6 +56,11 @@ export function StockTable({
                 {it.brand} {it.model}
               </Link>
               {it.color ? <span className="text-slate-400"> · {it.color}</span> : null}
+              {/* Cartonașul de sus spune câte mașini n-au poze; aici se vede
+                  care anume, altfel trebuia căutată fiecare pe rând. */}
+              {!(it.photoCount ?? 0) && (
+                <div className="text-[11px] font-medium text-amber-600">fără poze — nu ajunge pe site</div>
+              )}
             </td>
             <td className="px-3 py-2.5 text-slate-600">{it.year}</td>
             <td className="whitespace-nowrap px-3 py-2.5 font-mono text-xs text-slate-500">{it.vin || "—"}</td>

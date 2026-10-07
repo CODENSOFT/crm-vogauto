@@ -46,6 +46,9 @@ export function StockCards({
                 </Link>
                 <Badge color={it.status === "available" ? "green" : "yellow"}>{STOCK_STATUS_LABELS[it.status]}</Badge>
               </div>
+              {!(it.photoCount ?? 0) && (
+                <p className="mt-0.5 text-[11px] font-medium text-amber-600">fără poze — nu ajunge pe site</p>
+              )}
               <p className="mt-0.5 truncate text-xs text-slate-500">
                 {it.ownerName}{it.color ? ` · ${it.color}` : ""}{it.engine ? ` · ${it.engine}` : ""}
               </p>

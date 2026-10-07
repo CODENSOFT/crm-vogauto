@@ -41,6 +41,21 @@ export async function GET(request: Request) {
 
   const items = rows.map(inventoryToDTO);
 
+  // Câte mașini are fiecare secțiune, ca butoanele să-și arate cifra fără o
+  // cerere în plus. Căutarea se aplică și aici: altfel numărul din buton ar
+  // contrazice lista de sub el.
+  const countConds = [eq(inventory.isDeleted, false)];
+  if (search) countConds.push(conds[conds.length - 1]);
+  const grupe = await db
+    .select({ status: inventory.status, n: sql<number>`count(*)::int` })
+    .from(inventory)
+    .where(and(...countConds))
+    .groupBy(inventory.status);
+  const counts = {
+    preparing: grupe.find((g) => g.status === "preparing")?.n ?? 0,
+    available: grupe.find((g) => g.status === "available")?.n ?? 0,
+  };
+
   // Atașează foto principală + numărul de poze + totalul cheltuielilor.
   if (items.length) {
     const ids = items.map((i) => i._id);
@@ -72,10 +87,10 @@ export async function GET(request: Request) {
       const e = map.get(it._id);
       return { ...it, primaryPhoto: e?.url ?? null, photoCount: e?.count ?? 0 };
     });
-    return NextResponse.json({ items: withPhotos });
+    return NextResponse.json({ items: withPhotos, counts });
   }
 
-  return NextResponse.json({ items });
+  return NextResponse.json({ items, counts });
 }
 
 // POST /api/inventory — ADMIN ONLY. Adaugă o mașină în stoc.
