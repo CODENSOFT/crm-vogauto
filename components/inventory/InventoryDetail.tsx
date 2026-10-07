@@ -126,38 +126,19 @@ export function InventoryDetail({ id }: { id: string }) {
         {/* Galerie */}
         <div className="flex flex-col gap-5">
           <PhotoGallery urls={urls} alt={`${item.brand} ${item.model}`} />
-          {/* Istoricul stă sub galerie, pe lățimea ei: pe toată pagina lăsa
-              o bandă îngustă de text într-un spațiu enorm. */}
+          {/* Cheltuielile stau lângă poze și deasupra istoricului: sunt lucruri
+              pe care le faci cu mașina, nu date despre ea. Datele stau în
+              dreapta, într-un singur loc. */}
+          <ExpensesCard inventoryId={id} onChanged={load} />
+
+          {/* Istoricul, ultimul: se citește rar, dar e bine să fie la vedere. */}
           <Istoric timeline={timeline} />
         </div>
 
         <div className="flex flex-col gap-5">
           <CardPret item={item} />
 
-          <ExpensesCard inventoryId={id} onChanged={load} />
-
-          {/* Secțiunea e mereu prezentă: dacă textul lipsește, trebuie să se
-              vadă că lipsește, nu să dispară în tăcere — așa a trecut
-              neobservat că mașinile vechi rămăseseră fără descriere. */}
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card">
-            <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
-              <h3 className="text-sm font-semibold text-slate-700">Descriere anunț</h3>
-              <span className="text-xs text-slate-400">textul care apare pe site</span>
-            </div>
-            {item.listingDescription ? (
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-600">{item.listingDescription}</p>
-            ) : (
-              <p className="text-sm text-amber-600">
-                Lipsește. Apasă {'„Editează”'} și scrie textul, sau {'„Reface șablonul”'}.
-              </p>
-            )}
-            {item.notes && (
-              <div className="mt-3 border-t border-slate-100 pt-3">
-                <h3 className="mb-1 text-sm font-semibold text-slate-700">Note interne</h3>
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-600">{item.notes}</p>
-              </div>
-            )}
-          </div>
+          <CardDescriere item={item} />
         </div>
       </div>
 
@@ -286,6 +267,51 @@ function CardPret({ item }: { item: InventoryDTO }) {
           </section>
         ))}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Descrierea anunțului și notele interne.
+ *
+ * Textul de credit e același la fiecare mașină și are peste 20 de rânduri;
+ * desfășurat mereu, împingea tot restul paginii în jos.
+ */
+function CardDescriere({ item }: { item: InventoryDTO }) {
+  const [deschis, setDeschis] = useState(false);
+
+  // Secțiunea e mereu prezentă: dacă textul lipsește, trebuie să se vadă că
+  // lipsește, nu să dispară în tăcere.
+  return (
+    <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card">
+      <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
+        <h3 className="text-sm font-semibold text-slate-700">Descriere anunț</h3>
+        <span className="text-xs text-slate-400">textul care apare pe site</span>
+      </div>
+      {item.listingDescription ? (
+        <>
+          {/* Textul de credit e același la fiecare mașină și are peste 20
+              de rânduri. Desfășurat mereu, împinge tot restul în jos. */}
+          <p className={`whitespace-pre-wrap text-sm leading-relaxed text-slate-600 ${
+            deschis ? "" : "line-clamp-4"}`}>
+            {item.listingDescription}
+          </p>
+          <button type="button" onClick={() => setDeschis((v) => !v)}
+            className="mt-1.5 text-xs font-semibold text-brand hover:underline">
+            {deschis ? "Restrânge" : "Arată tot textul"}
+          </button>
+        </>
+      ) : (
+        <p className="text-sm text-amber-600">
+          Lipsește. Apasă {'„Editează”'} și scrie textul, sau {'„Reface șablonul”'}.
+        </p>
+      )}
+      {item.notes && (
+        <div className="mt-3 border-t border-slate-100 pt-3">
+          <h3 className="mb-1 text-sm font-semibold text-slate-700">Note interne</h3>
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-600">{item.notes}</p>
+        </div>
+      )}
     </div>
   );
 }
