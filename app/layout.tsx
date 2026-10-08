@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Plus_Jakarta_Sans } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 
@@ -7,14 +7,6 @@ const inter = Inter({
   subsets: ["latin", "latin-ext"],
   display: "swap",
   variable: "--font-inter",
-});
-
-// Fontul geometric folosit pe pagina de prezentare generală. Stă separat de
-// Inter ca restul aplicației să rămână neschimbat.
-const jakarta = Plus_Jakarta_Sans({
-  subsets: ["latin", "latin-ext"],
-  display: "swap",
-  variable: "--font-display",
 });
 
 export const metadata: Metadata = {
@@ -32,7 +24,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ro" className={`${inter.variable} ${jakarta.variable}`}>
+    <html lang="ro" className={inter.variable}>
       <body>
         <Providers>{children}</Providers>
       </body>
