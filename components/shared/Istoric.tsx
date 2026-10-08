@@ -11,7 +11,7 @@ export function Istoric({ timeline }: { timeline: TimelineEvent[] }) {
   if (timeline.length === 0) return null;
 
   return (
-    <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card">
+    <div className="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-card">
       <h3 className="mb-4 text-sm font-semibold text-slate-700">Istoricul mașinii</h3>
       <ol className="relative ml-2 border-l-2 border-slate-100">
         {timeline.map((e, i) => (

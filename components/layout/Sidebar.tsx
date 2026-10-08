@@ -15,6 +15,7 @@ import {
   IconBars,
   IconAward,
   IconHistory,
+  IconChevronRight,
 } from "@/components/ui/Icons";
 
 interface NavItem {
@@ -99,27 +100,27 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
         />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-30 flex w-64 transform flex-col bg-sidebar-gradient text-slate-200 shadow-elevated transition-transform duration-300 ease-out lg:static lg:translate-x-0 lg:shadow-none ${
-          open ? "translate-x-0" : "-translate-x-full"
+        className={`fixed inset-y-0 left-0 z-30 flex w-[264px] transform flex-col bg-white transition-transform duration-300 ease-out lg:static lg:translate-x-0 ${
+          open ? "translate-x-0 shadow-elevated" : "-translate-x-full"
         }`}
       >
-        <div className="flex h-16 shrink-0 items-center gap-3 border-b border-sidebar-border px-5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-gradient text-sm font-bold tracking-tight text-white shadow-glow ring-1 ring-white/10">
+        <div className="flex h-20 shrink-0 items-center gap-3 px-5">
+          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-ink text-[13px] font-bold tracking-tight text-white">
             VA
           </div>
           <div className="min-w-0 leading-tight">
-            <div className="text-sm font-bold tracking-[0.08em] text-white">VOGAUTO</div>
-            <div className="text-[11px] font-medium text-sidebar-muted">Management auto</div>
+            <div className="text-[15px] font-bold tracking-tight text-ink">VOGAUTO</div>
+            <div className="text-[11px] font-medium text-slate-400">Management auto</div>
           </div>
         </div>
 
         {/* Lista se poate derula singură: cu zece intrări plus cartonașul de
             jos, pe un ecran de laptop ultimele erau împinse afară. */}
-        <nav aria-label="Meniu principal" className="flex-1 overflow-y-auto px-3 py-4">
+        <nav aria-label="Meniu principal" className="mx-3 mb-3 flex-1 overflow-y-auto rounded-[22px] bg-slate-50/90 p-2.5">
           {nav.map((grup, gi) => (
-            <div key={grup.titlu ?? gi} className={gi > 0 ? "mt-5" : ""}>
+            <div key={grup.titlu ?? gi} className={gi > 0 ? "mt-4" : ""}>
               {grup.titlu && (
-                <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-sidebar-muted/70">
+                <p className="px-4 pb-1.5 pt-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
                   {grup.titlu}
                 </p>
               )}
@@ -132,21 +133,19 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
                         href={href}
                         onClick={onClose}
                         aria-current={active ? "page" : undefined}
-                        className={`group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-[background-color,color] duration-150 ease-out ${
+                        className={`group flex items-center gap-3 rounded-full px-4 py-2.5 text-sm transition-[background-color,color,box-shadow] duration-150 ease-out ${
                           active
-                            ? "bg-sidebar-active font-semibold text-white ring-1 ring-white/5"
-                            : "font-medium text-slate-400 hover:bg-sidebar-hover hover:text-white"
+                            ? "bg-ink font-semibold text-white shadow-pill"
+                            : "font-medium text-slate-500 hover:bg-white hover:text-ink"
                         }`}
                       >
-                        {active && (
-                          <span className="absolute inset-y-1.5 left-0 w-[3px] rounded-r-full bg-brand-light" />
-                        )}
                         <Icon
                           className={`h-[18px] w-[18px] shrink-0 transition-colors ${
-                            active ? "text-brand-lighter" : "text-slate-500 group-hover:text-slate-300"
+                            active ? "text-white" : "text-slate-400 group-hover:text-ink"
                           }`}
                         />
                         <span className="truncate">{label}</span>
+                        {active && <IconChevronRight className="ml-auto h-4 w-4 shrink-0 text-white/70" />}
                       </Link>
                     </li>
                   );
@@ -158,14 +157,14 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
 
         {/* Lipit de marginea de jos, cu linie proprie: nu face parte din meniu,
             ci spune cine ești. */}
-        <div className="shrink-0 border-t border-sidebar-border p-3">
-          <div className="flex items-center gap-3 rounded-xl bg-white/[0.04] px-3 py-2.5 ring-1 ring-white/5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-gradient text-xs font-bold text-white ring-1 ring-white/10">
+        <div className="shrink-0 px-3 pb-4">
+          <div className="flex items-center gap-3 rounded-[18px] border border-slate-200/70 bg-white px-3 py-2.5 shadow-card">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-xs font-bold text-white">
               {initials}
             </div>
             <div className="min-w-0 leading-tight">
-              <div className="truncate text-xs font-semibold text-slate-100">{name}</div>
-              <div className="text-[11px] text-sidebar-muted">
+              <div className="truncate text-xs font-semibold text-ink">{name}</div>
+              <div className="text-[11px] text-slate-400">
                 {isAdmin ? "Administrator" : "Angajat"}
               </div>
             </div>

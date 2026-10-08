@@ -13,7 +13,7 @@ export function PhotoGallery({ urls, alt }: { urls: string[]; alt: string }) {
 
   return (
     <>
-      <div className="rounded-2xl border border-slate-200/80 bg-white p-3 shadow-card">
+      <div className="rounded-2xl border border-slate-200/70 bg-white p-3 shadow-card">
         {main ? (
           <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-slate-100">
             <button type="button" onClick={() => setZoom(true)} aria-label="Mărește fotografia" className="h-full w-full cursor-zoom-in">

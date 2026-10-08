@@ -27,7 +27,7 @@ export function StockCards({
   return (
     <div className="vg-stagger space-y-3 lg:hidden">
       {items.map((it) => (
-        <div key={it._id} className="relative rounded-xl border border-slate-200/80 bg-white p-3 shadow-card">
+        <div key={it._id} className="relative rounded-xl border border-slate-200/70 bg-white p-3 shadow-card">
           {/* Buton real care acoperă cardul; acțiunile stau deasupra lui. */}
           <button
             type="button"

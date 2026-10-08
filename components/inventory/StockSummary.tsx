@@ -30,13 +30,13 @@ export function StockSummary({ items, prep }: { items: InventoryDTO[]; prep: boo
   return (
     <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
       {carduri.map((c) => (
-        <div key={c.eticheta} className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-card">
+        <div key={c.eticheta} className="rounded-xl border border-slate-200/70 bg-white p-4 shadow-card">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{c.eticheta}</p>
           <p className={`mt-1 text-xl font-bold tracking-tight ${c.ton ?? "text-slate-900"}`}>{c.valoare}</p>
         </div>
       ))}
       <div className={`rounded-xl border p-4 shadow-card ${
-        faraPoze ? "border-amber-200 bg-amber-50" : "border-slate-200/80 bg-white"}`}>
+        faraPoze ? "border-amber-200 bg-amber-50" : "border-slate-200/70 bg-white"}`}>
         <p className={`text-xs font-semibold uppercase tracking-wide ${faraPoze ? "text-amber-700" : "text-slate-500"}`}>
           Fără fotografii
         </p>

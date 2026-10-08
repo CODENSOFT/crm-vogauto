@@ -81,7 +81,7 @@ export function SaleForm() {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+        <h1 className="text-[32px] font-bold leading-[1.12] tracking-[-0.02em] text-ink">
           Înregistrează vânzare
         </h1>
         <p className="mt-1 text-sm text-slate-500">
@@ -89,7 +89,7 @@ export function SaleForm() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="rounded-xl border border-slate-200/80 bg-white p-6 shadow-card">
+      <form onSubmit={handleSubmit} className="rounded-xl border border-slate-200/70 bg-white p-6 shadow-card">
         <div className="mb-4 rounded-lg border border-brand/20 bg-brand-tint/60 p-3">
           <CarStockPicker
             value={stockQuery}

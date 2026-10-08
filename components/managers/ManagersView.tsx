@@ -50,11 +50,11 @@ export function ManagersView() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Manageri — vânzări și plată</h1>
+        <h1 className="text-[32px] font-bold leading-[1.12] tracking-[-0.02em] text-ink">Manageri — vânzări și plată</h1>
         <p className="mt-1 text-sm text-slate-500">Vânzările și profitul fiecărui manager, plus taxa, bonusul și totalul de plată.</p>
       </div>
 
-      <div className="mb-4 flex flex-wrap items-end gap-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-card">
+      <div className="mb-4 flex flex-wrap items-end gap-3 rounded-xl border border-slate-200/70 bg-white p-4 shadow-card">
         <Input label="De la" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
         <Input label="Până la" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
         <Button variant="ghost" onClick={() => { setFrom(""); setTo(""); }}>Resetează</Button>
@@ -63,21 +63,21 @@ export function ManagersView() {
       {loading || !data ? (
         <div className="py-12 text-center text-slate-400">Se încarcă...</div>
       ) : data.managers.length === 0 ? (
-        <div className="rounded-xl border border-slate-200/80 bg-white py-12 text-center text-slate-400 shadow-card">Nicio vânzare în perioadă.</div>
+        <div className="rounded-xl border border-slate-200/70 bg-white py-12 text-center text-slate-400 shadow-card">Nicio vânzare în perioadă.</div>
       ) : (
         <>
-          <div className="overflow-x-auto rounded-xl border border-slate-200/80 bg-white shadow-card">
+          <div className="overflow-x-auto rounded-card border border-slate-200/70 bg-white shadow-card">
             <table className="min-w-full divide-y divide-slate-200 text-sm">
               <thead className="bg-slate-50/80">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Manager</th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">Vânzări</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Venit</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Profit</th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">% din profit</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Taxă/buc</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Bonus</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Total plată</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Manager</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-400">Vânzări</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-400">Venit</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-400">Profit</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-400">% din profit</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-400">Taxă/buc</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-400">Bonus</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-400">Total plată</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -110,13 +110,13 @@ export function ManagersView() {
           <p className="mb-6 mt-2 text-xs text-slate-400">Total plată = Taxă fixă × nr. vânzări + Bonus (setate pe pagina Utilizatori).</p>
 
           <h2 className="mb-3 text-base font-semibold tracking-tight text-slate-900">Defalcare pe luni</h2>
-          <div className="overflow-x-auto rounded-xl border border-slate-200/80 bg-white shadow-card">
+          <div className="overflow-x-auto rounded-card border border-slate-200/70 bg-white shadow-card">
             <table className="min-w-full divide-y divide-slate-200 text-sm">
               <thead className="bg-slate-50/80">
                 <tr>
-                  <th className="sticky left-0 z-10 bg-slate-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Manager</th>
-                  {data.months.map((m) => <th key={m} className="whitespace-nowrap px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">{m}</th>)}
-                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-500">Total</th>
+                  <th className="sticky left-0 z-10 bg-slate-50 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">Manager</th>
+                  {data.months.map((m) => <th key={m} className="whitespace-nowrap px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-400">{m}</th>)}
+                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-slate-400">Total</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">

@@ -15,7 +15,7 @@ import type { InventoryDTO } from "@/types";
 
 function Stat({ label, value, tone }: { label: string; value: number | string; tone?: string }) {
   return (
-    <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-card">
+    <div className="rounded-xl border border-slate-200/70 bg-white p-4 shadow-card">
       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
       <p className={`mt-1 text-xl font-bold ${tone ?? "text-slate-900"}`}>{value}</p>
     </div>

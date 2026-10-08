@@ -8,7 +8,8 @@ body {
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  /* Fundalul colorat al machetei: carcasa albă plutește peste el. */
+  @apply bg-app-gradient bg-fixed text-slate-900 antialiased;
   font-feature-settings: "cv11", "ss01";
   font-variation-settings: normal;
   -webkit-font-smoothing: antialiased;
@@ -47,7 +48,17 @@ body {
 @layer components {
   /* Card de suprafață reutilizabil. */
   .surface-card {
-    @apply rounded-xl border border-slate-200/80 bg-white shadow-card;
+    @apply rounded-card border border-slate-200/70 bg-white shadow-card;
+  }
+
+  /* Eticheta mică, gri, de deasupra fiecărui card — în machetă toate o au. */
+  .card-label {
+    @apply text-[13px] font-semibold text-slate-500;
+  }
+
+  /* Butonul rotund din antet (clopoțel, deconectare). */
+  .icon-circle {
+    @apply inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200/70 bg-white text-slate-500 shadow-card transition-[background-color,color,transform] duration-150 ease-out hover:text-ink active:scale-[0.97];
   }
 }
 

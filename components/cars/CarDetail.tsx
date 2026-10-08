@@ -78,7 +78,7 @@ export function CarDetail({ id }: { id: string }) {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Link href="/dashboard/cars" className="text-sm text-slate-500 hover:text-brand">← Vânzări</Link>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">{car.brand} {car.model} <span className="text-slate-400">{car.year}</span></h1>
+          <h1 className="text-[32px] font-bold leading-[1.12] tracking-[-0.02em] text-ink">{car.brand} {car.model} <span className="text-slate-400">{car.year}</span></h1>
           <Badge color={car.status === "sold" ? "gray" : car.status === "available" ? "green" : "yellow"}>{STATUS_LABELS[car.status]}</Badge>
         </div>
         <div className="flex gap-2">
@@ -96,7 +96,7 @@ export function CarDetail({ id }: { id: string }) {
         </div>
 
         <div className="flex flex-col gap-5">
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card">
+          <div className="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-card">
             <div className="mb-2 flex items-baseline justify-between">
               <span className="text-sm font-semibold text-slate-500">Preț de vânzare</span>
               <span className="text-2xl font-extrabold text-brand">{formatMoney(car.priceSell)}</span>
@@ -124,7 +124,7 @@ export function CarDetail({ id }: { id: string }) {
 
           {/* Profit net real (P&L) */}
           {pnl && (
-            <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card">
+            <div className="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-card">
               <h3 className="mb-2 text-sm font-semibold text-slate-700">Profit net real</h3>
               <div className="space-y-1.5 text-sm">
                 <div className="flex justify-between"><span className="text-slate-500">Preț vânzare</span><span className="font-medium text-slate-800">{formatMoney(pnl.priceSell)}</span></div>
@@ -142,7 +142,7 @@ export function CarDetail({ id }: { id: string }) {
           )}
 
           {car.notes && (
-            <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card">
+            <div className="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-card">
               <h3 className="mb-1 text-sm font-semibold text-slate-700">Note</h3>
               <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-600">{car.notes}</p>
             </div>

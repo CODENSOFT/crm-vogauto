@@ -24,7 +24,7 @@ export function TaskFilters({
   workers: UserDTO[];
 }) {
   return (
-  <div className="mb-4 grid grid-cols-1 gap-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-card sm:grid-cols-2 lg:grid-cols-4">
+  <div className="mb-4 grid grid-cols-1 gap-3 rounded-xl border border-slate-200/70 bg-white p-4 shadow-card sm:grid-cols-2 lg:grid-cols-4">
     {view === "active" && (
     <div className="flex flex-col gap-1.5">
       <label htmlFor="task-day" className="text-xs font-semibold uppercase tracking-wide text-slate-600">Ziua</label>

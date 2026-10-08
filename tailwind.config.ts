@@ -9,6 +9,10 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      borderRadius: {
+        card: "20px",
+        shell: "28px",
+      },
       fontFamily: {
         sans: [
           "var(--font-inter)",
@@ -43,6 +47,12 @@ const config: Config = {
           border: "#1b2540",
           muted: "#8493b0",
         },
+        // Negrul cald al machetei: pilula activă din meniu, butoanele închise.
+        ink: {
+          DEFAULT: "#0b1220",
+          soft: "#1a2233",
+          muted: "#8a91a6",
+        },
         // Accent principal — albastru corporativ.
         brand: {
           DEFAULT: "#2563eb",
@@ -54,15 +64,20 @@ const config: Config = {
         },
       },
       boxShadow: {
-        card: "0 1px 2px 0 rgba(15, 23, 42, 0.04), 0 1px 3px 0 rgba(15, 23, 42, 0.06)",
+        card: "0 1px 2px 0 rgba(16, 24, 40, 0.03), 0 10px 26px -18px rgba(16, 24, 40, 0.22)",
         "card-hover":
-          "0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.06)",
+          "0 2px 4px 0 rgba(16, 24, 40, 0.04), 0 18px 36px -20px rgba(16, 24, 40, 0.28)",
+        // Carcasa care plutește peste fundalul colorat.
+        shell: "0 30px 70px -28px rgba(49, 46, 129, 0.30), 0 2px 8px -4px rgba(16, 24, 40, 0.06)",
+        pill: "0 8px 18px -8px rgba(11, 18, 32, 0.45)",
         elevated:
           "0 10px 30px -12px rgba(15, 23, 42, 0.18), 0 4px 8px -4px rgba(15, 23, 42, 0.08)",
         glow: "0 8px 24px -6px rgba(37, 99, 235, 0.45)",
         "inner-top": "inset 0 1px 0 0 rgba(255, 255, 255, 0.06)",
       },
       backgroundImage: {
+        "app-gradient":
+          "radial-gradient(900px 520px at 88% -5%, #e9dcef 0%, transparent 58%), radial-gradient(820px 620px at -5% 105%, #dde5fb 0%, transparent 55%), linear-gradient(135deg, #f3f4fc 0%, #e9eaf8 48%, #efe9f6 100%)",
         "brand-gradient": "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
         "sidebar-gradient":
           "linear-gradient(180deg, #0c1224 0%, #0a0f1d 60%, #080c17 100%)",
