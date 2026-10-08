@@ -10,6 +10,8 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
+        // Doar pagina de prezentare generală îl cere (clasa `font-display`).
+        display: ["var(--font-display)", "var(--font-inter)", "ui-sans-serif", "system-ui", "sans-serif"],
         sans: [
           "var(--font-inter)",
           "ui-sans-serif",
