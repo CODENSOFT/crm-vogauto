@@ -56,7 +56,7 @@ export function TelegramCard({ worker = false }: { worker?: boolean }) {
   const botLink = state.botUsername ? `https://t.me/${state.botUsername}` : null;
 
   return (
-    <div className="mb-4 rounded-xl border border-slate-200/70 bg-white p-5 shadow-card">
+    <div className="mb-4 rounded-xl border border-slate-200/80 bg-white p-5 shadow-card">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-start gap-3">
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600 ring-1 ring-inset ring-black/5">

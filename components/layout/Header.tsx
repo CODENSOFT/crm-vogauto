@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { signOut, useSession } from "next-auth/react";
+import { Button } from "@/components/ui/Button";
 import { IconMenu, IconLogout } from "@/components/ui/Icons";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 
@@ -16,43 +17,37 @@ export function Header({ onMenu }: { onMenu: () => void }) {
     .join("")
     .toUpperCase();
 
-  // Antetul nu mai e o bandă cu linie dedesubt: stă pe aceeași foaie albă ca
-  // restul, iar comenzile sunt butoane rotunde, ca în machetă.
   return (
-    <header className="sticky top-0 z-10 flex h-20 shrink-0 items-center justify-between bg-white px-4 lg:px-7">
+    <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-slate-200/80 bg-white/80 px-4 backdrop-blur-md lg:px-6">
       <button
-        className="icon-circle lg:hidden"
+        className="rounded-lg p-2 text-slate-600 transition-colors hover:bg-slate-100 lg:hidden"
         onClick={onMenu}
         aria-label="Meniu"
       >
-        <IconMenu className="h-5 w-5" />
+        <IconMenu />
       </button>
       <div className="flex-1" />
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-3 sm:gap-4">
         <NotificationBell />
         <div className="hidden text-right sm:block">
-          <div className="text-sm font-semibold text-ink">{name}</div>
-          <div className="text-xs text-slate-400">{session?.user?.email}</div>
+          <div className="text-sm font-semibold text-slate-800">{name}</div>
+          <div className="text-xs text-slate-500">{session?.user?.email}</div>
         </div>
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-ink text-sm font-semibold text-white">
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-gradient text-sm font-semibold text-white shadow-sm ring-2 ring-white">
           {initials}
         </div>
-        <button
-          className="icon-circle disabled:opacity-60"
-          disabled={loading}
-          aria-label="Deconectare"
-          title="Deconectare"
+        <div className="hidden h-8 w-px bg-slate-200 sm:block" />
+        <Button
+          variant="secondary"
+          loading={loading}
           onClick={() => {
             setLoading(true);
             signOut({ callbackUrl: "/login" });
           }}
         >
-          {loading ? (
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
-          ) : (
-            <IconLogout className="h-[18px] w-[18px]" />
-          )}
-        </button>
+          <IconLogout className="h-4 w-4" />
+          <span className="hidden sm:inline">Deconectare</span>
+        </Button>
       </div>
     </header>
   );

@@ -25,14 +25,14 @@ export function Table<T>({
   onRowClick,
 }: TableProps<T>) {
   return (
-    <div className="overflow-x-auto rounded-card border border-slate-200/70 bg-white shadow-card">
+    <div className="overflow-x-auto rounded-xl border border-slate-200/80 bg-white shadow-card">
       <table className="min-w-full divide-y divide-slate-200 text-sm">
-        <thead className="bg-slate-50/70">
+        <thead className="bg-slate-50/80">
           <tr>
             {columns.map((col) => (
               <th
                 key={col.key}
-                className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400 ${col.className ?? ""}`}
+                className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 ${col.className ?? ""}`}
               >
                 {col.header}
               </th>
@@ -54,7 +54,7 @@ export function Table<T>({
               <tr
                 key={rowKey(row)}
                 onClick={() => onRowClick?.(row)}
-                className={`transition-colors hover:bg-slate-50 ${onRowClick ? "cursor-pointer" : ""}`}
+                className={`transition-colors hover:bg-brand-tint/50 ${onRowClick ? "cursor-pointer" : ""}`}
               >
                 {columns.map((col) => (
                   <td key={col.key} className={`px-4 py-3 text-slate-700 ${col.className ?? ""}`}>

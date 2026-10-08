@@ -36,7 +36,7 @@ function StatCard({ label, value, Icon, tone, sub }: {
   label: string; value: string | number; Icon: (p: { className?: string }) => JSX.Element; tone: string; sub?: React.ReactNode;
 }) {
   return (
-    <div className="group relative overflow-hidden rounded-xl border border-slate-200/70 bg-white p-5 shadow-card transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-card-hover">
+    <div className="group relative overflow-hidden rounded-xl border border-slate-200/80 bg-white p-5 shadow-card transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-card-hover">
       <div className="flex items-start justify-between">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
@@ -52,26 +52,15 @@ function StatCard({ label, value, Icon, tone, sub }: {
 }
 
 function Delta({ now, prev }: { now: number; prev: number }) {
-  if (prev === 0 && now === 0) {
-    return <span className="text-xs text-slate-400">fără schimbare</span>;
-  }
+  if (prev === 0 && now === 0) return <span className="text-slate-400">— fără schimbare</span>;
   const pct = prev === 0 ? 100 : Math.round(((now - prev) / prev) * 100);
   const up = now >= prev;
-  return (
-    <span className="inline-flex items-center gap-2">
-      <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-bold ${
-        up ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
-      }`}>
-        {up ? "▲" : "▼"} {Math.abs(pct)}%
-      </span>
-      <span className="text-xs text-slate-400">vs luna trecută</span>
-    </span>
-  );
+  return <span className={up ? "text-emerald-600" : "text-red-500"}>{up ? "▲" : "▼"} {Math.abs(pct)}% vs luna trecută</span>;
 }
 
 function QuickLink({ href, label, Icon }: { href: string; label: string; Icon: (p: { className?: string }) => JSX.Element }) {
   return (
-    <Link href={href} className="flex flex-col items-center gap-2 rounded-xl border border-slate-200/70 bg-white px-3 py-4 text-center shadow-card transition-[transform,border-color,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-card-hover">
+    <Link href={href} className="flex flex-col items-center gap-2 rounded-xl border border-slate-200/80 bg-white px-3 py-4 text-center shadow-card transition-[transform,border-color,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-card-hover">
       <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-tint text-brand"><Icon className="h-5 w-5" /></span>
       <span className="text-xs font-semibold text-slate-700">{label}</span>
     </Link>
@@ -80,7 +69,7 @@ function QuickLink({ href, label, Icon }: { href: string; label: string; Icon: (
 
 function SkeletonCard() {
   return (
-    <div className="rounded-xl border border-slate-200/70 bg-white p-5 shadow-card">
+    <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-card">
       <div className="flex items-start justify-between">
         <div className="space-y-2.5"><div className="skeleton h-3 w-24" /><div className="skeleton h-7 w-16" /></div>
         <div className="skeleton h-11 w-11 rounded-xl" />
@@ -109,18 +98,14 @@ export function AdminDashboard({ name }: { name: string }) {
   return (
     <div>
       {/* Hero */}
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-x-8 gap-y-4 pt-1">
-        <div>
-          <h1 className="text-[32px] font-bold leading-[1.12] tracking-[-0.02em] text-ink">
-            Bună ziua, {name.split(" ")[0]}
-          </h1>
-          <p className="mt-1 text-sm capitalize text-slate-400">{today}</p>
-        </div>
+      <div className="mb-6 overflow-hidden rounded-2xl border border-slate-200/60 bg-sidebar-gradient p-6 text-white shadow-elevated">
+        <h1 className="text-2xl font-bold tracking-tight">Bună ziua, {name.split(" ")[0]}</h1>
+        <p className="mt-1 text-sm capitalize text-slate-300">{today}</p>
         {stats && (
-          <div className="flex flex-wrap gap-x-7 gap-y-2 text-sm">
-            <span><span className="text-slate-400">În stoc: </span><span className="font-semibold text-ink">{stats.stock.available}</span></span>
-            <span><span className="text-slate-400">Vândute luna asta: </span><span className="font-semibold text-ink">{stats.thisMonth.count}</span></span>
-            <span><span className="text-slate-400">Profit luna asta: </span><span className="font-semibold text-emerald-600">{formatMoney(stats.thisMonth.profit)}</span></span>
+          <div className="mt-4 flex flex-wrap gap-x-8 gap-y-2 text-sm">
+            <span><span className="text-slate-400">În stoc: </span><span className="font-semibold">{stats.stock.available}</span></span>
+            <span><span className="text-slate-400">Vândute luna asta: </span><span className="font-semibold">{stats.thisMonth.count}</span></span>
+            <span><span className="text-slate-400">Profit luna asta: </span><span className="font-semibold text-emerald-300">{formatMoney(stats.thisMonth.profit)}</span></span>
           </div>
         )}
       </div>
@@ -137,7 +122,7 @@ export function AdminDashboard({ name }: { name: string }) {
 
       {alerts.length > 0 && (
         <div className="mb-6">
-          <h2 className="mb-3 flex items-center gap-2 text-[13px] font-semibold text-slate-400">
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-slate-500">
             <IconWarning className="h-4 w-4 text-amber-500" /> De rezolvat
           </h2>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -157,26 +142,26 @@ export function AdminDashboard({ name }: { name: string }) {
         </div>
       ) : (
         <>
-          <h2 className="mb-3 text-[13px] font-semibold text-slate-400">Luna curentă</h2>
+          <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-500">Luna curentă</h2>
           <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <StatCard label="Mașini vândute" value={stats.thisMonth.count} Icon={IconMoney} tone="bg-indigo-50 text-indigo-500" sub={<Delta now={stats.thisMonth.count} prev={stats.lastMonth.count} />} />
+            <StatCard label="Mașini vândute" value={stats.thisMonth.count} Icon={IconMoney} tone="bg-indigo-50 text-indigo-600" sub={<Delta now={stats.thisMonth.count} prev={stats.lastMonth.count} />} />
             <StatCard label="Încasări" value={formatMoney(stats.thisMonth.revenue)} Icon={IconCar} tone="bg-brand-tint text-brand" sub={<Delta now={stats.thisMonth.revenue} prev={stats.lastMonth.revenue} />} />
             <StatCard label="Profit net" value={formatMoney(stats.thisMonth.profit)} Icon={IconCheck} tone="bg-emerald-50 text-emerald-600" sub={<Delta now={stats.thisMonth.profit} prev={stats.lastMonth.profit} />} />
           </div>
 
-          <h2 className="mb-3 text-[13px] font-semibold text-slate-400">Sinteză</h2>
+          <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-500">Sinteză</h2>
           <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
             <StatCard label="Mașini în stoc" value={stats.stock.available} Icon={IconCube} tone="bg-brand-tint text-brand" />
             <StatCard label="Valoare stoc" value={formatMoney(stats.stock.value)} Icon={IconTrend} tone="bg-emerald-50 text-emerald-600" />
-            <StatCard label="Vândute (total)" value={stats.counts.sold} Icon={IconCar} tone="bg-indigo-50 text-indigo-500" />
+            <StatCard label="Vândute (total)" value={stats.counts.sold} Icon={IconCar} tone="bg-indigo-50 text-indigo-600" />
             <StatCard label="Profit net (total)" value={formatMoney(stats.totalProfit)} Icon={IconCheck} tone="bg-emerald-50 text-emerald-600" sub={`marjă ${stats.profitMargin.toFixed(1)}%`} />
           </div>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <div className="lg:col-span-2"><RevenueLineChart data={stats.monthly} /></div>
-            <div className="rounded-xl border border-slate-200/70 bg-white p-5 shadow-card">
+            <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-card">
               <div className="mb-3 flex items-center justify-between">
-                <h3 className="card-label">Top vânzători</h3>
+                <h3 className="text-sm font-semibold text-slate-700">Top vânzători</h3>
                 <Link href="/dashboard/managers" className="text-xs font-medium text-brand hover:underline">Toți →</Link>
               </div>
               {stats.topWorkers.length === 0 ? (

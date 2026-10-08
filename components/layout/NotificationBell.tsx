@@ -50,7 +50,7 @@ export function NotificationBell() {
 
   return (
     <div className="relative" ref={ref}>
-      <button onClick={toggle} className="icon-circle relative" aria-label="Notificări">
+      <button onClick={toggle} className="relative rounded-lg p-2 text-slate-600 transition-colors hover:bg-slate-100" aria-label="Notificări">
         <IconBell className="h-5 w-5" />
         {unread > 0 && (
           <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">

@@ -97,7 +97,7 @@ export function InventoryView() {
     <div>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-[32px] font-bold leading-[1.12] tracking-[-0.02em] text-ink">Stoc mașini</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Stoc mașini</h1>
           <p className="mt-1 text-sm text-slate-500">{TABS.find((t) => t.key === tab)?.hint}</p>
         </div>
         <Button onClick={() => setFormOpen(true)}>
@@ -135,7 +135,7 @@ export function InventoryView() {
       {loading ? (
         /* Schelet, nu „Se încarcă...": pagina nu-și mai schimbă forma când
            sosesc datele, deci ochiul nu sare. */
-        <div className="rounded-xl border border-slate-200/70 bg-white p-4 shadow-card">
+        <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-card">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="flex items-center gap-4 border-b border-slate-100 py-3 last:border-0">
               <div className="skeleton h-11 w-14 rounded-md" />

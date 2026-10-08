@@ -17,7 +17,7 @@ export function SalesCards({ cars }: { cars: CarDTO[] }) {
         const profit = Number(car.priceSell) - Number(car.priceBuy);
         return (
           <Link key={car._id} href={`/dashboard/cars/${car._id}`}
-            className="block rounded-xl border border-slate-200/70 bg-white p-3 shadow-card active:bg-brand-tint/40">
+            className="block rounded-xl border border-slate-200/80 bg-white p-3 shadow-card active:bg-brand-tint/40">
             <div className="flex gap-3">
               <CarThumb url={car.primaryPhoto} count={car.photoCount} className="h-16 w-20 shrink-0 rounded-lg" />
               <div className="min-w-0 flex-1">

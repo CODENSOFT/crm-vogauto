@@ -104,13 +104,13 @@ export function LeadsView() {
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-[32px] font-bold leading-[1.12] tracking-[-0.02em] text-ink">Clienți potențiali</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Clienți potențiali</h1>
           <p className="mt-1 text-sm text-slate-500">Cine a sunat, ce mașină vrea și în ce etapă e — de la primul contact până la vânzare.</p>
         </div>
         <Button onClick={openAdd}>Client potențial nou</Button>
       </div>
 
-      <div className="mb-4 grid grid-cols-1 gap-3 rounded-xl border border-slate-200/70 bg-white p-4 shadow-card sm:grid-cols-3">
+      <div className="mb-4 grid grid-cols-1 gap-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-card sm:grid-cols-3">
         <Select label="Status" value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="">Toate</option>
           {Object.entries(LEAD_STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}

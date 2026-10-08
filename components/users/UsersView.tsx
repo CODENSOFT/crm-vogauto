@@ -42,7 +42,7 @@ function initials(name: string) {
 
 function StatCard({ label, value, tone }: { label: string; value: number | string; tone?: string }) {
   return (
-    <div className="rounded-xl border border-slate-200/70 bg-white p-4 shadow-card">
+    <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-card">
       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
       <p className={`mt-1 text-xl font-bold ${tone ?? "text-slate-900"}`}>{value}</p>
     </div>
@@ -91,7 +91,7 @@ export function UsersView() {
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-[32px] font-bold leading-[1.12] tracking-[-0.02em] text-ink">Utilizatori</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Utilizatori</h1>
           <p className="mt-1 text-sm text-slate-500">Conturi, roluri și comisioane (taxă + bonus per angajat).</p>
         </div>
         <Button onClick={() => setAddOpen(true)}>Adaugă angajat</Button>
@@ -109,12 +109,12 @@ export function UsersView() {
       {loading ? (
         <div className="py-12 text-center text-slate-400">Se încarcă...</div>
       ) : (
-        <div className="overflow-x-auto rounded-card border border-slate-200/70 bg-white shadow-card">
+        <div className="overflow-x-auto rounded-xl border border-slate-200/80 bg-white shadow-card">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50/80">
               <tr>
                 {["Utilizator", "Rol", "Status", "Taxă / vânzare", "Bonus", "Ultima conectare", ""].map((h) => (
-                  <th key={h} className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">{h}</th>
+                  <th key={h} className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">{h}</th>
                 ))}
               </tr>
             </thead>

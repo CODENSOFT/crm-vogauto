@@ -89,7 +89,7 @@ export function InventoryDetail({ id }: { id: string }) {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Link href="/dashboard/inventory" className="text-sm text-slate-500 hover:text-brand">← Stoc</Link>
-          <h1 className="text-[32px] font-bold leading-[1.12] tracking-[-0.02em] text-ink">{item.brand} {item.model} <span className="text-slate-400">{item.year}</span></h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">{item.brand} {item.model} <span className="text-slate-400">{item.year}</span></h1>
           <Badge color={item.status === "available" ? "green" : item.status === "preparing" ? "yellow" : "gray"}>{STOCK_STATUS_LABELS[item.status]}</Badge>
           {item.published && <Badge color="blue">Publicat</Badge>}
           {hasReducere && <Badge color="red">−{procentReducere}% reducere</Badge>}
@@ -240,7 +240,7 @@ function CardPret({ item }: { item: InventoryDTO }) {
   ];
 
   return (
-    <div className="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-card">
+    <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card">
       <div className="mb-4 flex items-baseline justify-between gap-2">
         <span className="text-sm font-semibold text-slate-500">Preț de vânzare</span>
         <span className="flex items-baseline gap-2">
@@ -283,9 +283,9 @@ function CardDescriere({ item }: { item: InventoryDTO }) {
   // Secțiunea e mereu prezentă: dacă textul lipsește, trebuie să se vadă că
   // lipsește, nu să dispară în tăcere.
   return (
-    <div className="rounded-2xl border border-slate-200/70 bg-white p-5 shadow-card">
+    <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card">
       <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="card-label">Descriere anunț</h3>
+        <h3 className="text-sm font-semibold text-slate-700">Descriere anunț</h3>
         <span className="text-xs text-slate-400">textul care apare pe site</span>
       </div>
       {item.listingDescription ? (

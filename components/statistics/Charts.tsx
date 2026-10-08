@@ -79,11 +79,11 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col overflow-hidden rounded-card border border-slate-200/70 bg-white shadow-card">
+    <div className="flex flex-col overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-card">
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1 px-5 pt-5">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{title}</p>
-          {value && <p className="mt-1 text-[30px] font-bold leading-none tracking-[-0.03em] text-ink">{value}</p>}
+          {value && <p className="mt-1 text-2xl font-bold tracking-tight text-slate-900">{value}</p>}
           {note && <p className="mt-0.5 text-xs text-slate-400">{note}</p>}
         </div>
         {trend !== undefined && <TrendChip pct={trend ?? null} />}

@@ -100,7 +100,7 @@ export function CarsTable() {
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-[32px] font-bold leading-[1.12] tracking-[-0.02em] text-ink">Vânzări</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Vânzări</h1>
         <div className="flex gap-2">
           <Button variant="secondary" onClick={() => { window.location.href = "/api/export"; toast("Se generează Excel..."); }}>
             <IconDownload className="h-4 w-4" /> Export Excel
@@ -109,7 +109,7 @@ export function CarsTable() {
         </div>
       </div>
 
-      <div className="mb-4 grid grid-cols-1 gap-3 rounded-xl border border-slate-200/70 bg-white p-4 shadow-card sm:grid-cols-3 lg:grid-cols-6">
+      <div className="mb-4 grid grid-cols-1 gap-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-card sm:grid-cols-3 lg:grid-cols-6">
         <Input label="Căutare" placeholder="Client, telefon, VIN" value={filters.search} onChange={(e) => setF("search", e.target.value)} />
         <Input label="Marcă" value={filters.brand} onChange={(e) => setF("brand", e.target.value)} />
         <Input label="Vânzător" value={filters.worker} onChange={(e) => setF("worker", e.target.value)} />

@@ -3,9 +3,9 @@
 import { forwardRef } from "react";
 
 const fieldBase =
-  "rounded-xl border border-slate-200/70 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-card transition-colors placeholder:text-slate-400 outline-none focus:border-brand focus:ring-2 focus:ring-brand/15 disabled:bg-slate-50 disabled:text-slate-400";
+  "rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition-colors placeholder:text-slate-400 outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 disabled:bg-slate-100 disabled:text-slate-500";
 
-const labelBase = "text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400";
+const labelBase = "text-xs font-semibold uppercase tracking-wide text-slate-600";
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;

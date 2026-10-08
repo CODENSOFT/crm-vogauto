@@ -300,10 +300,3 @@ export const IconHistory = ({ className }: IconProps) => (
     <path d="M12 8v4.3l2.8 1.7" />
   </Svg>
 );
-
-// Săgeata din dreptul intrării active din meniu (ca în machetă).
-export const IconChevronRight = ({ className }: IconProps) => (
-  <Svg className={className}>
-    <path d="M9 6l6 6-6 6" />
-  </Svg>
-);

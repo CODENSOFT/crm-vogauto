@@ -73,11 +73,11 @@ export function SalesTable({
   }
 
   return (
-  <div className="hidden overflow-x-auto rounded-card border border-slate-200/70 bg-white shadow-card lg:block">
+  <div className="hidden overflow-x-auto rounded-xl border border-slate-200/80 bg-white shadow-card lg:block">
     <table className="min-w-full divide-y divide-slate-200 text-sm">
       <thead className="bg-slate-50/80">
         <tr>{HEADERS.map(([col, lbl]: [string, string], i: number) => (
-          <th key={i} className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <th key={i} className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
             {col ? (
               <button type="button" onClick={() => onToggleSort(col)} className="select-none uppercase tracking-wider hover:text-brand">
                 {lbl}{sortInd(col)}

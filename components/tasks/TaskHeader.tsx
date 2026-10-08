@@ -14,7 +14,7 @@ export function TaskHeader({
   return (
   <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
     <div>
-      <h1 className="text-[32px] font-bold leading-[1.12] tracking-[-0.02em] text-ink">
+      <h1 className="text-2xl font-bold tracking-tight text-slate-900">
         {isAdmin ? "Sarcini" : "Sarcinile mele"}
       </h1>
       <p className="mt-1 text-sm text-slate-500">

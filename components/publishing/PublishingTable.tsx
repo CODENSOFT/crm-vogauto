@@ -67,12 +67,12 @@ export function PublishingTable({
   onUnsocial: (it: InventoryDTO) => void;
 }) {
   return (
-  <div className="overflow-x-auto rounded-card border border-slate-200/70 bg-white shadow-card">
+  <div className="overflow-x-auto rounded-xl border border-slate-200/80 bg-white shadow-card">
     <table className="min-w-full divide-y divide-slate-200 text-sm">
       <thead className="bg-slate-50/80">
         <tr>
           {["Foto", "Mașină", "Preț", "Site", "999.md", "Facebook + Instagram", "Acțiuni"].map((h, i) => (
-            <th key={i} className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">{h}</th>
+            <th key={i} className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">{h}</th>
           ))}
         </tr>
       </thead>

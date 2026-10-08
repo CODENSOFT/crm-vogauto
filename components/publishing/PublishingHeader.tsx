@@ -18,7 +18,7 @@ export function PublishingHeader({
   return (
   <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
     <div>
-      <h1 className="text-[32px] font-bold leading-[1.12] tracking-[-0.02em] text-ink">Publicare</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-slate-900">Publicare</h1>
       <p className="mt-1 text-sm text-slate-500">Alege pe ce canale apare fiecare mașină. Vândută → dispare automat de peste tot.</p>
     </div>
     <div className="flex flex-wrap gap-2">

@@ -16,12 +16,12 @@ export function LeadsTable({
   onDelete: (lead: LeadDTO) => void;
 }) {
   return (
-  <div className="hidden overflow-x-auto rounded-card border border-slate-200/70 bg-white shadow-card lg:block">
+  <div className="hidden overflow-x-auto rounded-xl border border-slate-200/80 bg-white shadow-card lg:block">
     <table className="min-w-full divide-y divide-slate-200 text-sm">
       <thead className="bg-slate-50/80">
         <tr>
           {["Client", "Telefon", "Sursă", "Interes", "Buget", "Status", "Responsabil", ""].map((h, i) => (
-            <th key={i} className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-400">{h}</th>
+            <th key={i} className="whitespace-nowrap px-3 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">{h}</th>
           ))}
         </tr>
       </thead>

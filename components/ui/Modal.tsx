@@ -46,12 +46,12 @@ export function Modal({ open, onClose, title, children, footer, size = "md" }: M
 
   return (
     <dialog ref={ref} className="vg-modal" aria-label={title}>
-      <div className={`mx-auto flex max-h-[92vh] w-full ${WIDTH[size]} flex-col overflow-hidden rounded-t-shell border border-slate-200/60 bg-white shadow-elevated animate-scale-in sm:max-h-[90vh] sm:rounded-shell`}>
+      <div className={`mx-auto flex max-h-[92vh] w-full ${WIDTH[size]} flex-col overflow-hidden rounded-t-2xl border border-slate-200/60 bg-white shadow-elevated animate-scale-in sm:max-h-[90vh] sm:rounded-2xl`}>
         <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-5 py-4 sm:px-6">
           <h2 className="text-base font-semibold tracking-tight text-slate-900">{title}</h2>
           <button
             onClick={onClose}
-            className="rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-ink"
+            className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
             aria-label="Închide"
           >
             <IconClose className="h-5 w-5" />

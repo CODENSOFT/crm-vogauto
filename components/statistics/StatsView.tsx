@@ -44,10 +44,10 @@ function Delta({ now, prev }: { now: number; prev: number }) {
 
 function Kpi({ label, value, sub, accent }: { label: string; value: string | number; sub?: React.ReactNode; accent?: string }) {
   return (
-    <div className="rounded-xl border border-slate-200/70 bg-white p-5 shadow-card transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-card-hover">
-      <p className="card-label">{label}</p>
-      <p className={`mt-3 text-[30px] font-bold leading-none tracking-[-0.03em] ${accent ?? "text-ink"}`}>{value}</p>
-      {sub && <p className="mt-2 text-xs text-slate-400">{sub}</p>}
+    <div className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-card transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-0.5 hover:shadow-card-hover">
+      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className={`mt-2 text-2xl font-bold tracking-tight ${accent ?? "text-slate-900"}`}>{value}</p>
+      {sub && <p className="mt-1 text-xs text-slate-400">{sub}</p>}
     </div>
   );
 }
@@ -82,11 +82,11 @@ export function StatsView() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-[32px] font-bold leading-[1.12] tracking-[-0.02em] text-ink">Statistici</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Statistici</h1>
         <p className="mt-1 text-sm text-slate-500">Performanța vânzărilor și a stocului, dintr-o privire.</p>
       </div>
 
-      <div className="mb-5 flex flex-wrap items-end gap-3 rounded-xl border border-slate-200/70 bg-white p-4 shadow-card">
+      <div className="mb-5 flex flex-wrap items-end gap-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-card">
         <Input label="De la" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
         <Input label="Până la" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
         <div className="flex gap-1.5">
@@ -99,12 +99,12 @@ export function StatsView() {
 
       {loading || !data ? (
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-28 rounded-card border border-slate-200/70 bg-white shadow-card animate-pulse" />)}
+          {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-28 rounded-xl border border-slate-200/80 bg-white shadow-card animate-pulse" />)}
         </div>
       ) : (
         <>
           {/* Luna curentă vs precedentă */}
-          <h2 className="mb-3 text-[13px] font-semibold text-slate-400">Luna curentă</h2>
+          <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-500">Luna curentă</h2>
           <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Kpi label="Mașini vândute" value={data.thisMonth.count} sub={<span className="inline-flex items-center gap-1"><Delta now={data.thisMonth.count} prev={data.lastMonth.count} /> vs luna trecută</span>} />
             <Kpi label="Venit" value={formatMoney(data.thisMonth.revenue)} sub={<span className="inline-flex items-center gap-1"><Delta now={data.thisMonth.revenue} prev={data.lastMonth.revenue} /> vs luna trecută</span>} />
@@ -112,7 +112,7 @@ export function StatsView() {
           </div>
 
           {/* KPI perioada selectată */}
-          <h2 className="mb-3 text-[13px] font-semibold text-slate-400">{from || to ? "Perioada selectată" : "Total (istoric)"}</h2>
+          <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-500">{from || to ? "Perioada selectată" : "Total (istoric)"}</h2>
           <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
             <Kpi label="Mașini vândute" value={data.totalSales} />
             <Kpi label="Venit total" value={formatMoney(data.totalRevenue)} />
@@ -125,7 +125,7 @@ export function StatsView() {
           </div>
 
           {/* Stoc */}
-          <h2 className="mb-3 text-[13px] font-semibold text-slate-400">Stoc mașini</h2>
+          <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-slate-500">Stoc mașini</h2>
           <div className="mb-6 grid grid-cols-2 gap-4">
             <Kpi label="Mașini în stoc" value={data.stock.available} />
             <Kpi label="Valoare stoc" value={formatMoney(data.stock.value)} />
@@ -140,9 +140,9 @@ export function StatsView() {
           </div>
 
           {/* Top vânzători */}
-          <div className="mt-4 rounded-xl border border-slate-200/70 bg-white p-5 shadow-card">
+          <div className="mt-4 rounded-xl border border-slate-200/80 bg-white p-5 shadow-card">
             <div className="mb-3 flex items-center justify-between">
-              <h3 className="card-label">Clasament vânzători</h3>
+              <h3 className="text-sm font-semibold text-slate-700">Clasament vânzători</h3>
               <Link href="/dashboard/managers" className="text-xs font-medium text-brand hover:underline">Detalii pe manageri →</Link>
             </div>
             {data.topWorkers.length === 0 ? (

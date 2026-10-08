@@ -13,9 +13,9 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variants: Record<Variant, string> = {
   primary:
-    "bg-ink text-white shadow-pill hover:bg-ink-soft active:bg-ink focus-visible:ring-ink/30",
+    "bg-brand-gradient text-white shadow-sm hover:shadow-glow hover:brightness-[1.05] active:brightness-95 focus-visible:ring-brand/40",
   secondary:
-    "bg-white text-slate-600 border border-slate-200/70 shadow-card hover:text-ink hover:border-slate-300 active:bg-slate-50 focus-visible:ring-slate-200",
+    "bg-white text-slate-700 border border-slate-300 shadow-sm hover:bg-slate-50 hover:border-slate-400 active:bg-slate-100 focus-visible:ring-slate-300",
   danger:
     "bg-red-600 text-white shadow-sm hover:bg-red-700 active:bg-red-800 focus-visible:ring-red-300",
   ghost:
@@ -27,8 +27,8 @@ const variants: Record<Variant, string> = {
 };
 
 const sizes: Record<Size, string> = {
-  sm: "px-3.5 py-1.5 text-xs",
-  md: "px-5 py-2.5 text-sm",
+  sm: "px-3 py-1.5 text-xs",
+  md: "px-4 py-2 text-sm",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -40,7 +40,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         disabled={disabled || loading}
-        className={`inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-[transform,box-shadow,background-color,filter] duration-150 ease-out active:scale-[0.97] outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none ${variants[variant]} ${sizes[size]} ${className}`}
+        className={`inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-[transform,box-shadow,background-color,filter] duration-150 ease-out active:scale-[0.97] outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none ${variants[variant]} ${sizes[size]} ${className}`}
         {...props}
       >
         {loading && (
